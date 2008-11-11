@@ -1,6 +1,6 @@
 ==Modul ovládání motorů==
 
-První modul vyvíjeného systému. Modul MotorControl je určen k řízení dvou stejnosměrných motorků GHM-16 ([http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=75_101&products_id=405 odkaz]). Protože je [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=77&products_id=382 podvozek MOB-03] tvořen čtveřicí těchto DC motorků, bude na řízení pohonů potřeba dvojice těchto modulů. Modul je samozřejmě univerzální, takže je možné využít jakýkoliv motorek a enkodér s podobnými parametry. 
+První modul vyvíjeného systému. Modul MotorControl je určen k řízení dvou stejnosměrných  [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=75_101&products_id=405 motorků GHM-16]. Protože je [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=77&products_id=382 podvozek MOB-03] tvořen čtveřicí těchto DC motorků, bude na řízení pohonů potřeba dvojice těchto modulů. Modul je samozřejmě univerzální, takže je možné využít jakýkoliv motorek s enkodérem s podobnými parametry. 
 
 ===Aktuální stav===
 
