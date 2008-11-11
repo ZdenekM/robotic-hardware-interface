@@ -13,7 +13,7 @@ V současnosti je navržená, vyrobená a osazená deska (ke stažení) a připr
   * řízení rychlosti pomocí PI regulátorů
   * měření proudu oběma motory, měření teploty motorů
 
-==Parametry pohonu==
+===Parametry pohonu===
 
 Výrobce LynxMotion, dodavatel HobbyRobot.
 
@@ -30,7 +30,7 @@ Výrobce LynxMotion, dodavatel HobbyRobot.
     * maximální frekvence 30kHz, 100 kroků (400 čtvrtkroků) na otáčku motoru
     * 3000 kroků (12000 čtvrtkroků) na otáčku výstupního hřídele GHM-16
 
-==Parametry modulu==
+===Parametry modulu===
 
   * mikroprocesor Atmel ATmega8, frekvence 16MHz, programování přes SPI
   * můstkový budič L298HN - pro buzení dvou motorů
