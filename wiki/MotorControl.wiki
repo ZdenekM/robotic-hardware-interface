@@ -17,7 +17,7 @@ V současnosti je navržená, vyrobená a osazená deska (ke stažení) a připr
 
 Výrobce LynxMotion, dodavatel HobbyRobot.
 
-  * Motor GHM-16
+  * [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=75_101&products_id=405 Motor GHM-16]
     * motor s převodovkou
     * napájení 12V, odběr 100mA bez zátěže, 1.5A při 0ot/min
     * převodový poměr 30:1, rychlost otáčení 200ot/min bez zátěže
@@ -25,7 +25,7 @@ Výrobce LynxMotion, dodavatel HobbyRobot.
     * rozměry 37x42mm, hmotnost 154g
     * [http://www.lynxmotion.com/images/data/ghm16.pdf katalogový list]
 
-  * Enkodér QME-01
+  * [http://shop.snailinstruments.com/index.php?main_page=product_info&products_id=406 Enkodér QME-01]
     * kvadraturní enkodér pro motory, napájení 5V
     * maximální frekvence 30kHz, 100 kroků (400 čtvrtkroků) na otáčku motoru
     * 3000 kroků (12000 čtvrtkroků) na otáčku výstupního hřídele GHM-16
