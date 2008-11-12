@@ -11,11 +11,17 @@ Při tvorbě návrhu byl použit jako inspirace protokol Martina Lockera (ROBONE
 ||SYNC1||SYNC2||ADDR||LEN||TYPE||Data 0||...||Data n||CRC1||CRC2||
 
 SYNC1, SYNC2: synchronizační byty
+
 ADDR: adresa přijemce
+
 LEN: délka dat (teoreticky max. 255 bytů, bude sw omezeno na 32 bytů)
+
 TYPE: typ paketu/dat
+
 Data 0 ... Data n: přenášená data
+
 CRC1,CRC2: šestnáctibitový kontrolní součet
+
 
 
 ====Vyhrazené adresy====
