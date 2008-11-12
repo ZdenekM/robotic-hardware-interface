@@ -1,0 +1,24 @@
+==Popis společných vlastností modulů==
+
+Jednotlivé moduly se mnoha věcech podobají.
+
+===Konektory===
+
+Zapojení použitých konektorů je převzato z [http://robotika.cz/wiki/StandardKonektory robotika.cz/wiki], kde je nabízen návrh standardu pro robotické moduly. Tento standard by měl umožnit kompatibilitu robotických modulů.  Konkrétně jsou (nebo budou) využity tyto konektory:
+
+  * I2C
+  * RS232 TTL konektor
+  * RS485 konektor (half duplex)
+  * Univerzální konektor pro připojení serv a akčních členů
+  * Univerzální konektor 4 pólový (2 porty + napájení)
+  * ISP - programovací konektor (10 pinů)
+  * 
+
+
+===Stabilizace napětí===
+
+Každý modul obsahuje vlastní stabilizátor napětí. Použity jsou obvody 75L05 v SMD provedení. Napájení modulů bude řešeno tak, že modul PowerMod zajistí pomocí step-down měniče snížení napětí z palubní 12V baterie na cca 9V, které se pak bude rozvádět k jednotlivým modulům, které si dále toho napětí upraví na potřebných 5V. Dále každý modul obsahuje diodu chránící proti přepólování napájení a také varistor chránící modul proti případným napěťovým špičkám - inspirováno zapojením z http://robotika.cz/wiki/OchranaNapajeni.
+
+===Komunikace===
+
+Pro poloduplexní komunikaci po sběrnici RS485 využívají moduly nejlevnější transceiver ttl<>RS485, obvod 75176 ([http://www.gme.cz/cz/index.php?page=product&detail=959-001 gme.cz]). Obvod nezajišťuje přepínání směru, to je tedy nutné řešit programově jedním pinem procesoru. Obě linky jsou připojeny přes odpory 2k2 připojeny na zem, respektive 5V pro definování klidového stavu a omezení falešného přijmu.
