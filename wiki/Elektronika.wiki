@@ -17,7 +17,7 @@ Zapojení použitých konektorů je převzato z [http://robotika.cz/wiki/Standar
 
 ===Stabilizace napětí===
 
-Každý modul obsahuje vlastní stabilizátor napětí. Použity jsou obvody 75L05 v SMD provedení. Napájení modulů bude řešeno tak, že modul PowerMod zajistí pomocí step-down měniče snížení napětí z palubní 12V baterie na cca 9V, které se pak bude rozvádět k jednotlivým modulům, které si dále toho napětí upraví na potřebných 5V. Dále každý modul obsahuje diodu chránící proti přepólování napájení a také varistor chránící modul proti případným napěťovým špičkám - inspirováno zapojením z http://robotika.cz/wiki/OchranaNapajeni.
+Každý modul obsahuje vlastní stabilizátor napětí. Použity jsou obvody 75L05 v SMD provedení. Napájení modulů bude řešeno tak, že modul PowMod zajistí pomocí step-down měniče snížení napětí z palubní 12V baterie na cca 9V, které se pak bude rozvádět k jednotlivým modulům, které si dále toho napětí upraví na potřebných 5V. Dále každý modul obsahuje diodu chránící proti přepólování napájení a také varistor chránící modul proti případným napěťovým špičkám - inspirováno zapojením z http://robotika.cz/wiki/OchranaNapajeni.
 
 ===Komunikace===
 
