@@ -1,3 +1,0 @@
-===Protokol pro komunikaci mezi moduly===
-
-TODO: popis protokolu
