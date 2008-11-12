@@ -4,7 +4,7 @@ Komunikace po lince RS485 bude poloduplexní (nelze zároveň vysílat a přijí
 
 ===Návrh protokolu===
 
-Při tvorbě návrhu byl použit jako inspirace protokol Martina Lockera (ROBONET) a dále protokol Tomáše Paseka uvedený v jeho diplomové práci (Návrh a realizace autonomního robotu pro kategorii IEEE Micromouse).
+Při tvorbě návrhu byl použit jako inspirace protokol Martina Lockera (ROBONET) a dále protokol Tomáše Paseky uvedený v jeho diplomové práci (Návrh a realizace autonomního robotu pro kategorii IEEE Micromouse).
 
 ====Popis paketu====
 
