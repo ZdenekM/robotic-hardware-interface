@@ -1,3 +1,13 @@
+/*
+
+TODO: alokace pole pro klouzavy prumer
+
+
+
+*/
+
+
+
 #define F_CPU 16000000UL  // 16 MHz
 
 #include <stdlib.h>
@@ -52,7 +62,7 @@
 #define EN2A PINC, 4
 #define EN2B PINC, 5
 
-uint8_t ena_st=0;
+volatile uint8_t ena_st=0;
 
 #define PEN1A ena_st, 0
 #define PEN1B ena_st, 1
@@ -60,19 +70,125 @@ uint8_t ena_st=0;
 #define PEN2A ena_st, 2
 #define PEN2B ena_st, 3
 
-
-volatile int32_t t_en1=0, pt_en1 = 0, t_en2 = 0, pt_en2 = 0;
-volatile int16_t diff1 = 0, diff2 = 0;
-
-//volatile int16_t e;
-volatile static int32_t sum;
-volatile int16_t act;
-volatile int16_t speed;
-
-volatile int16_t e[5];
+#define DEBUG ena_st, 7
 
 
-#define UART_BAUD_RATE  115200
+enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_OVERTEMP};
+
+typedef struct {
+
+	// pocet tiku enkoderu
+	volatile int32_t enc;
+	
+	// uschovani minule hodnoty enc
+	volatile int32_t last_enc;
+	
+	// zadana rychlost (pocet tiku za urcity cas) - reference
+	volatile int16_t req_speed;
+	
+	// aktualni rychlost
+	volatile int16_t act_speed;
+	
+	// minula aktualni rychlost
+	volatile int16_t last_speed;
+	
+	// regulator - integral (suma) odchylky
+	volatile int32_t sum;
+	
+	// regulator - ulozeni akcniho zasahu
+	volatile int16_t act;
+
+	// velikost pole pro ulozeni prumeru
+	volatile uint8_t e_arr_len;
+	
+	// pole pro ulozeni klouzaveho prumeru odchylky
+	volatile int16_t e[5];
+	
+	// parametry regulatoru, * 10
+	volatile float P, I, D;
+	
+	// stav motoru
+	volatile uint8_t state;
+	
+	// ukazatele na funkce ovladajici smer otaceni atd.
+	void (*forwd)(void);
+	void (*backwd)(void);
+	void (*stop)(void);
+	void (*free)(void);
+	
+		
+	
+
+} motor;
+
+
+motor motor1;
+motor motor2;
+
+
+
+// inicializace struktury motor
+void motor_init(motor *m) {
+	
+	(*m).enc = 0;
+	(*m).last_enc = 0;
+	(*m).req_speed = 0;
+	(*m).act_speed = 0;
+	(*m).last_speed = 0;
+	(*m).sum = 0;
+	(*m).act = 0;
+	
+	(*m).P = 4;
+	(*m).I = 0.5;
+	(*m).D = 0.5;
+	
+	(*m).forwd = NULL;
+	(*m).backwd = NULL;
+	(*m).stop = NULL;
+	(*m).free = NULL;
+	
+	(*m).state = MOT_FREE;
+
+	
+	
+	// ulozi do pole same nuly	
+	for (uint8_t i=0; i<(*m).e_arr_len;i++)
+		(*m).e[i] = 0;
+	
+}
+
+
+void motor2_forwd(void) {
+
+	C_SETBIT(INPUT4);
+	C_CLEARBIT(INPUT3);
+
+}
+
+void motor2_backwd(void) {
+		
+		C_SETBIT(INPUT3);
+		C_CLEARBIT(INPUT4);
+
+}
+
+void motor2_stop(void) {
+		
+		C_SETBIT(INPUT3);
+		C_SETBIT(INPUT4);
+
+}
+
+void motor2_free(void) {
+		
+		C_CLEARBIT(INPUT3);
+		C_CLEARBIT(INPUT4);
+
+}
+
+
+
+#define UART_BAUD_RATE  19200
 
 
 
@@ -91,6 +207,8 @@ ioinit (void) {
 	PORTC = (1<<PORTC2)|(1<<PORTC3)|(1<<PORTC4)|(1<<PORTC5);
 	
 	
+	C_CLEARBIT(LED);
+	
 	uart_init( UART_BAUD_SELECT_DOUBLE_SPEED(UART_BAUD_RATE,F_CPU) );
 	
 	// ct0, 40kHz, 8x presc, normal mode
@@ -107,8 +225,26 @@ ioinit (void) {
 	
 	OCR1B = 0;
 	
-	/*C_SETBIT(INPUT4);
-	C_CLEARBIT(INPUT3);*/
+	C_SETBIT(INPUT1);
+	C_SETBIT(INPUT2);
+	C_SETBIT(INPUT3);
+	C_SETBIT(INPUT4);
+	
+	
+	// berlicka...
+	motor2.e_arr_len = 5;
+	
+	motor_init(&motor1);
+	motor_init(&motor2);
+	
+	// funkce pro ovladani smeru otaceni atd.
+	motor2.forwd = &motor2_forwd;
+	motor2.backwd = &motor2_backwd;
+	motor2.stop = &motor2_stop;
+	motor2.free = &motor2_free;
+	
+	
+	
 	
 	
 	// 100 Hz -> OCR2=78, N=1024, CTC mode
@@ -119,92 +255,157 @@ ioinit (void) {
 	
 	TIMSK = (1<<TOIE0)|(1<<TOIE1);
 	
+	_delay_ms(2000);
+	C_SETBIT(LED);
+	
+	
 	sei();
+
+}
+
+
+
+
+
+uint16_t motor_reg(motor *m) {
+
+	static uint8_t pocit = 0, pct2 = 0;
+	
+	 //10 Hz - odstranit s lepsim enkoderem!!!
+	if (++pocit==10) {
+		
+		(*m).act_speed = (*m).enc - (*m).last_enc;
+		(*m).last_enc = (*m).enc;
+		
+		pocit = 0;
+		
+		
+			// 1 Hz
+			if (++pct2==10) {
+				C_SETBIT(DEBUG);
+				pct2 = 0;
+				C_FLIPBIT(LED);
+			}
+	
+	}
+	
+	switch((*m).state) {
+	
+		case MOT_RUNNING: {
+	
+		
+					// klouzavy prumer odchylky - soupnuti o jedno misto v poli
+					// odchylka = reference - rychlost
+					
+					/*for(uint8_t i=0; i<((*m).e_arr_len-1);i++)
+						(*m).e[i] = (*m).e[i+1]; */
+					
+						
+					(*m).e[0] = (*m).e[1];
+					(*m).e[1] = (*m).e[2];
+					(*m).e[2] = (*m).e[3];
+					(*m).e[4] = ((*m).req_speed - (*m).act_speed);
+					
+					
+					
+					// ulozeni aktualni odchylky na posledni pozici
+					//(*m).e[(*m).e_arr_len-1] = ((*m).req_speed - (*m).act_speed);
+					
+					
+					// vypocet klouzaveho prumeru
+					int16_t pe = ((*m).e[0] + (*m).e[1] + (*m).e[2] + (*m).e[3] + (*m).e[4])/5;
+					/*int16_t pe = 0;
+					
+					for(uint8_t i=0; i<(*m).e_arr_len;i++)
+						pe+=(*m).e[i];
+					pe /=(*m).e_arr_len;*/
+					
+					
+					// vypocet akcniho zasahu
+					// akce = P*odchylka + I*suma + D*(speed - last_speed)
+					
+					int16_t speed_diff = (*m).act_speed - (*m).last_speed;
+					
+					(*m).act = (int16_t)( (*m).P*pe + (*m).I*(*m).sum - (*m).D*speed_diff);
+					
+					
+					// urceni smeru otaceni
+					if ((*m).act>0) {
+						if ((*m).forwd!= NULL) (*m).forwd();
+					} else {
+						if ((*m).backwd!= NULL) (*m).backwd();
+					}
+
+					// omezeni max. vel. akcniho zas.
+					if (abs((*m).act)>ICR1) (*m).act = ICR1;
+					
+					// suma = suma + odchylka
+					(*m).sum += pe;
+					
+					// osetreni max hodnoty sumy
+					#define MAXSUM 3000
+					if ((*m).sum > MAXSUM) (*m).sum = MAXSUM;
+						else if ((*m).sum < -MAXSUM) (*m).sum = -MAXSUM;
+					
+					// ulozeni aktualni rychlosti
+					(*m).last_speed = (*m).act_speed;
+					
+					
+		} break;
+		
+		case MOT_STOP: {
+		
+					(*m).stop();
+					(*m).act = ICR1;
+		
+		} break;
+		
+		
+		case MOT_FREE: {
+		
+					(*m).free();
+					(*m).act = 0;
+		
+		} break;
+		
+		
+		case MOT_BRAKE: {
+		
+			// TODO: napsat regulator pro brzdu - v podstate servo
+		
+		} break;
+	
+	
+	} // switch
+	
+	// test funkcnosti - (*m).act = 100;
+	return abs((*m).act);
+	
+
 
 }
 
 /* regulator */
 ISR(TIMER1_OVF_vect) {
 
-	static uint8_t pocit = 0;
-
 	
-	
-	// 10 Hz
-	if (++pocit==10) {
-
-
-		//C_FLIPBIT(LED);
-		
-		diff1 = t_en1 - pt_en1;
-		diff2 = t_en2 - pt_en2;
-		
-		pt_en1 = t_en1;
-		pt_en2 = t_en2;
-		
-		pocit = 0;
-		
-		
-		//odchylka = reference - rychlost;
-		//akce = P*odchylka + I*suma;
-		//suma = suma + odchylka;
-		
-		
-		
-		
-		
-		
-	
-	}
-	
-		
-		// klouzavy prumer odchylky
-		e[0] = e[1];
-		e[1] = e[2];
-		e[2] = e[3];
-		e[4] = (speed-diff2);
-		
-		int16_t pe = (e[0] + e[1] + e[2] + e[3] + e[4])/5;
-		
-		act = ((int16_t)(4*pe+0.9*sum)); 
-		
-		if (act>0) {
-		
-			C_SETBIT(INPUT4);
-			C_CLEARBIT(INPUT3);
-		
-		} else {
-		
-			C_SETBIT(INPUT3);
-			C_CLEARBIT(INPUT4);
-		
-		}
-
-		if (abs(act)<=ICR1) OCR1B = abs(act);
-			else OCR1B = ICR1;
-		
-		sum += pe;
-		if (sum > 3000) sum = 3000;
-		
+	OCR1B = motor_reg(&motor2);
+	//OCR1A = motor_reg(&motor1);
 	
 
 }
 
-
-/* Vzorkovani stavu enkoderu */
-ISR(TIMER0_OVF_vect) {
-
-	
+void read_enc(void) {
 
 	// vzestupna hrana - EN2A
 		if ((C_CHECKBIT(EN2A)) && (!C_CHECKBIT(PEN2A))) {
-			if (C_CHECKBIT(EN2B)) t_en2++;
-				else t_en2--;
+			if (C_CHECKBIT(EN2B)) motor2.enc++;
+				else motor2.enc--;
 		} else
 		// sestupna hrana - EN2A
 		if ((!C_CHECKBIT(EN2A)) && (C_CHECKBIT(PEN2A))) {
-			if (!C_CHECKBIT(EN2B)) t_en2++;
-				else t_en2--;
+			if (!C_CHECKBIT(EN2B)) motor2.enc++;
+				else motor2.enc--;
 		}
 		
 		
@@ -212,13 +413,13 @@ ISR(TIMER0_OVF_vect) {
 		
 		// vzestupna hrana - EN2B
 		if ((C_CHECKBIT(EN2B)) && (!C_CHECKBIT(PEN2B))) {
-			if (!C_CHECKBIT(EN2A)) t_en2++;
-				else t_en2--;
+			if (!C_CHECKBIT(EN2A)) motor2.enc++;
+				else motor2.enc--;
 		} else
 		// sestupna hrana - EN2B
 		if ((!C_CHECKBIT(EN2B)) && (C_CHECKBIT(PEN2B))) {
-			if (C_CHECKBIT(EN2A)) t_en2++;
-				else t_en2--;
+			if (C_CHECKBIT(EN2A)) motor2.enc++;
+				else motor2.enc--;
 		}
 		
 		
@@ -234,13 +435,13 @@ ISR(TIMER0_OVF_vect) {
 			
 		// vzestupna hrana - EN1A
 		if ((C_CHECKBIT(EN1A)) && (!C_CHECKBIT(PEN1A))) {
-			if (C_CHECKBIT(EN1B)) t_en1++;
-				else t_en1--;
+			if (C_CHECKBIT(EN1B)) motor1.enc++;
+				else motor1.enc--;
 		} else
 		// sestupna hrana - EN1A
 		if ((!C_CHECKBIT(EN1A)) && (C_CHECKBIT(PEN1A))) {
-			if (!C_CHECKBIT(EN1B)) t_en1++;
-				else t_en1--;
+			if (!C_CHECKBIT(EN1B)) motor1.enc++;
+				else motor1.enc--;
 		}
 		
 		
@@ -248,13 +449,13 @@ ISR(TIMER0_OVF_vect) {
 		
 		// vzestupna hrana - EN1B
 		if ((C_CHECKBIT(EN1B)) && (!C_CHECKBIT(PEN1B))) {
-			if (!C_CHECKBIT(EN1A)) t_en1++;
-				else t_en1--;
+			if (!C_CHECKBIT(EN1A)) motor1.enc++;
+				else motor1.enc--;
 		} else
 		// sestupna hrana - EN1B
 		if ((!C_CHECKBIT(EN1B)) && (C_CHECKBIT(PEN1B))) {
-			if (C_CHECKBIT(EN1A)) t_en1++;
-				else t_en1--;
+			if (C_CHECKBIT(EN1A)) motor1.enc++;
+				else motor1.enc--;
 		}
 		
 		
@@ -269,53 +470,55 @@ ISR(TIMER0_OVF_vect) {
 }
 
 
+/* Vzorkovani stavu enkoderu */
+ISR(TIMER0_OVF_vect) {
+
+	
+	read_enc();
+	
+	
+}
+
+
 int main(void) {
 
 	
 	
 
 	ioinit();
-	
-	
-	
-	C_CLEARBIT(INPUT1);
-	C_CLEARBIT(INPUT2);
-	
-	uint8_t pocit=0;
+
+
 	volatile unsigned char buffer[10]="";
 
 	while(1) {
 	
-		/*if (C_CHECKBIT(EN2A)) C_SETBIT(LED);
-			else C_CLEARBIT(LED);
-		_delay_ms(50);
-		*/
+		
+		unsigned char c = (unsigned char)uart_getc();
+		
+		switch (c) {
 		
 		
-		switch (uart_getc()) {
-		
-		
-			case '+': speed++; break;
-			case '-': speed--; break;
-			case '0': speed=0; break;
-			case '*': speed*=-1; break;
+			case '+': motor2.req_speed++; break;
+			case '-': motor2.req_speed--; break;
+			case '0': motor2.req_speed=0; break;
+			case '*': motor2.req_speed*=-1; break;
+			case 's': motor2.state = MOT_STOP; break;
+			case 'r': motor2.state = MOT_RUNNING; break;
+			case 'f': motor2.state = MOT_FREE; break;
+			case 'b': motor2.state = MOT_BRAKE; break;
 		
 		
 		}
 		
 		
-		if (++pocit==10) {
+		// 1 Hz
+		if (C_CHECKBIT(DEBUG)) {
 		
 			
-			pocit = 0;
+			C_CLEARBIT(DEBUG);
 	
 			uart_puts_P("en2 tic: ");
-			uart_puts(itoa(t_en2,buffer,10));
-			uart_puts_P("\n");
-			uart_putc(13);
-			
-			uart_puts_P("en2 dif: ");
-			uart_puts(itoa(diff2,buffer,10));
+			uart_puts(itoa(motor2.enc,buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
 			
@@ -325,22 +528,28 @@ int main(void) {
 			uart_putc(13);
 			
 			uart_puts_P("e: ");
-			uart_puts(itoa(e,buffer,10));
+			uart_puts(itoa(motor2.e[0],buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
 			
 			uart_puts_P("sum: ");
-			uart_puts(itoa(sum,buffer,10));
+			uart_puts(itoa(motor2.sum,buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
 			
-			uart_puts_P("act: ");
-			uart_puts(itoa(act,buffer,10));
+			
+			uart_puts_P("state: ");
+			uart_puts(itoa(motor2.state,buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
 			
-			uart_puts_P("speed: ");
-			uart_puts(itoa(speed,buffer,10));
+			uart_puts_P("act_speed: ");
+			uart_puts(itoa(motor2.act_speed,buffer,10));
+			uart_puts_P("\n");
+			uart_putc(13);
+			
+			uart_puts_P("req_speed: ");
+			uart_puts(itoa(motor2.req_speed,buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
 			uart_puts_P("\n");
@@ -348,8 +557,8 @@ int main(void) {
 		
 		}
 		
-		_delay_ms(100);
 		
+		//_delay_ms(10);
 
 	
 	
