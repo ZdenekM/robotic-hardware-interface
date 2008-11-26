@@ -1,10 +1,31 @@
 /*
 
-TODO: alokace pole pro klouzavy prumer
+TODO:
 
+komunikace po RS485
+mereni proudu
+
+
+kolo WH100 - obvod 628,32mm
+emg30 - 360 pulzu na otacku
 
 
 */
+
+// frekvence regulace
+#define F_REG 50
+
+// prumer kola
+#define WHEEL_DIAM 100
+
+// pocet pulzu enkoderu na otacku
+#define PULSES_PER_REV 360
+
+// vypocet delky jednoho pulzu
+#define PULSE_LEN ((WHEEL_DIAM*3.14*2)/360)
+
+// prevod cm/s na pocet pulzu za iteraci regulatoru
+#define CM2PS(CM) (CM*10/PULSE_LEN/F_REG)
 
 
 
@@ -97,12 +118,15 @@ typedef struct {
 	
 	// regulator - ulozeni akcniho zasahu
 	volatile int16_t act;
+	
+	// hodnota klouzaveho prumeru
+	volatile int16_t pe;
 
 	// velikost pole pro ulozeni prumeru
-	volatile uint8_t e_arr_len;
+	//volatile uint8_t e_arr_len;
 	
-	// pole pro ulozeni klouzaveho prumeru odchylky
-	volatile int16_t e[5];
+	// pole pro ulozeni klouzaveho prumeru odchylky + akt index
+	volatile int8_t e[5], ei;
 	
 	// parametry regulatoru, * 10
 	volatile float P, I, D;
@@ -130,30 +154,29 @@ motor motor2;
 // inicializace struktury motor
 void motor_init(motor *m) {
 	
-	(*m).enc = 0;
-	(*m).last_enc = 0;
-	(*m).req_speed = 0;
-	(*m).act_speed = 0;
-	(*m).last_speed = 0;
-	(*m).sum = 0;
-	(*m).act = 0;
+	m->enc = 0;
+	m->last_enc = 0;
+	m->req_speed = 0;
+	m->act_speed = 0;
+	m->last_speed = 0;
+	m->sum = 0;
+	m->act = 0;
 	
-	(*m).P = 4;
-	(*m).I = 0.5;
-	(*m).D = 0.5;
+	m->P = 4;
+	m->I = 4 ;
+	m->D = 4;
 	
-	(*m).forwd = NULL;
-	(*m).backwd = NULL;
-	(*m).stop = NULL;
-	(*m).free = NULL;
+	m->forwd = NULL;
+	m->backwd = NULL;
+	m->stop = NULL;
+	m->free = NULL;
 	
-	(*m).state = MOT_FREE;
+	m->state = MOT_FREE;
 
 	
-	
-	// ulozi do pole same nuly	
-	for (uint8_t i=0; i<(*m).e_arr_len;i++)
-		(*m).e[i] = 0;
+	// ulozi do pole pro odchylku same nuly	
+	/*for (uint8_t i=0; i<sizeof(m->e);i++)
+		m->e[i] = 0;*/
 	
 }
 
@@ -209,7 +232,7 @@ ioinit (void) {
 	
 	C_CLEARBIT(LED);
 	
-	uart_init( UART_BAUD_SELECT_DOUBLE_SPEED(UART_BAUD_RATE,F_CPU) );
+	uart_init( UART_BAUD_SELECT(UART_BAUD_RATE,F_CPU) );
 	
 	// ct0, 40kHz, 8x presc, normal mode
 	TCCR0 = (0<<CS02)|(1<<CS01)|(0<<CS00);
@@ -231,9 +254,6 @@ ioinit (void) {
 	C_SETBIT(INPUT4);
 	
 	
-	// berlicka...
-	motor2.e_arr_len = 5;
-	
 	motor_init(&motor1);
 	motor_init(&motor2);
 	
@@ -242,10 +262,6 @@ ioinit (void) {
 	motor2.backwd = &motor2_backwd;
 	motor2.stop = &motor2_stop;
 	motor2.free = &motor2_free;
-	
-	
-	
-	
 	
 	// 100 Hz -> OCR2=78, N=1024, CTC mode
 	TCCR2 = (1<<WGM21)|(0<<WGM20)|(0<<COM21)|(0<<COM20)|(1<<CS22)|(1<<CS21)|(0<<CS20);
@@ -265,136 +281,147 @@ ioinit (void) {
 
 
 
+// zdroj rutiny - konference hw list
+/*int16_t update_moving_average(int16_t value)
+{
+       static int8_t buffer[50], i=0;
+			 static int16_t acc=0;
+
+       acc = acc - buffer[i] + value;
+       buffer[i] = value;
+       if (++i >= 50) i = 0;
+
+       return acc/50;     // nebo acc/N podle potøeby
+}*/
+
+
+void update_moving_average(motor *m, uint8_t size)
+{
+		//uint8_t size = 50;
+		
+		m->pe = m->pe - m->e[m->ei] + (m->req_speed - m->act_speed);
+		
+		m->e[m->ei] = (m->req_speed - m->act_speed);
+		
+		if (++m->ei >= size) m->ei = 0;
+		
+}
 
 
 uint16_t motor_reg(motor *m) {
 
-	static uint8_t pocit = 0, pct2 = 0;
+		
+		m->act_speed = m->enc - m->last_enc;
+		m->last_enc = m->enc;
+		
 	
-	 //10 Hz - odstranit s lepsim enkoderem!!!
-	if (++pocit==10) {
+	if (m->e != NULL)
+		switch(m->state) {
 		
-		(*m).act_speed = (*m).enc - (*m).last_enc;
-		(*m).last_enc = (*m).enc;
+			// motor normalne bezi - PID regulace
+			case MOT_RUNNING: {
 		
-		pocit = 0;
+			
+						// klouzavy prumer odchylky - soupnuti o jedno misto v poli
+						// odchylka = reference - rychlost
+											
+						//m->pe = update_moving_average(m->req_speed - m->act_speed);
+						
+						
+						//update_moving_average(m,size);
+						m->pe = (m->req_speed - m->act_speed);
+						
+						// vypocet akcniho zasahu
+						// akce = P*odchylka + I*suma + D*(speed - last_speed)
+						
+						int16_t speed_diff = m->act_speed - m->last_speed;
+						
+						m->act = (int16_t)( (m->P)*(m->pe) + (m->I)*(m->sum) - (m->D)*speed_diff);
+						
+						
+						
+						// urceni smeru otaceni
+						if (m->act>0) {
+							if (m->forwd!= NULL) m->forwd();
+						} else {
+							if (m->backwd!= NULL) m->backwd();
+						}
+
+						// omezeni max. vel. akcniho zas.
+						if (abs(m->act)>ICR1) m->act = ICR1;
+						
+						// suma = suma + odchylka
+						m->sum += m->pe;
+						
+						// osetreni max hodnoty sumy
+						#define MAXSUM 5000
+						if (m->sum > MAXSUM) m->sum = MAXSUM;
+							else if (m->sum < -MAXSUM) m->sum = -MAXSUM;
+						
+						// ulozeni aktualni rychlosti
+						m->last_speed = m->act_speed;
+						
+						
+			} break;
+			
+			// motor stoji - brzdeni zkratem
+			case MOT_STOP: {
+			
+						m->stop();
+						m->act = ICR1;
+			
+			} break;
+			
+			// motor ma volno
+			case MOT_FREE: {
+			
+						m->free();
+						m->act = 0;
+			
+			} break;
+			
+			// aktivni brzda
+			case MOT_BRAKE: {
+			
+				// TODO: napsat regulator pro brzdu - v podstate servo
+			
+			} break;
 		
 		
-			// 1 Hz
-			if (++pct2==10) {
+		} // switch
+	
+	// test funkcnosti - m->act = 100;
+	return abs(m->act);
+	
+
+
+}
+
+/* 100 Hz */
+ISR(TIMER1_OVF_vect) {
+
+		static uint8_t pocit = 0, pct2 = 0;
+	
+	 //50 Hz
+	if (++pocit==2) {
+	OCR1B = motor_reg(&motor2);
+	pocit = 0;
+	}
+	//OCR1A = motor_reg(&motor1);
+	
+	// 1 Hz
+	if (++pct2==100) {
 				C_SETBIT(DEBUG);
 				pct2 = 0;
 				C_FLIPBIT(LED);
 			}
 	
-	}
-	
-	switch((*m).state) {
-	
-		case MOT_RUNNING: {
-	
-		
-					// klouzavy prumer odchylky - soupnuti o jedno misto v poli
-					// odchylka = reference - rychlost
-					
-					/*for(uint8_t i=0; i<((*m).e_arr_len-1);i++)
-						(*m).e[i] = (*m).e[i+1]; */
-					
-						
-					(*m).e[0] = (*m).e[1];
-					(*m).e[1] = (*m).e[2];
-					(*m).e[2] = (*m).e[3];
-					(*m).e[4] = ((*m).req_speed - (*m).act_speed);
-					
-					
-					
-					// ulozeni aktualni odchylky na posledni pozici
-					//(*m).e[(*m).e_arr_len-1] = ((*m).req_speed - (*m).act_speed);
-					
-					
-					// vypocet klouzaveho prumeru
-					int16_t pe = ((*m).e[0] + (*m).e[1] + (*m).e[2] + (*m).e[3] + (*m).e[4])/5;
-					/*int16_t pe = 0;
-					
-					for(uint8_t i=0; i<(*m).e_arr_len;i++)
-						pe+=(*m).e[i];
-					pe /=(*m).e_arr_len;*/
-					
-					
-					// vypocet akcniho zasahu
-					// akce = P*odchylka + I*suma + D*(speed - last_speed)
-					
-					int16_t speed_diff = (*m).act_speed - (*m).last_speed;
-					
-					(*m).act = (int16_t)( (*m).P*pe + (*m).I*(*m).sum - (*m).D*speed_diff);
-					
-					
-					// urceni smeru otaceni
-					if ((*m).act>0) {
-						if ((*m).forwd!= NULL) (*m).forwd();
-					} else {
-						if ((*m).backwd!= NULL) (*m).backwd();
-					}
-
-					// omezeni max. vel. akcniho zas.
-					if (abs((*m).act)>ICR1) (*m).act = ICR1;
-					
-					// suma = suma + odchylka
-					(*m).sum += pe;
-					
-					// osetreni max hodnoty sumy
-					#define MAXSUM 3000
-					if ((*m).sum > MAXSUM) (*m).sum = MAXSUM;
-						else if ((*m).sum < -MAXSUM) (*m).sum = -MAXSUM;
-					
-					// ulozeni aktualni rychlosti
-					(*m).last_speed = (*m).act_speed;
-					
-					
-		} break;
-		
-		case MOT_STOP: {
-		
-					(*m).stop();
-					(*m).act = ICR1;
-		
-		} break;
-		
-		
-		case MOT_FREE: {
-		
-					(*m).free();
-					(*m).act = 0;
-		
-		} break;
-		
-		
-		case MOT_BRAKE: {
-		
-			// TODO: napsat regulator pro brzdu - v podstate servo
-		
-		} break;
-	
-	
-	} // switch
-	
-	// test funkcnosti - (*m).act = 100;
-	return abs((*m).act);
-	
-
-
-}
-
-/* regulator */
-ISR(TIMER1_OVF_vect) {
-
-	
-	OCR1B = motor_reg(&motor2);
-	//OCR1A = motor_reg(&motor1);
 	
 
 }
 
+
+// cteni enkoderu - nejde to vyresit nejak univerzalne??
 void read_enc(void) {
 
 	// vzestupna hrana - EN2A
@@ -528,7 +555,7 @@ int main(void) {
 			uart_putc(13);
 			
 			uart_puts_P("e: ");
-			uart_puts(itoa(motor2.e[0],buffer,10));
+			uart_puts(itoa(motor2.pe,buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
 			
@@ -552,8 +579,11 @@ int main(void) {
 			uart_puts(itoa(motor2.req_speed,buffer,10));
 			uart_puts_P("\n");
 			uart_putc(13);
+			
+		
 			uart_puts_P("\n");
 			uart_putc(13);
+			
 		
 		}
 		
