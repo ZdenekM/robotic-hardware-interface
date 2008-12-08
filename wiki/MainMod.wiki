@@ -1,0 +1,33 @@
+== Řídicí modul ==
+
+Řídicí modul bude zpracovávat povely z PC, komunikovat s podřízenými moduly a zajišťovat některé autonomní, diagnostické a kontrolní funkce.
+
+=== Aktuální stav ===
+
+V současnosti je navržená DPS.
+
+=== Plánované funkce ===
+
+  * výstup informací na LCD, ovládání a nastavování parametrů pomocí tlačítek
+  * komunikace s PC (příjem povelů, odesílání dat)
+  * vysílání povelů do podřízených modulů, sběr a zpracování dat
+  * diagnostické funkce
+    * zjištění funkčnosti pohonů (krátké popojetí, přečtení ujeté vzdálenosti)
+  * řídicí funkce - bezpečnostní
+    * zastavení před překážkou (senzory -> pohon)
+    * zastavení při vybité baterii (napájení -> pohon)
+    * zastavení při výpadku komunikace s PC nebo při výpadku senzorového modulu
+  * řídicí funkce - autonomní
+    * o autonomních funkcích realizovaných v tomto modulu bude rozhodnuto až podle testování s programem v PC
+  * možnost ovládat robota pomocí analogového joysticku - přímo, bez PC
+
+Řídící modul by měl programu v PC například umožnit nastavení PID konstant apod.
+
+=== Použité součástky ===
+
+  * mikroprocesor atmega64 (nejlevnější s 2x UART)
+  * alfanumerický LCD (16x4 nebo 20x4 znaků)
+  * stabilizátor 78L05 SMD
+  * MAX232CWE
+  * SN75176A - RS485 tranceiver
+  * transily P6KE6V8CA - jako ochrana RS485 před ESD
