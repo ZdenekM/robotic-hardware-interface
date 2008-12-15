@@ -5,14 +5,12 @@
 
 int main(void)
 {
-
     // Insert code
 
-    uint8_t pole[15];
-
+    // pokus
     uint8_t i;
-    for (i=0;i<15;i++) pole[i] = i*10;
-
+    for
+    
     while (1)
         ;
 
