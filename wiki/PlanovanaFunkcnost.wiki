@@ -1,0 +1,4 @@
+= Plánovaná funkčnost =
+
+
+== Nultá verze ==
