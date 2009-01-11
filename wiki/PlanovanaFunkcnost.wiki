@@ -1,4 +1,32 @@
 = Plánovaná funkčnost =
 
+Vývoj bude rozdělen do několika etap - verzí. Každá verze bude mít stanoveno jeden nebo více cílů.
+
+== Aktuálně přidaná funkčnost ==
+
+  * obsluha joysticku (zjišťování vychýlení)
+  * zprovozněna komunikace mezi moduly
 
 == Nultá verze ==
+
+Nultá verze bude používat dva moduly MotorControl a modul MainMod.
+
+=== Cílová funkčnost ===
+
+  * funkční protokol pro komunikaci mezi moduly
+  * posílání stavových a diagnostických informací z použitých modulů do PC
+  * čtení enkodérů, implementace PID regulátorů, plynulý rozjezd/dojezd, hlídání proudu motory, teploty motorů
+  * protokol pro komunikaci mezi MainMod a PC
+  * příjem povelů z PC pro nejjednodušší pohyby: rozjet se, ujet rovně určitou vzdálenost (konstantní rychlostí), zastavit
+
+== Verze 0.1 ==
+
+Přidání modulu pro obsluhu senzorů - SensMod.
+
+=== Cílová funkčnost ===
+
+  * odesílání informací ze senzorů do ŘP
+  * zastavení před detekovanou překážkou
+  * otočení o zadaný úhel
+  * ovládání pomocí joysticku
+  * ...
