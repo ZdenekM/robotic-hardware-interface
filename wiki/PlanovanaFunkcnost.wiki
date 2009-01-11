@@ -13,7 +13,7 @@ Nultá verze bude používat dva moduly MotorControl a modul MainMod.
 
 === Cílová funkčnost ===
 
-  * funkční protokol pro komunikaci mezi moduly
+  * funkční protokol pro komunikaci mezi moduly (KomunikacniProtokol)
   * posílání stavových a diagnostických informací z použitých modulů do PC
   * čtení enkodérů, implementace PID regulátorů, plynulý rozjezd/dojezd, hlídání proudu motory, teploty motorů
   * protokol pro komunikaci mezi MainMod a PC
