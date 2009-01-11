@@ -7,7 +7,9 @@ Vývoj bude rozdělen do několika etap - verzí. Každá verze bude mít stanov
   * obsluha joysticku (zjišťování vychýlení)
   * zprovozněna komunikace mezi moduly
 
-== Nultá verze ==
+
+----
+== Verze 0.1 ==
 
 Nultá verze bude používat dva moduly MotorControl a modul MainMod.
 
@@ -18,8 +20,10 @@ Nultá verze bude používat dva moduly MotorControl a modul MainMod.
   * čtení enkodérů, implementace PID regulátorů, plynulý rozjezd/dojezd, hlídání proudu motory, teploty motorů
   * protokol pro komunikaci mezi MainMod a PC
   * příjem povelů z PC pro nejjednodušší pohyby: rozjet se, ujet rovně určitou vzdálenost (konstantní rychlostí), zastavit
+----
 
-== Verze 0.1 ==
+----
+== Verze 0.2 ==
 
 Přidání modulu pro obsluhu senzorů - SensMod.
 
@@ -30,3 +34,4 @@ Přidání modulu pro obsluhu senzorů - SensMod.
   * otočení o zadaný úhel
   * ovládání pomocí joysticku
   * ...
+----
