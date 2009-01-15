@@ -656,61 +656,17 @@ int main(void)
     		manageLcd();
     	}
 
+    	// odeslání dat do PC ---------------------------------------------------------------------------
     	if (C_CHECKBIT(MRS232)) {
 
-    		C_CLEARBIT(MRS232);
+    	    		C_CLEARBIT(MRS232);
 
-    		// odeslání statistiky komunikace s moduly do PC
-    		sendCommStat(&comm_state,&pccomm_state);
+    	    		// odeslání statistiky komunikace s moduly do PC
+    	    		sendCommStat(&comm_state,&pccomm_state);
 
-    	}
+    	    	}
 
-    	uint8_t data[30], i=0;
-
-    		for(i=0; i<30;i++) data[i] = i*2;
-
-    		// vytvoøení paketu
-    		makePacket(&comm_state.op,data,30,P_ECHO,10);
-
-    		// odeslání paketu
-    		sendPacketE();
-
-    		C_CLEARBIT(RS485_SEND);
-    		// èekání na odpovìï
-    		comm_state.receive_state = PR_WAITING;
-    		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_BAD_CRC);
-
-    		// crc souhlasí -> úspìšné pøijetí paketu
-    		//if (comm_state.receive_state==PR_PACKET_RECEIVED) C_FLIPBIT(LCD_BL);
-
-    		comm_state.receive_state = PR_READY;
-
-
-    		// vytvoøení paketu - odeslání na neexistující adresu
-    		  makePacket(&comm_state.op,data,30,P_VALUE,12);
-
-    		// odeslání paketu
-    		  sendPacketE();
-
-
-
-
-    	/*uint8_t data[5]; // 1 byte typ, 14 bytù data
-    	data[0] = 0xf1;
-    	data[1] = 0xf2;
-    	data[2] = 0xf3;
-    	data[3] = 0xf4;
-    	data[4] = 0xf5;
-    	makePacket(&pccomm_state.op,&data,5,P_VAL,0);
-
-    	sendFirstByte(&UDR0,&pccomm_state);
-
-    	// èekání na odeslání paketu
-    	while(pccomm_state.send_state != PS_READY);*/
-
-
-
-    	// obsluha joysticku
+    	// obsluha joysticku ---------------------------------------------------------------------------
     	if (mod_state.menu_state==M_JOYSTICK) {
 
     		mod_state.joy_x = joystick_xy(JOY_X);
@@ -718,7 +674,7 @@ int main(void)
 
     	}
 
-    	// pøepínání režimu lcd
+    	// pøepínání režimu lcd ---------------------------------------------------------------------------
     	if (CHECKBIT(mod_state.buttons,ABUTT1)) {
     		lcd_clrscr();
     		if (++mod_state.menu_state > M_JOYSTICK) mod_state.menu_state = M_STANDBY;
@@ -726,6 +682,61 @@ int main(void)
 
     	}
 
+
+    	// obsluha komunikace s PC ---------------------------------------------------------------------------
+    	pccomm_state.receive_state = PR_WAITING;
+    	while(pccomm_state.receive_state != PR_PACKET_RECEIVED && pccomm_state.receive_state!=PR_TIMEOUT && pccomm_state.receive_state!=PR_BAD_CRC);
+
+    	// crc souhlasí -> úspìšné pøijetí paketu
+    	if (pccomm_state.receive_state==PR_PACKET_RECEIVED)
+    		switch (pccomm_state.ip.packet_type) {
+
+    		//echo - poslat zpìt stejný paket
+    		case P_ECHO: {
+
+    			// TODO: odeslání echa
+
+
+    		} break;
+
+
+
+
+    		} // switch
+
+
+    	pccomm_state.receive_state = PR_READY;
+
+    	// obsluha komunikace s moduly ---------------------------------------------------------------------------
+
+
+
+    	/*uint8_t data[30], i=0;
+
+    	 for(i=0; i<30;i++) data[i] = i*2;
+
+    	 // vytvoøení paketu
+    	    		makePacket(&comm_state.op,data,30,P_ECHO,10);
+
+    	    		// odeslání paketu
+    	    		sendPacketE();
+
+    	    		C_CLEARBIT(RS485_SEND);
+    	    		// èekání na odpovìï
+    	    		comm_state.receive_state = PR_WAITING;
+    	    		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_BAD_CRC);
+
+    	    		// crc souhlasí -> úspìšné pøijetí paketu
+    	    		//if (comm_state.receive_state==PR_PACKET_RECEIVED) C_FLIPBIT(LCD_BL);
+
+    	    		comm_state.receive_state = PR_READY;
+
+
+    	    		// vytvoøení paketu - odeslání na neexistující adresu
+    	    		  makePacket(&comm_state.op,data,30,P_VALUE,12);
+
+    	    		// odeslání paketu
+    	    		  sendPacketE();*/
 
 
 
