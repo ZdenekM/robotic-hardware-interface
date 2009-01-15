@@ -1,0 +1,634 @@
+Archive member included because of file (symbol)
+
+/home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                              ./MainMod.o (sendFirstByte)
+/usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o (exit)
+/usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+                              ./MainMod.o (__do_copy_data)
+/usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+                              ./MainMod.o (__do_clear_bss)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                              /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o) (memcpy)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                              ./MainMod.o (snprintf)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                              ./MainMod.o (sprintf)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o) (vfprintf)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o) (strnlen_P)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o) (strnlen)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o) (fputc)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o) (__ultoa_invert)
+/usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o) (__prologue_saves__)
+/usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o) (__epilogue_restores__)
+
+Allocating common symbols
+Common symbol       size              file
+
+mod_state           0xe               ./MainMod.o
+comm_state          0x5b              ./MainMod.o
+tpcdata             0x1               ./MainMod.o
+pccomm_state        0x5b              ./MainMod.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+text             0x0000000000000000 0x0000000000020000 xr
+data             0x0000000000800060 0x000000000000ffa0 rw !x
+eeprom           0x0000000000810000 0x0000000000010000 rw !x
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+Address of section .data set to 0x800100
+LOAD /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+LOAD ./MainMod.o
+LOAD ./lib/MainModLib.o
+LOAD ./lib/lcd.o
+LOAD /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a
+LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
+LOAD /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libm.a
+LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
+LOAD /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a
+LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
+
+.hash
+ *(.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rel.init
+ *(.rel.init)
+
+.rela.init
+ *(.rela.init)
+
+.rel.text
+ *(.rel.text)
+ *(.rel.text.*)
+ *(.rel.gnu.linkonce.t*)
+
+.rela.text
+ *(.rela.text)
+ *(.rela.text.*)
+ *(.rela.gnu.linkonce.t*)
+
+.rel.fini
+ *(.rel.fini)
+
+.rela.fini
+ *(.rela.fini)
+
+.rel.rodata
+ *(.rel.rodata)
+ *(.rel.rodata.*)
+ *(.rel.gnu.linkonce.r*)
+
+.rela.rodata
+ *(.rela.rodata)
+ *(.rela.rodata.*)
+ *(.rela.gnu.linkonce.r*)
+
+.rel.data
+ *(.rel.data)
+ *(.rel.data.*)
+ *(.rel.gnu.linkonce.d*)
+
+.rela.data
+ *(.rela.data)
+ *(.rela.data.*)
+ *(.rela.gnu.linkonce.d*)
+
+.rel.ctors
+ *(.rel.ctors)
+
+.rela.ctors
+ *(.rela.ctors)
+
+.rel.dtors
+ *(.rel.dtors)
+
+.rela.dtors
+ *(.rela.dtors)
+
+.rel.got
+ *(.rel.got)
+
+.rela.got
+ *(.rela.got)
+
+.rel.bss
+ *(.rel.bss)
+
+.rela.bss
+ *(.rela.bss)
+
+.rel.plt
+ *(.rel.plt)
+
+.rela.plt
+ *(.rela.plt)
+
+.text           0x0000000000000000     0x1a2c
+ *(.vectors)
+ .vectors       0x0000000000000000       0x8c /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+                0x0000000000000000                __vectors
+                0x0000000000000000                __vector_default
+ *(.vectors)
+ *(.progmem.gcc*)
+ *(.progmem*)
+ .progmem.data  0x000000000000008c       0x67 ./MainMod.o
+                0x00000000000000f4                . = ALIGN (0x2)
+ *fill*         0x00000000000000f3        0x1 00
+                0x00000000000000f4                __trampolines_start = .
+ *(.trampolines)
+ .trampolines   0x00000000000000f4        0x0 linker stubs
+ *(.trampolines*)
+                0x00000000000000f4                __trampolines_end = .
+ *(.jumptables)
+ *(.jumptables*)
+ *(.lowtext)
+ *(.lowtext*)
+                0x00000000000000f4                __ctors_start = .
+ *(.ctors)
+                0x00000000000000f4                __ctors_end = .
+                0x00000000000000f4                __dtors_start = .
+ *(.dtors)
+                0x00000000000000f4                __dtors_end = .
+ SORT(*)(.ctors)
+ SORT(*)(.dtors)
+ *(.init0)
+ .init0         0x00000000000000f4        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+                0x00000000000000f4                __init
+ *(.init0)
+ *(.init1)
+ *(.init1)
+ *(.init2)
+ .init2         0x00000000000000f4        0xc /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ *(.init2)
+ *(.init3)
+ *(.init3)
+ *(.init4)
+ .init4         0x0000000000000100       0x16 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+                0x0000000000000100                __do_copy_data
+ .init4         0x0000000000000116       0x10 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+                0x0000000000000116                __do_clear_bss
+ *(.init4)
+ *(.init5)
+ *(.init5)
+ *(.init6)
+ *(.init6)
+ *(.init7)
+ *(.init7)
+ *(.init8)
+ *(.init8)
+ *(.init9)
+ .init9         0x0000000000000126        0x8 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ *(.init9)
+ *(.text)
+ .text          0x000000000000012e        0x4 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+                0x000000000000012e                __vector_22
+                0x000000000000012e                __vector_28
+                0x000000000000012e                __vector_1
+                0x000000000000012e                __vector_34
+                0x000000000000012e                __vector_24
+                0x000000000000012e                __vector_12
+                0x000000000000012e                __bad_interrupt
+                0x000000000000012e                __vector_6
+                0x000000000000012e                __vector_31
+                0x000000000000012e                __vector_3
+                0x000000000000012e                __vector_23
+                0x000000000000012e                __vector_25
+                0x000000000000012e                __vector_11
+                0x000000000000012e                __vector_13
+                0x000000000000012e                __vector_17
+                0x000000000000012e                __vector_19
+                0x000000000000012e                __vector_7
+                0x000000000000012e                __vector_27
+                0x000000000000012e                __vector_5
+                0x000000000000012e                __vector_33
+                0x000000000000012e                __vector_4
+                0x000000000000012e                __vector_9
+                0x000000000000012e                __vector_2
+                0x000000000000012e                __vector_21
+                0x000000000000012e                __vector_29
+                0x000000000000012e                __vector_8
+                0x000000000000012e                __vector_26
+                0x000000000000012e                __vector_14
+                0x000000000000012e                __vector_10
+                0x000000000000012e                __vector_16
+ .text          0x0000000000000132      0xce2 ./MainMod.o
+                0x0000000000000acc                manageLcd
+                0x0000000000000264                checkButtons
+                0x000000000000060e                __vector_32
+                0x0000000000000224                joystick_xy
+                0x0000000000000876                commStat
+                0x00000000000004ba                sendEcho
+                0x0000000000000a2e                writeTime
+                0x00000000000006cc                __vector_30
+                0x0000000000000132                set_uarts
+                0x00000000000001c8                moving_average_y
+                0x000000000000030a                updateTime
+                0x0000000000000262                initModule
+                0x0000000000000378                sendCommStat
+                0x0000000000000482                sendPacketE
+                0x0000000000000c26                ioinit
+                0x00000000000005fc                standBy
+                0x0000000000000cd8                main
+                0x000000000000057a                __vector_15
+                0x000000000000016c                moving_average_x
+                0x000000000000079a                joy
+                0x0000000000000162                set_adc
+                0x0000000000000b3a                initModules
+                0x0000000000000736                __vector_18
+                0x000000000000067c                __vector_20
+ .text          0x0000000000000e14        0x0 ./lib/MainModLib.o
+ .text          0x0000000000000e14      0x226 ./lib/lcd.o
+                0x0000000000000eea                lcd_data
+                0x0000000000000efe                lcd_gotoxy
+                0x0000000000000f42                lcd_putc
+                0x0000000000000f3a                lcd_home
+                0x0000000000000f32                lcd_clrscr
+                0x0000000000000f2a                lcd_getxy
+                0x0000000000000f82                lcd_puts
+                0x0000000000000fa2                lcd_puts_p
+                0x0000000000000fc6                lcd_init
+                0x0000000000000ed6                lcd_command
+ .text          0x000000000000103a      0x3d8 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                0x000000000000106e                makeCRC
+                0x0000000000001154                sendFirstByte
+                0x0000000000001160                sendPacket
+                0x000000000000121c                comm_state_init
+                0x0000000000001396                receiveTimeout
+                0x00000000000013c2                makePacket
+                0x000000000000103a                crc16_update
+                0x000000000000124a                receivePacket
+ .text          0x0000000000001412        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .text          0x0000000000001412        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .text          0x0000000000001412        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .text          0x0000000000001412       0x12 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                0x0000000000001412                memcpy
+ .text          0x0000000000001424       0x62 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                0x0000000000001424                snprintf
+ .text          0x0000000000001486       0x48 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                0x0000000000001486                sprintf
+ .text          0x00000000000014ce      0x3ac /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                0x00000000000014ce                vfprintf
+ .text          0x000000000000187a       0x16 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+                0x000000000000187a                strnlen_P
+ .text          0x0000000000001890       0x16 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+                0x0000000000001890                strnlen
+ .text          0x00000000000018a6       0x58 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                0x00000000000018a6                fputc
+ .text          0x00000000000018fe       0xbc /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+                0x00000000000018fe                __ultoa_invert
+ .text          0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+ .text          0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+                0x00000000000019ba                . = ALIGN (0x2)
+ *(.text.*)
+ .text.libgcc   0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .text.libgcc   0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .text.libgcc   0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .text.libgcc   0x00000000000019ba       0x38 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+                0x00000000000019ba                __prologue_saves__
+ .text.libgcc   0x00000000000019f2       0x36 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+                0x00000000000019f2                __epilogue_restores__
+                0x0000000000001a28                . = ALIGN (0x2)
+ *(.fini9)
+ .fini9         0x0000000000001a28        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+                0x0000000000001a28                exit
+                0x0000000000001a28                _exit
+ *(.fini9)
+ *(.fini8)
+ *(.fini8)
+ *(.fini7)
+ *(.fini7)
+ *(.fini6)
+ *(.fini6)
+ *(.fini5)
+ *(.fini5)
+ *(.fini4)
+ *(.fini4)
+ *(.fini3)
+ *(.fini3)
+ *(.fini2)
+ *(.fini2)
+ *(.fini1)
+ *(.fini1)
+ *(.fini0)
+ .fini0         0x0000000000001a28        0x4 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ *(.fini0)
+                0x0000000000001a2c                _etext = .
+
+.data           0x0000000000800100       0x46 load address 0x0000000000001a2c
+                0x0000000000800100                PROVIDE (__data_start, .)
+ *(.data)
+ .data          0x0000000000800100        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ .data          0x0000000000800100       0x46 ./MainMod.o
+ .data          0x0000000000800146        0x0 ./lib/MainModLib.o
+ .data          0x0000000000800146        0x0 ./lib/lcd.o
+ .data          0x0000000000800146        0x0 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+ .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+ *(.data*)
+ *(.rodata)
+ *(.rodata*)
+ *(.gnu.linkonce.d*)
+                0x0000000000800146                . = ALIGN (0x2)
+                0x0000000000800146                _edata = .
+                0x0000000000800146                PROVIDE (__data_end, .)
+
+.bss            0x0000000000800146       0xe5 load address 0x0000000000001a72
+                0x0000000000800146                PROVIDE (__bss_start, .)
+ *(.bss)
+ .bss           0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ .bss           0x0000000000800146       0x1e ./MainMod.o
+                0x0000000000800146                flags
+ .bss           0x0000000000800164        0x0 ./lib/MainModLib.o
+ .bss           0x0000000000800164        0x0 ./lib/lcd.o
+ .bss           0x0000000000800164        0x2 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+ .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+ *(.bss*)
+ *(COMMON)
+ COMMON         0x0000000000800166       0xc5 ./MainMod.o
+                0x0000000000800166                mod_state
+                0x0000000000800174                comm_state
+                0x00000000008001cf                tpcdata
+                0x00000000008001d0                pccomm_state
+                0x000000000080022b                PROVIDE (__bss_end, .)
+                0x0000000000001a2c                __data_load_start = LOADADDR (.data)
+                0x0000000000001a72                __data_load_end = (__data_load_start + SIZEOF (.data))
+
+.noinit         0x000000000080022b        0x0
+                0x000000000080022b                PROVIDE (__noinit_start, .)
+ *(.noinit*)
+                0x000000000080022b                PROVIDE (__noinit_end, .)
+                0x000000000080022b                _end = .
+                0x000000000080022b                PROVIDE (__heap_start, .)
+
+.eeprom         0x0000000000810000        0x0
+ *(.eeprom*)
+                0x0000000000810000                __eeprom_end = .
+
+.stab           0x0000000000000000      0xc6c
+ *(.stab)
+ .stab          0x0000000000000000      0xc6c /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+
+.stabstr        0x0000000000000000      0xd7a
+ *(.stabstr)
+ .stabstr       0x0000000000000000      0xd7a /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment
+ *(.comment)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges
+ *(.debug_aranges)
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info
+ *(.debug_info)
+ *(.gnu.linkonce.wi.*)
+
+.debug_abbrev
+ *(.debug_abbrev)
+
+.debug_line
+ *(.debug_line)
+
+.debug_frame
+ *(.debug_frame)
+
+.debug_str
+ *(.debug_str)
+
+.debug_loc
+ *(.debug_loc)
+
+.debug_macinfo
+ *(.debug_macinfo)
+OUTPUT(MainMod.elf elf32-avr)
+LOAD linker stubs
+
+Cross Reference Table
+
+Symbol                                            File
+__bad_interrupt                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__bss_end                                         /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+__bss_start                                       /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+__data_end                                        /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+__data_load_start                                 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+__data_start                                      /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+__do_clear_bss                                    /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./lib/lcd.o
+                                                  ./lib/MainModLib.o
+                                                  ./MainMod.o
+__do_copy_data                                    /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./lib/lcd.o
+                                                  ./lib/MainModLib.o
+                                                  ./MainMod.o
+__epilogue_restores__                             /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+__heap_end                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__init                                            /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__prologue_saves__                                /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+__stack                                           /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__ultoa_invert                                    /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+__vector_1                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_10                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_11                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_12                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_13                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_14                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_15                                       ./MainMod.o
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_16                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_17                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_18                                       ./MainMod.o
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_19                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_2                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_20                                       ./MainMod.o
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_21                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_22                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_23                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_24                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_25                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_26                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_27                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_28                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_29                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_3                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_30                                       ./MainMod.o
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_31                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_32                                       ./MainMod.o
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_33                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_34                                       /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_4                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_5                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_6                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_7                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_8                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_9                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vector_default                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+__vectors                                         /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+_exit                                             /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+checkButtons                                      ./MainMod.o
+commStat                                          ./MainMod.o
+comm_state                                        ./MainMod.o
+comm_state_init                                   /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./MainMod.o
+crc16_update                                      /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+exit                                              /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+flags                                             ./MainMod.o
+fputc                                             /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+initModule                                        ./MainMod.o
+initModules                                       ./MainMod.o
+ioinit                                            ./MainMod.o
+joy                                               ./MainMod.o
+joystick_xy                                       ./MainMod.o
+lcd_clrscr                                        ./lib/lcd.o
+                                                  ./MainMod.o
+lcd_command                                       ./lib/lcd.o
+lcd_data                                          ./lib/lcd.o
+lcd_getxy                                         ./lib/lcd.o
+lcd_gotoxy                                        ./lib/lcd.o
+                                                  ./MainMod.o
+lcd_home                                          ./lib/lcd.o
+                                                  ./MainMod.o
+lcd_init                                          ./lib/lcd.o
+                                                  ./MainMod.o
+lcd_putc                                          ./lib/lcd.o
+lcd_puts                                          ./lib/lcd.o
+                                                  ./MainMod.o
+lcd_puts_p                                        ./lib/lcd.o
+                                                  ./MainMod.o
+main                                              ./MainMod.o
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+makeCRC                                           /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+makePacket                                        /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./MainMod.o
+manageLcd                                         ./MainMod.o
+memcpy                                            /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                                                  /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+mod_state                                         ./MainMod.o
+moving_average_x                                  ./MainMod.o
+moving_average_y                                  ./MainMod.o
+pccomm_state                                      ./MainMod.o
+receivePacket                                     /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./MainMod.o
+receiveTimeout                                    /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./MainMod.o
+sendCommStat                                      ./MainMod.o
+sendEcho                                          ./MainMod.o
+sendFirstByte                                     /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./MainMod.o
+sendPacket                                        /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                                                  ./MainMod.o
+sendPacketE                                       ./MainMod.o
+set_adc                                           ./MainMod.o
+set_uarts                                         ./MainMod.o
+snprintf                                          /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  ./MainMod.o
+sprintf                                           /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                                                  ./MainMod.o
+standBy                                           ./MainMod.o
+strnlen                                           /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+strnlen_P                                         /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+tpcdata                                           ./MainMod.o
+updateTime                                        ./MainMod.o
+vfprintf                                          /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+writeTime                                         ./MainMod.o
