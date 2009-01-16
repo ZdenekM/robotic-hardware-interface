@@ -1,6 +1,6 @@
 ==Komunikační protokol robotických modulů==
 
-Komunikace po lince RS485 bude poloduplexní (nelze zároveň vysílat a přijímat), typu master-slave. Pro zmenšení zatížení mikroprocesorů bude využita 9 bitová komunikace.
+Komunikace po lince RS485 bude poloduplexní (nelze zároveň vysílat a přijímat), typu master-slave. Pro zmenšení zatížení mikroprocesorů bude využita 9 bitová komunikace a MPCM.
 
 ===Návrh protokolu===
 
@@ -36,7 +36,7 @@ Devátý bit signalizuje jestli se posílají data nebo adresa (nastavený = adr
   * master sestaví paket, umístí ho do bufferu, vloží první byte do UDR a pak se již celý buffer odešle samočinně
   * byty SYNC1, SYNC2 a ADDR mají nastavený devátý bit, takže na ně reagují všechny moduly
   * jakmile modul zjistí, že mu přišel byte s jeho adresou, přepne se na příjem všech bytů, ostatní moduly další byty ignorují (mají nulový devátý bit)
-  * jakmile přijde byte s délkou dat, modul alokuje buffer odpovídající velikosti
+  * maximální délka datové části je omezena na 32 bytů
   * po příjmu všech dat vypočítá kontrolní součet, nastaví se na příjem adresních bytů a nastaví příznak indikující přijetí paketu
 
 Komunikaci vždy inicializuje master. Slave moduly posílají data jen pokud jsou o to požádány. Příjem paketu není nijak potvrzován. Pokud master nedostane odpověď, pošle paket ještě 2x a pak považuje modul za mrtvý. Stejně tak, pokud podřízený modul zjistí, že už příliš dlouho nedostal data (např. povel pro motory) ukončí svou činnost (robot se zastaví), protože komunikace zřejmě nefunguje. Dále se zjišťuje, jestli nenastal timeout mezi příjmem jednotlivých bytů (modul umřel v půlce paketu).
@@ -46,5 +46,9 @@ Komunikaci vždy inicializuje master. Slave moduly posílají data jen pokud jso
 TODO: přerušení receive_complet, transmit_complet, alokace bufferů, ukládání nastavení a statistiky do struktury atd.
 
 ====Typy paketů====
+
+TODO.
+
+==== Komunikace s řídicím PC ====
 
 TODO.
