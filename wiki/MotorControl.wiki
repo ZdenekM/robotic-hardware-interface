@@ -1,19 +1,21 @@
-==Modul ovládání motorů==
+=Modul ovládání motorů=
 
 První modul vyvíjeného systému. Modul MotorControl je určen k řízení dvou stejnosměrných  [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=75_101&products_id=405 motorků GHM-16]. Protože je [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=77&products_id=382 podvozek MOB-03] tvořen čtveřicí těchto DC motorků, bude na řízení pohonů potřeba dvojice těchto modulů. Modul je samozřejmě univerzální, takže je možné využít jakýkoliv motorek s enkodérem s podobnými parametry. 
 
-===Aktuální stav===
+==Aktuální stav==
 
-V současnosti je navržená, vyrobená a osazená deska (ke stažení) a připravuje se testovací program.
+  * navržená, vyrobená a osazená deska (ke stažení)
+  * zprovozněná komunikace
+  * vyzkoušený PID regulátor (bohužel na jiném motoru a jiném enkodéru než bude finální)
 
-====Plánované funkce modulu====
+===Plánované funkce modulu===
 
-  * řízení budiče L298HN
-  * čtení dvou enkodérů (QME-01)
-  * řízení rychlosti pomocí PI regulátorů
-  * měření proudu oběma motory, měření teploty motorů
+  * řízení budiče L298HN, čtení dvou enkodérů (QME-01)
+  * řízení rychlosti pomocí PID regulátorů, brždění
+  * plynulý rozjezd a zastavení
+  * měření proudu a teploty motorů
 
-===Parametry pohonu===
+==Parametry pohonu==
 
 Výrobce LynxMotion, dodavatel HobbyRobot.
 
@@ -30,8 +32,7 @@ Výrobce LynxMotion, dodavatel HobbyRobot.
     * maximální frekvence 30kHz, 100 kroků (400 čtvrtkroků) na otáčku motoru
     * 3000 kroků (12000 čtvrtkroků) na otáčku výstupního hřídele GHM-16
 
-===Parametry modulu===
+== Možná vylepšení modulu ==
 
-  * mikroprocesor Atmel ATmega8, frekvence 16MHz, programování přes SPI
-  * můstkový budič L298HN - pro buzení dvou motorů
-  * obvod 75176 pro komunikaci po lince RS485
+  * použít lepší integrovaný H-bridge, s integrovanými ochr. diodami -> víc místa na DPS
+  * použít jiný procesor s diferenciálními vstupy AD převodníku -> menší odpory pro měření proudu
