@@ -10,4 +10,4 @@ Modul PowerMod by měl zajišťovat následující funkce
 
 Napájení pomocí pb aku (např. [http://www.gme.cz/cz/index.php?page=product&detail=540-190 tato - 12V, 4,5Ah])
 
-Nabíjení baterie bude realizování pomocí samostatné nabíječky - (např. [http://hw.cz/Teorie-a-praxe/Konstrukce/ART1685-Inteligentni-nabijecka-Pb-akumulatoru.html tato konstrukce]).
+Nabíjení baterie bude realizováno pomocí samostatné nabíječky - (např. [http://hw.cz/Teorie-a-praxe/Konstrukce/ART1685-Inteligentni-nabijecka-Pb-akumulatoru.html tato konstrukce]).
