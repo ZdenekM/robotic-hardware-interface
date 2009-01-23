@@ -1,0 +1,13 @@
+== Modul zajišťující napájení ==
+
+Modul PowerMod by měl zajišťovat následující funkce
+
+  * stabilizace napětí z baterie na hodnotu vhodnou pro další moduly (pomocí spínaného stabilizátoru)
+  * kontrolovat napětí baterie (zabránění nadměrnému vybití).
+  * měřit proud odebíraný z baterie - při použití atmega8 nutný OZ
+  * měření teploty baterie
+  * jištění baterie vratnou pojistkou
+
+Napájení pomocí pb aku (např. [http://www.gme.cz/cz/index.php?page=product&detail=540-190 tato - 12V, 4,5Ah])
+
+Nabíjení baterie bude realizování pomocí samostatné nabíječky - (např. [http://hw.cz/Teorie-a-praxe/Konstrukce/ART1685-Inteligentni-nabijecka-Pb-akumulatoru.html tato konstrukce]).
