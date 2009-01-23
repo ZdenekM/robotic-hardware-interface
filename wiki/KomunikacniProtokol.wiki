@@ -1,12 +1,12 @@
-==Komunikační protokol robotických modulů==
+=Komunikační protokol robotických modulů=
 
 Komunikace po lince RS485 bude poloduplexní (nelze zároveň vysílat a přijímat), typu master-slave. Pro zmenšení zatížení mikroprocesorů bude využita 9 bitová komunikace a MPCM.
 
-===Návrh protokolu===
+==Návrh protokolu==
 
 Při tvorbě návrhu byl použit jako inspirace protokol Martina Lockera (ROBONET) a dále protokol Tomáše Paseky uvedený v jeho diplomové práci (Návrh a realizace autonomního robotu pro kategorii IEEE Micromouse).
 
-====Popis paketu====
+===Popis paketu===
 
 ||SYNC1||SYNC2||ADDR||LEN||TYPE||Data 0||...||Data n||CRC1||CRC2||
 
@@ -24,12 +24,12 @@ CRC1,CRC2: šestnáctibitový kontrolní součet
 
 
 
-====Vyhrazené adresy====
+===Vyhrazené adresy===
 
   * Adresa 0xFF vyhrazena pro broadcast
   * Adresa 0x0 pro master zařízení
 
-====Algoritmus komunikace====
+===Algoritmus komunikace===
 
 Devátý bit signalizuje jestli se posílají data nebo adresa (nastavený = adresa).
 
@@ -41,14 +41,16 @@ Devátý bit signalizuje jestli se posílají data nebo adresa (nastavený = adr
 
 Komunikaci vždy inicializuje master. Slave moduly posílají data jen pokud jsou o to požádány. Příjem paketu není nijak potvrzován. Pokud master nedostane odpověď, pošle paket ještě 2x a pak považuje modul za mrtvý. Stejně tak, pokud podřízený modul zjistí, že už příliš dlouho nedostal data (např. povel pro motory) ukončí svou činnost (robot se zastaví), protože komunikace zřejmě nefunguje. Dále se zjišťuje, jestli nenastal timeout mezi příjmem jednotlivých bytů (modul umřel v půlce paketu).
 
-====Realizace komunikace v procesorech AVR====
+
+===Typy paketů===
+
+TODO
+
+==Realizace komunikace v procesorech AVR==
 
 TODO: přerušení receive_complet, transmit_complet, alokace bufferů, ukládání nastavení a statistiky do struktury atd.
 
-====Typy paketů====
 
-TODO.
+== Komunikace s řídicím PC ==
 
-==== Komunikace s řídicím PC ====
-
-TODO.
+TODO
