@@ -8,7 +8,7 @@ První modul vyvíjeného systému. Modul MotorControl je určen k řízení dvo
   * zprovozněná komunikace
   * vyzkoušený PID regulátor (bohužel na jiném motoru a jiném enkodéru než bude finální)
 
-===Plánované funkce modulu===
+==Plánované funkce modulu==
 
   * řízení budiče L298HN, čtení dvou enkodérů (QME-01)
   * řízení rychlosti pomocí PID regulátorů, brždění
@@ -32,7 +32,7 @@ Výrobce LynxMotion, dodavatel HobbyRobot.
     * maximální frekvence 30kHz, 100 kroků (400 čtvrtkroků) na otáčku motoru
     * 3000 kroků (12000 čtvrtkroků) na otáčku výstupního hřídele GHM-16
 
-== Možná vylepšení modulu ==
+==Možná vylepšení modulu==
 
   * použít lepší integrovaný H-bridge, s integrovanými ochr. diodami -> víc místa na DPS
   * použít jiný procesor s diferenciálními vstupy AD převodníku -> menší odpory pro měření proudu
