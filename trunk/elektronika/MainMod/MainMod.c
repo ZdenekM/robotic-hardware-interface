@@ -21,6 +21,7 @@
 #include <avr/sleep.h>
 #include <avr/sfr_defs.h>
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 #include "lib/lcd.h"
 #include "MainMod.h"
 #include "../CommLib/comm.h"
@@ -64,6 +65,7 @@
 #define RS485_IN (C_CLEARBIT(RS485_SEND))
 
 
+// *****************************************************
 // stavové promìnné modulu
 volatile tmod_state mod_state;
 
@@ -73,12 +75,23 @@ volatile tcomm_state comm_state;
 // stav komunikace - rs232
 volatile tcomm_state pccomm_state;
 
+// promìnné pro motory
+// lf = left front, lr = left rear
+// rf = right front, rr = right rear
+tmotor m_lf,m_lr,m_rf,m_rr;
+
 
 // flagy pro obsluhu perif.
 volatile uint8_t flags = 0;
 
 #define MLCD flags, 0
 #define MRS232 flags, 1
+
+// promìnné v EEPROM
+uint8_t EEMEM ee_self_addr = 0;
+uint8_t EEMEM ee_id_str[15]="MainMod";
+
+
 
 // nastavení obou UARTù
 inline void set_uarts() {
@@ -117,6 +130,21 @@ inline void set_uarts() {
 	UCSR1B = (1<<UCSZ12)|(1<<TXCIE1)|(1<<TXEN1)|(1<<RXEN1)|(1<<RXCIE1);
 	UCSR1C = (1<<USBS1)|(0<<UMSEL1)|(0<<UPM11)|(0<<UPM10)|(1<<UCSZ11)|(1<<UCSZ10);
 
+
+}
+
+// inicializace struktur
+void motor_init(volatile tmotor *m) {
+
+	m->D = 0;
+	m->I = 0;
+	m->P = 0;
+	m->act_speed = 0;
+	m->current = 0;
+	m->distance = 0;
+	m->req_speed = 0;
+	m->state = 0;
+	m->temp = 0;
 
 }
 
@@ -325,7 +353,20 @@ inline void ioinit(void) {
 	comm_state_init(&comm_state);
 	comm_state_init(&pccomm_state);
 
-	_delay_ms(2000);
+	// inic. struktur motorù
+	motor_init(&m_lf);
+	motor_init(&m_lr);
+	motor_init(&m_rf);
+	motor_init(&m_rr);
+
+	// TODO: vyzkoušet funkènost
+	// naètení vlastní adresy z EEPROM
+	comm_state.self_addr = eeprom_read_byte(&ee_self_addr);
+
+	// naètení identifikaèního øetìzce z EEPROM
+	eeprom_read_block((void*)&comm_state.id_str, (const void*)&ee_id_str, 15);
+
+	_delay_ms(2100);
 	lcd_clrscr();
 
 	// povolení pøíjmu
@@ -504,6 +545,34 @@ ISR(USART1_TX_vect) {
 
 }
 
+// na LCD zobrazí info z motoru
+void motStat(volatile tmotor *m) {
+
+	char abuff[10];
+
+	// pož. rychlost
+	lcd_gotoxy(0,1);
+	sprintf(abuff,"RS:%7d",m->req_speed);
+	lcd_puts(abuff);
+
+	// akt. rychlost
+	lcd_gotoxy(0,2);
+	sprintf(abuff,"AS:%7d",m->act_speed);
+	lcd_puts(abuff);
+
+	// teplota motoru
+	lcd_gotoxy(10,1);
+	sprintf(abuff,"TM:%7u",m->temp);
+	lcd_puts(abuff);
+
+	// proud motorem
+	lcd_gotoxy(10,2);
+	sprintf(abuff,"CU:%7u",m->current);
+	lcd_puts(abuff);
+
+
+}
+
 
 void manageLcd() {
 
@@ -536,6 +605,27 @@ void manageLcd() {
 			lcd_gotoxy(0,0);
 			lcd_puts_P("PCCommStat");
 			commStat(&pccomm_state);
+
+		} break;
+
+		// levý pøední motor
+		case M_MLF: {
+
+			writeTime(&mod_state);
+			lcd_gotoxy(0,0);
+			lcd_puts_P("M_LF");
+			motStat(&m_lf);
+
+		} break;
+
+		// levý zadní motor
+		case M_MLR: {
+
+			writeTime(&mod_state);
+			lcd_gotoxy(0,0);
+			lcd_puts_P("M_LR");
+			motStat(&m_lr);
+
 
 		} break;
 
@@ -603,9 +693,6 @@ void sendCommStat() {
 	uint8_t index = 1;
 	uint8_t i=0;
 
-	for (i=1;i<15;i++)
-		data[i]=i*2;
-
 	for (i=0;i<4;i++)
 		data[index++]=(uint8_t)(comm_state.packets_sended>>(i*8));
 
@@ -627,6 +714,58 @@ void sendCommStat() {
 
 	// èekání na odeslání paketu
 	while(pccomm_state.send_state != PS_READY);
+
+
+}
+
+// dekóduje pøijaté info z modulu sMotorControl
+void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
+
+		// údaje pro pøední motor ----------------------------------
+
+		// požadovaná rychlost
+		mf->req_speed = comm_state.ip.data[0];
+		mf->req_speed |= (int16_t)comm_state.ip.data[1]<<8;
+
+		// aktuální rychlost
+		mf->act_speed = comm_state.ip.data[2];
+		mf->act_speed |= (int16_t)comm_state.ip.data[3]<<8;
+
+		// ujetá vzdálenost
+		mf->distance = comm_state.ip.data[4];
+		mf->distance |= (int16_t)comm_state.ip.data[5]<<8;
+
+		// stav motoru
+		mf->state = comm_state.ip.data[6];
+
+		// proud motoru
+		mf->current = comm_state.ip.data[7];
+
+		// teplota motoru
+		mf->temp = comm_state.ip.data[8];
+
+		// údaje pro zadní motor -------------------------------------------------
+
+		// požadovaná rychlost
+		mr->req_speed = comm_state.ip.data[0];
+		mr->req_speed |= (int16_t)comm_state.ip.data[1]<<8;
+
+		// aktuální rychlost
+		mr->act_speed = comm_state.ip.data[9];
+		mr->act_speed |= (int16_t)comm_state.ip.data[10]<<8;
+
+		// ujetá vzdálenost
+		mr->distance = comm_state.ip.data[11];
+		mr->distance |= (int16_t)comm_state.ip.data[12]<<8;
+
+		// stav motoru
+		mr->state = comm_state.ip.data[13];
+
+		// proud motoru
+		mr->current = comm_state.ip.data[14];
+
+		// teplota motoru
+		mr->temp = comm_state.ip.data[15];
 
 
 }
@@ -667,12 +806,37 @@ int main(void)
     	    	}
 
     	// obsluha joysticku ---------------------------------------------------------------------------
-    	if (mod_state.menu_state==M_JOYSTICK) {
+    	// TODO: zapínat joystick flagem -> stisknutí obou tlaèítek zároveò
+    	//if (mod_state.menu_state==M_JOYSTICK) {
 
+    		// podle výpoètu -> max rychlost = cca 1,4m/s = 144cm/s
     		mod_state.joy_x = joystick_xy(JOY_X);
     		mod_state.joy_y = joystick_xy(JOY_Y);
 
-    	}
+
+
+    	//}
+
+    	// TODO: nastavení rychlosti pouze pøi aktivaci joysticku, nebo pøi pøíjmu dat z PC
+    	// TODO: pøidat k joysticku odpory, aby nelítaly hodnoty když není pøipojený
+
+    	// pokus - nastavení rychlosti podle joysticku
+
+    	int16_t sp = 0;
+
+    	// TODO: opravit - nefunguje
+    	sp = ((int16_t)mod_state.joy_y-511)/4;
+
+
+    	uint8_t sarr[2];
+
+    	sarr[0] = (uint8_t)sp;
+    	sarr[1] = (uint8_t)(sp>>8);
+
+    	makePacket(&comm_state.op,sarr,2,P_COMM,10);
+
+    	sendPacketE();
+
 
     	// pøepínání režimu lcd ---------------------------------------------------------------------------
     	if (CHECKBIT(mod_state.buttons,ABUTT1)) {
@@ -684,7 +848,8 @@ int main(void)
 
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
-    	pccomm_state.receive_state = PR_WAITING;
+
+    	/*pccomm_state.receive_state = PR_WAITING;
     	while(pccomm_state.receive_state != PR_PACKET_RECEIVED && pccomm_state.receive_state!=PR_TIMEOUT && pccomm_state.receive_state!=PR_BAD_CRC);
 
     	// crc souhlasí -> úspìšné pøijetí paketu
@@ -694,7 +859,14 @@ int main(void)
     		//echo - poslat zpìt stejný paket
     		case P_ECHO: {
 
-    			// TODO: odeslání echa
+    			// vytvoøení ECHO paketu
+    			makePacket(&pccomm_state.op,pccomm_state.ip.data,pccomm_state.ip.len,P_ECHO,0);
+
+    			// zahájení pøenosu
+    			sendFirstByte(&UDR0,&pccomm_state);
+
+    			// èekání na odeslání paketu
+    			while(pccomm_state.send_state != PS_READY);
 
 
     		} break;
@@ -702,42 +874,34 @@ int main(void)
 
 
 
-    		} // switch
+    		} // switch*/
 
-
-    	pccomm_state.receive_state = PR_READY;
 
     	// obsluha komunikace s moduly ---------------------------------------------------------------------------
 
+    	// TODO: napsat funkci na obsluhu pøíjmu z modulù -> pøi timeoutu, nebo bad crc zkusí aut. poslat znovu
+
+    	// ètení stavu levých motorù
+
+    	makePacket(&comm_state.op,NULL,0,P_INFO,10);
+
+    	sendPacketE();
+
+    	C_CLEARBIT(RS485_SEND);
+    	// èekání na odpovìï
+    	comm_state.receive_state = PR_WAITING;
+    	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_BAD_CRC);
+
+    	// crc souhlasí -> úspìšné pøijetí paketu
+    	if (comm_state.receive_state==PR_PACKET_RECEIVED) {
+
+    		// dekódování pøijatých dat
+    		decodeMotorInfo(&m_lf,&m_lr);
 
 
-    	/*uint8_t data[30], i=0;
+    	};
 
-    	 for(i=0; i<30;i++) data[i] = i*2;
-
-    	 // vytvoøení paketu
-    	    		makePacket(&comm_state.op,data,30,P_ECHO,10);
-
-    	    		// odeslání paketu
-    	    		sendPacketE();
-
-    	    		C_CLEARBIT(RS485_SEND);
-    	    		// èekání na odpovìï
-    	    		comm_state.receive_state = PR_WAITING;
-    	    		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_BAD_CRC);
-
-    	    		// crc souhlasí -> úspìšné pøijetí paketu
-    	    		//if (comm_state.receive_state==PR_PACKET_RECEIVED) C_FLIPBIT(LCD_BL);
-
-    	    		comm_state.receive_state = PR_READY;
-
-
-    	    		// vytvoøení paketu - odeslání na neexistující adresu
-    	    		  makePacket(&comm_state.op,data,30,P_VALUE,12);
-
-    	    		// odeslání paketu
-    	    		  sendPacketE();*/
-
+    	comm_state.receive_state = PR_READY;
 
 
 

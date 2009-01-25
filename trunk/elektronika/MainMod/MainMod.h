@@ -10,7 +10,7 @@ enum {COMMSTATE} tpcdata;
 typedef struct {
 
 	// stavy menu
-	enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_JOYSTICK} tmenu_states;
+	enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_JOYSTICK} tmenu_states;
 
 	// aktuální stav menu
 	volatile uint8_t menu_state;
@@ -33,6 +33,34 @@ typedef struct {
 	#define ABUTT4 3
 
 } tmod_state;
+
+typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_OVERTEMP} tmotor_state;
+
+// zjednodušená struktura pro ukládání stavu motorù
+typedef struct {
+
+	// žádaná rychlost v cm/s
+	volatile int16_t req_speed;
+
+	// aktuální skuteèná rychlost
+	volatile int16_t act_speed;
+
+	// vzdálenost ujetá od posledního povelu
+	volatile int16_t distance;
+
+	// parametry regulatoru, * 10
+	volatile uint8_t P, I, D;
+
+	// stav motoru
+	volatile tmotor_state state;
+
+	// proud motorem
+	volatile uint8_t current;
+
+	// teplota motoru
+	volatile uint8_t temp;
+
+} tmotor;
 
 
 extern inline void set_uarts();
