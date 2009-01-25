@@ -78,7 +78,7 @@ volatile tcomm_state pccomm_state;
 // promìnné pro motory
 // lf = left front, lr = left rear
 // rf = right front, rr = right rear
-tmotor m_lf,m_lr,m_rf,m_rr;
+volatile tmotor m_lf,m_lr,m_rf,m_rr;
 
 
 // flagy pro obsluhu perif.
@@ -824,7 +824,7 @@ int main(void)
 
     	int16_t sp = 0;
 
-    	// TODO: opravit - nefunguje
+    	// TODO: opravit - nefunguje -> data se posílají, jen dokud se na MainMod nepøepne menu &*#!?ß
     	sp = ((int16_t)mod_state.joy_y-511)/4;
 
 
@@ -897,6 +897,7 @@ int main(void)
 
     		// dekódování pøijatých dat
     		decodeMotorInfo(&m_lf,&m_lr);
+
 
 
     	};
