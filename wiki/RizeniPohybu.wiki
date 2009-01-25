@@ -1,0 +1,17 @@
+=Řízení pohybu=
+
+Popis řízení pohybu.
+
+==Popis komunikace mezi PC a MainMod==
+
+==Popis komunikace mezi MainMod a moduly MotorControl==
+
+Modul MainMod pošle příslušnému modulu MotorControl pouze požadovanou rychlost (int16_t) a pak sleduje ujetou vzdálenost. Pokud ujetá vzdálenost = požadovaná vzdálenost, pošle paket s nulovou požadovanou rychlostí.
+
+Paket posílaný modulem MainMod (pouze typ + datová část):
+
+||T_COMM|||speed_l||speed_h||
+
+T_COMM ... příkaz
+speed_l ... spodní byte požadované rychlosti
+speed_h ... horní byte požadované rychlosti
