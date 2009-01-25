@@ -33,4 +33,4 @@ Na paket typu P_COMM odpoví modul MotorControl paketem P_INFO s údaji o stavu 
   * mcurrx ... proud motorem (u1)
   * mtempx ... teplota motoru (u1)
 
-Celkem tedy 10 bytů.
+Celkem tedy 16 bytů.
