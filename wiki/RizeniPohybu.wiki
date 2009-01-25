@@ -21,7 +21,7 @@ _Údaje v závorce značí počet bytů a případné znaménko (u = unsigned, s
   * P_COMM ... typ paketu příkaz (u1)
   * rspeed ... požadovaná rychlost (s2)
 
-Na paket typu P_COMM odpoví modul MotorControl paketem P_INFO s údaji o stavu motoru. Po odeslání paketu P_INFO se vynuluje proměnná udávající ujetou vzdálenost od posledního příkazu.
+Na paket typu P_COMM modul MotorControl neodpovídá. Informace o stavu motorů pošle po přijetí paketu P_INFO.
 
 ||P_INFO||rspeed||aspeedf||distf||mstatef||mcurrf||mtempf||aspeedr||distr||mstatef||mcurrf||
 
