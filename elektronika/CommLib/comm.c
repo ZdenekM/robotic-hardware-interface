@@ -1,7 +1,4 @@
 
-// TODO: pøi nulové délce dat pøeskoèit odesílání/pøíjem datové èásti
-// TODO: rozšíøit CRC i na adresu, délku a typ
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <avr/io.h>
@@ -64,11 +61,10 @@ uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
     check = crc16_update(check,len);
     check = crc16_update(check,type);
 
+    if (input!=NULL && len > 0)
     for (i=0; i<len; i++)
-    {
         check = crc16_update(check,input[i]);
 
-    }
 
     return check;
 
@@ -86,7 +82,7 @@ void makePacket(tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint
 		p->crc = makeCRC(data,len,packet_type,addr);
 
 		// kopírování dat
-		if (len < BUFF_LEN && len > 0) memcpy(p->data,data,len);
+		if (len < BUFF_LEN && len > 0 && data !=NULL) memcpy(p->data,data,len);
 
 
 
@@ -100,7 +96,7 @@ void sendFirstByte(volatile uint8_t *tUDR, volatile tcomm_state *c) {
 
 }
 
-// TODO: nastavování devátého bitu
+
 // funkce volaná z pøerušení TX_Complete
 // PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY
 void sendPacket(volatile uint8_t *tUDR, volatile tcomm_state *c) {
@@ -131,8 +127,10 @@ void sendPacket(volatile uint8_t *tUDR, volatile tcomm_state *c) {
 		} break;
 
 		case PS_LEN: {
+			// pøeskoèení odesílání dat, pokud je délka 0
+			if (c->op.len>0) c->send_state = PS_TYPE;
+			else c->send_state = PS_DATA;
 			// typ paketu
-			c->send_state = PS_TYPE;
 			*tUDR = c->op.packet_type;
 
 		} break;
@@ -202,7 +200,6 @@ void comm_state_init(volatile tcomm_state *c) {
 }
 
 
-// TODO: dodìlat pøíjem paketù podle 9. bitu
 // PR_SYNC1, PR_SYNC2, PR_ADDR, PR_LEN, PR_TYPE, PR_DATA, PR_CRC1, PR_CRC2, PR_PACKET_RECEIVED, PR_READY
 void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 
@@ -253,7 +250,9 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 
 	case PR_TYPE: {
 
-		c->receive_state = PR_DATA;
+		// pøeskoèení pøíjmu dat, pokud je délka dat 0
+		if (c->ip.len>0) c->receive_state = PR_DATA;
+		else c->receive_state = PR_CRC1;
 		c->ip.packet_type = tUDR;
 
 	} break;

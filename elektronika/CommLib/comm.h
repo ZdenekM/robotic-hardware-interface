@@ -38,7 +38,7 @@ typedef struct {
 
 
 // definice typù paketù - 5. bajt paketu
-typedef enum {P_ECHO, P_PARAM, P_VALUE, P_INFO} tpacket_type;
+typedef enum {P_ECHO, P_PARAM, P_VALUE, P_INFO, P_COMM} tpacket_type;
 
 // definice stavù odesílání paketu
 typedef enum {PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY} tsend_state;
@@ -79,6 +79,12 @@ typedef struct {
 
 	// pøijatý paket
 	volatile tpacket ip;
+
+	// adresa modulu
+	volatile uint8_t self_addr;
+
+	// øetìzec identifikující modul
+	volatile uint8_t id_str[15];
 
 } tcomm_state;
 
