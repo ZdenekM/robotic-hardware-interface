@@ -10,6 +10,8 @@ Archive member included because of file (symbol)
                               ./MainMod.o (__do_clear_bss)
 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
                               /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o) (memcpy)
+/usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
+                              ./MainMod.o (__eerd_block)
 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
                               ./MainMod.o (snprintf)
 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
@@ -25,17 +27,21 @@ Archive member included because of file (symbol)
 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
                               /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o) (__ultoa_invert)
 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
-                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o) (__prologue_saves__)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o) (__prologue_saves__)
 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
-                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o) (__epilogue_restores__)
+                              /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o) (__epilogue_restores__)
 
 Allocating common symbols
 Common symbol       size              file
 
 mod_state           0xe               ./MainMod.o
-comm_state          0x5b              ./MainMod.o
+comm_state          0x6b              ./MainMod.o
+m_rf                0xc               ./MainMod.o
+m_lr                0xc               ./MainMod.o
+m_lf                0xc               ./MainMod.o
 tpcdata             0x1               ./MainMod.o
-pccomm_state        0x5b              ./MainMod.o
+m_rr                0xc               ./MainMod.o
+pccomm_state        0x6b              ./MainMod.o
 
 Memory Configuration
 
@@ -149,7 +155,7 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x0000000000000000     0x1a2c
+.text           0x0000000000000000     0x1e3e
  *(.vectors)
  .vectors       0x0000000000000000       0x8c /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
                 0x0000000000000000                __vectors
@@ -157,42 +163,42 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
  *(.vectors)
  *(.progmem.gcc*)
  *(.progmem*)
- .progmem.data  0x000000000000008c       0x67 ./MainMod.o
-                0x00000000000000f4                . = ALIGN (0x2)
- *fill*         0x00000000000000f3        0x1 00
-                0x00000000000000f4                __trampolines_start = .
+ .progmem.data  0x000000000000008c       0x71 ./MainMod.o
+                0x00000000000000fe                . = ALIGN (0x2)
+ *fill*         0x00000000000000fd        0x1 00
+                0x00000000000000fe                __trampolines_start = .
  *(.trampolines)
- .trampolines   0x00000000000000f4        0x0 linker stubs
+ .trampolines   0x00000000000000fe        0x0 linker stubs
  *(.trampolines*)
-                0x00000000000000f4                __trampolines_end = .
+                0x00000000000000fe                __trampolines_end = .
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x00000000000000f4                __ctors_start = .
+                0x00000000000000fe                __ctors_start = .
  *(.ctors)
-                0x00000000000000f4                __ctors_end = .
-                0x00000000000000f4                __dtors_start = .
+                0x00000000000000fe                __ctors_end = .
+                0x00000000000000fe                __dtors_start = .
  *(.dtors)
-                0x00000000000000f4                __dtors_end = .
+                0x00000000000000fe                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00000000000000f4        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
-                0x00000000000000f4                __init
+ .init0         0x00000000000000fe        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+                0x00000000000000fe                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00000000000000f4        0xc /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ .init2         0x00000000000000fe        0xc /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x0000000000000100       0x16 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
-                0x0000000000000100                __do_copy_data
- .init4         0x0000000000000116       0x10 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
-                0x0000000000000116                __do_clear_bss
+ .init4         0x000000000000010a       0x16 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+                0x000000000000010a                __do_copy_data
+ .init4         0x0000000000000120       0x10 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+                0x0000000000000120                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -203,121 +209,126 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x0000000000000126        0x8 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ .init9         0x0000000000000130        0x8 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
  *(.init9)
  *(.text)
- .text          0x000000000000012e        0x4 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
-                0x000000000000012e                __vector_22
-                0x000000000000012e                __vector_28
-                0x000000000000012e                __vector_1
-                0x000000000000012e                __vector_34
-                0x000000000000012e                __vector_24
-                0x000000000000012e                __vector_12
-                0x000000000000012e                __bad_interrupt
-                0x000000000000012e                __vector_6
-                0x000000000000012e                __vector_31
-                0x000000000000012e                __vector_3
-                0x000000000000012e                __vector_23
-                0x000000000000012e                __vector_25
-                0x000000000000012e                __vector_11
-                0x000000000000012e                __vector_13
-                0x000000000000012e                __vector_17
-                0x000000000000012e                __vector_19
-                0x000000000000012e                __vector_7
-                0x000000000000012e                __vector_27
-                0x000000000000012e                __vector_5
-                0x000000000000012e                __vector_33
-                0x000000000000012e                __vector_4
-                0x000000000000012e                __vector_9
-                0x000000000000012e                __vector_2
-                0x000000000000012e                __vector_21
-                0x000000000000012e                __vector_29
-                0x000000000000012e                __vector_8
-                0x000000000000012e                __vector_26
-                0x000000000000012e                __vector_14
-                0x000000000000012e                __vector_10
-                0x000000000000012e                __vector_16
- .text          0x0000000000000132      0xce2 ./MainMod.o
-                0x0000000000000acc                manageLcd
-                0x0000000000000264                checkButtons
-                0x000000000000060e                __vector_32
-                0x0000000000000224                joystick_xy
-                0x0000000000000876                commStat
-                0x00000000000004ba                sendEcho
-                0x0000000000000a2e                writeTime
-                0x00000000000006cc                __vector_30
-                0x0000000000000132                set_uarts
-                0x00000000000001c8                moving_average_y
-                0x000000000000030a                updateTime
-                0x0000000000000262                initModule
-                0x0000000000000378                sendCommStat
-                0x0000000000000482                sendPacketE
-                0x0000000000000c26                ioinit
-                0x00000000000005fc                standBy
-                0x0000000000000cd8                main
-                0x000000000000057a                __vector_15
-                0x000000000000016c                moving_average_x
-                0x000000000000079a                joy
-                0x0000000000000162                set_adc
-                0x0000000000000b3a                initModules
-                0x0000000000000736                __vector_18
-                0x000000000000067c                __vector_20
- .text          0x0000000000000e14        0x0 ./lib/MainModLib.o
- .text          0x0000000000000e14      0x226 ./lib/lcd.o
-                0x0000000000000eea                lcd_data
-                0x0000000000000efe                lcd_gotoxy
-                0x0000000000000f42                lcd_putc
-                0x0000000000000f3a                lcd_home
-                0x0000000000000f32                lcd_clrscr
-                0x0000000000000f2a                lcd_getxy
-                0x0000000000000f82                lcd_puts
-                0x0000000000000fa2                lcd_puts_p
-                0x0000000000000fc6                lcd_init
-                0x0000000000000ed6                lcd_command
- .text          0x000000000000103a      0x3d8 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
-                0x000000000000106e                makeCRC
-                0x0000000000001154                sendFirstByte
-                0x0000000000001160                sendPacket
-                0x000000000000121c                comm_state_init
-                0x0000000000001396                receiveTimeout
-                0x00000000000013c2                makePacket
-                0x000000000000103a                crc16_update
-                0x000000000000124a                receivePacket
- .text          0x0000000000001412        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
- .text          0x0000000000001412        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
- .text          0x0000000000001412        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
- .text          0x0000000000001412       0x12 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
-                0x0000000000001412                memcpy
- .text          0x0000000000001424       0x62 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
-                0x0000000000001424                snprintf
- .text          0x0000000000001486       0x48 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
-                0x0000000000001486                sprintf
- .text          0x00000000000014ce      0x3ac /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
-                0x00000000000014ce                vfprintf
- .text          0x000000000000187a       0x16 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
-                0x000000000000187a                strnlen_P
- .text          0x0000000000001890       0x16 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
-                0x0000000000001890                strnlen
- .text          0x00000000000018a6       0x58 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
-                0x00000000000018a6                fputc
- .text          0x00000000000018fe       0xbc /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
-                0x00000000000018fe                __ultoa_invert
- .text          0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
- .text          0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
-                0x00000000000019ba                . = ALIGN (0x2)
+ .text          0x0000000000000138        0x4 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+                0x0000000000000138                __vector_22
+                0x0000000000000138                __vector_28
+                0x0000000000000138                __vector_1
+                0x0000000000000138                __vector_34
+                0x0000000000000138                __vector_24
+                0x0000000000000138                __vector_12
+                0x0000000000000138                __bad_interrupt
+                0x0000000000000138                __vector_6
+                0x0000000000000138                __vector_31
+                0x0000000000000138                __vector_3
+                0x0000000000000138                __vector_23
+                0x0000000000000138                __vector_25
+                0x0000000000000138                __vector_11
+                0x0000000000000138                __vector_13
+                0x0000000000000138                __vector_17
+                0x0000000000000138                __vector_19
+                0x0000000000000138                __vector_7
+                0x0000000000000138                __vector_27
+                0x0000000000000138                __vector_5
+                0x0000000000000138                __vector_33
+                0x0000000000000138                __vector_4
+                0x0000000000000138                __vector_9
+                0x0000000000000138                __vector_2
+                0x0000000000000138                __vector_21
+                0x0000000000000138                __vector_29
+                0x0000000000000138                __vector_8
+                0x0000000000000138                __vector_26
+                0x0000000000000138                __vector_14
+                0x0000000000000138                __vector_10
+                0x0000000000000138                __vector_16
+ .text          0x000000000000013c     0x108c ./MainMod.o
+                0x0000000000000d38                manageLcd
+                0x000000000000029a                checkButtons
+                0x0000000000000b0e                __vector_32
+                0x000000000000025a                joystick_xy
+                0x0000000000000956                commStat
+                0x000000000000017c                motor_init
+                0x00000000000005c4                sendEcho
+                0x0000000000000c9a                writeTime
+                0x0000000000000bcc                __vector_30
+                0x000000000000014c                set_uarts
+                0x00000000000001fe                moving_average_y
+                0x0000000000000340                updateTime
+                0x0000000000000298                initModule
+                0x0000000000000494                sendCommStat
+                0x000000000000058c                sendPacketE
+                0x0000000000000ee0                ioinit
+                0x0000000000000706                standBy
+                0x000000000000107a                main
+                0x0000000000000684                __vector_15
+                0x00000000000003ae                decodeMotorInfo
+                0x00000000000001a2                moving_average_x
+                0x000000000000087a                joy
+                0x0000000000000198                set_adc
+                0x0000000000000df4                initModules
+                0x0000000000000c36                __vector_18
+                0x0000000000000b7c                __vector_20
+                0x0000000000000718                motStat
+ .text          0x00000000000011c8        0x0 ./lib/MainModLib.o
+ .text          0x00000000000011c8      0x226 ./lib/lcd.o
+                0x000000000000129e                lcd_data
+                0x00000000000012b2                lcd_gotoxy
+                0x00000000000012f6                lcd_putc
+                0x00000000000012ee                lcd_home
+                0x00000000000012e6                lcd_clrscr
+                0x00000000000012de                lcd_getxy
+                0x0000000000001336                lcd_puts
+                0x0000000000001356                lcd_puts_p
+                0x000000000000137a                lcd_init
+                0x000000000000128a                lcd_command
+ .text          0x00000000000013ee      0x3fe /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                0x0000000000001422                makeCRC
+                0x000000000000150c                sendFirstByte
+                0x0000000000001518                sendPacket
+                0x00000000000015e0                comm_state_init
+                0x0000000000001770                receiveTimeout
+                0x000000000000179c                makePacket
+                0x00000000000013ee                crc16_update
+                0x000000000000160e                receivePacket
+ .text          0x00000000000017ec        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .text          0x00000000000017ec        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .text          0x00000000000017ec        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .text          0x00000000000017ec       0x12 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                0x00000000000017ec                memcpy
+ .text          0x00000000000017fe       0x38 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
+                0x00000000000017fe                __eerd_block
+ .text          0x0000000000001836       0x62 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                0x0000000000001836                snprintf
+ .text          0x0000000000001898       0x48 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                0x0000000000001898                sprintf
+ .text          0x00000000000018e0      0x3ac /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                0x00000000000018e0                vfprintf
+ .text          0x0000000000001c8c       0x16 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+                0x0000000000001c8c                strnlen_P
+ .text          0x0000000000001ca2       0x16 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+                0x0000000000001ca2                strnlen
+ .text          0x0000000000001cb8       0x58 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                0x0000000000001cb8                fputc
+ .text          0x0000000000001d10       0xbc /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+                0x0000000000001d10                __ultoa_invert
+ .text          0x0000000000001dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+ .text          0x0000000000001dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+                0x0000000000001dcc                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
- .text.libgcc   0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
- .text.libgcc   0x00000000000019ba        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
- .text.libgcc   0x00000000000019ba       0x38 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
-                0x00000000000019ba                __prologue_saves__
- .text.libgcc   0x00000000000019f2       0x36 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
-                0x00000000000019f2                __epilogue_restores__
-                0x0000000000001a28                . = ALIGN (0x2)
+ .text.libgcc   0x0000000000001dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .text.libgcc   0x0000000000001dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .text.libgcc   0x0000000000001dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .text.libgcc   0x0000000000001dcc       0x38 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+                0x0000000000001dcc                __prologue_saves__
+ .text.libgcc   0x0000000000001e04       0x36 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+                0x0000000000001e04                __epilogue_restores__
+                0x0000000000001e3a                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x0000000000001a28        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
-                0x0000000000001a28                exit
-                0x0000000000001a28                _exit
+ .fini9         0x0000000000001e3a        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+                0x0000000000001e3a                exit
+                0x0000000000001e3a                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -336,90 +347,99 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x0000000000001a28        0x4 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .fini0         0x0000000000001e3a        0x4 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
  *(.fini0)
-                0x0000000000001a2c                _etext = .
+                0x0000000000001e3e                _etext = .
 
-.data           0x0000000000800100       0x46 load address 0x0000000000001a2c
+.data           0x0000000000800100       0x62 load address 0x0000000000001e3e
                 0x0000000000800100                PROVIDE (__data_start, .)
  *(.data)
  .data          0x0000000000800100        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
- .data          0x0000000000800100       0x46 ./MainMod.o
- .data          0x0000000000800146        0x0 ./lib/MainModLib.o
- .data          0x0000000000800146        0x0 ./lib/lcd.o
- .data          0x0000000000800146        0x0 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
- .data          0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+ .data          0x0000000000800100       0x62 ./MainMod.o
+ .data          0x0000000000800162        0x0 ./lib/MainModLib.o
+ .data          0x0000000000800162        0x0 ./lib/lcd.o
+ .data          0x0000000000800162        0x0 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+ .data          0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
  *(.data*)
  *(.rodata)
  *(.rodata*)
  *(.gnu.linkonce.d*)
-                0x0000000000800146                . = ALIGN (0x2)
-                0x0000000000800146                _edata = .
-                0x0000000000800146                PROVIDE (__data_end, .)
+                0x0000000000800162                . = ALIGN (0x2)
+                0x0000000000800162                _edata = .
+                0x0000000000800162                PROVIDE (__data_end, .)
 
-.bss            0x0000000000800146       0xe5 load address 0x0000000000001a72
-                0x0000000000800146                PROVIDE (__bss_start, .)
+.bss            0x0000000000800162      0x135 load address 0x0000000000001ea0
+                0x0000000000800162                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x0000000000800146        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
- .bss           0x0000000000800146       0x1e ./MainMod.o
-                0x0000000000800146                flags
- .bss           0x0000000000800164        0x0 ./lib/MainModLib.o
- .bss           0x0000000000800164        0x0 ./lib/lcd.o
- .bss           0x0000000000800164        0x2 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
- .bss           0x0000000000800166        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
+ .bss           0x0000000000800162        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
+ .bss           0x0000000000800162       0x1e ./MainMod.o
+                0x0000000000800162                flags
+ .bss           0x0000000000800180        0x0 ./lib/MainModLib.o
+ .bss           0x0000000000800180        0x0 ./lib/lcd.o
+ .bss           0x0000000000800180        0x2 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_copy_data.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_clear_bss.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(strnlen.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
+ .bss           0x0000000000800182        0x0 /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
  *(.bss*)
  *(COMMON)
- COMMON         0x0000000000800166       0xc5 ./MainMod.o
-                0x0000000000800166                mod_state
-                0x0000000000800174                comm_state
-                0x00000000008001cf                tpcdata
-                0x00000000008001d0                pccomm_state
-                0x000000000080022b                PROVIDE (__bss_end, .)
-                0x0000000000001a2c                __data_load_start = LOADADDR (.data)
-                0x0000000000001a72                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x0000000000800182      0x115 ./MainMod.o
+                0x0000000000800182                mod_state
+                0x0000000000800190                comm_state
+                0x00000000008001fb                m_rf
+                0x0000000000800207                m_lr
+                0x0000000000800213                m_lf
+                0x000000000080021f                tpcdata
+                0x0000000000800220                m_rr
+                0x000000000080022c                pccomm_state
+                0x0000000000800297                PROVIDE (__bss_end, .)
+                0x0000000000001e3e                __data_load_start = LOADADDR (.data)
+                0x0000000000001ea0                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x000000000080022b        0x0
-                0x000000000080022b                PROVIDE (__noinit_start, .)
+.noinit         0x0000000000800297        0x0
+                0x0000000000800297                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x000000000080022b                PROVIDE (__noinit_end, .)
-                0x000000000080022b                _end = .
-                0x000000000080022b                PROVIDE (__heap_start, .)
+                0x0000000000800297                PROVIDE (__noinit_end, .)
+                0x0000000000800297                _end = .
+                0x0000000000800297                PROVIDE (__heap_start, .)
 
-.eeprom         0x0000000000810000        0x0
+.eeprom         0x0000000000810000       0x10
  *(.eeprom*)
-                0x0000000000810000                __eeprom_end = .
+ .eeprom        0x0000000000810000       0x10 ./MainMod.o
+                0x0000000000810001                ee_id_str
+                0x0000000000810000                ee_self_addr
+                0x0000000000810010                __eeprom_end = .
 
-.stab           0x0000000000000000      0xc6c
+.stab           0x0000000000000000      0xc9c
  *(.stab)
- .stab          0x0000000000000000      0xc6c /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .stab          0x0000000000000000      0xc9c /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
 
-.stabstr        0x0000000000000000      0xd7a
+.stabstr        0x0000000000000000      0xde5
  *(.stabstr)
- .stabstr       0x0000000000000000      0xd7a /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .stabstr       0x0000000000000000      0xde5 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
 
 .stab.excl
  *(.stab.excl)
@@ -492,6 +512,7 @@ __do_clear_bss                                    /usr/lib/gcc/avr/4.3.2/avr5/li
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
                                                   /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
                                                   ./lib/lcd.o
                                                   ./lib/MainModLib.o
@@ -501,20 +522,25 @@ __do_copy_data                                    /usr/lib/gcc/avr/4.3.2/avr5/li
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
                                                   /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
                                                   ./lib/lcd.o
                                                   ./lib/MainModLib.o
+                                                  ./MainMod.o
+__eerd_block                                      /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
                                                   ./MainMod.o
 __epilogue_restores__                             /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_epilogue.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
 __heap_end                                        /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
 __init                                            /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
 __prologue_saves__                                /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_prologue.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(sprintf.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(snprintf.o)
+                                                  /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(eerd_block.o)
 __stack                                           /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
 __ultoa_invert                                    /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
@@ -566,6 +592,9 @@ comm_state                                        ./MainMod.o
 comm_state_init                                   /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
                                                   ./MainMod.o
 crc16_update                                      /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+decodeMotorInfo                                   ./MainMod.o
+ee_id_str                                         ./MainMod.o
+ee_self_addr                                      ./MainMod.o
 exit                                              /usr/lib/gcc/avr/4.3.2/avr5/libgcc.a(_exit.o)
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
 flags                                             ./MainMod.o
@@ -592,6 +621,10 @@ lcd_puts                                          ./lib/lcd.o
                                                   ./MainMod.o
 lcd_puts_p                                        ./lib/lcd.o
                                                   ./MainMod.o
+m_lf                                              ./MainMod.o
+m_lr                                              ./MainMod.o
+m_rf                                              ./MainMod.o
+m_rr                                              ./MainMod.o
 main                                              ./MainMod.o
                                                   /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/crtm64.o
 makeCRC                                           /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
@@ -601,6 +634,8 @@ manageLcd                                         ./MainMod.o
 memcpy                                            /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
                                                   /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
 mod_state                                         ./MainMod.o
+motStat                                           ./MainMod.o
+motor_init                                        ./MainMod.o
 moving_average_x                                  ./MainMod.o
 moving_average_y                                  ./MainMod.o
 pccomm_state                                      ./MainMod.o
