@@ -1,0 +1,981 @@
+In archive libCommLib.a:
+
+comm.o:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000400  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000434  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000002  00000000  00000000  00000434  2**0
+                  ALLOC
+  3 .stab         00000c9c  00000000  00000000  00000434  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  4 .stabstr      00000ea6  00000000  00000000  000010d0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+Disassembly of section .text:
+
+00000000 <crc16_update>:
+
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+   0:	70 e0       	ldi	r23, 0x00	; 0
+   2:	68 27       	eor	r22, r24
+   4:	79 27       	eor	r23, r25
+   6:	80 e0       	ldi	r24, 0x00	; 0
+   8:	90 e0       	ldi	r25, 0x00	; 0
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
+   a:	21 e0       	ldi	r18, 0x01	; 1
+   c:	30 ea       	ldi	r19, 0xA0	; 160
+   e:	00 c0       	rjmp	.+0      	; 0x10 <crc16_update+0x10>
+  10:	76 95       	lsr	r23
+  12:	67 95       	ror	r22
+  14:	62 27       	eor	r22, r18
+  16:	73 27       	eor	r23, r19
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  18:	01 96       	adiw	r24, 0x01	; 1
+  1a:	88 30       	cpi	r24, 0x08	; 8
+  1c:	91 05       	cpc	r25, r1
+  1e:	01 f0       	breq	.+0      	; 0x20 <crc16_update+0x20>
+        {
+            if (crc & 1)
+  20:	60 fd       	sbrc	r22, 0
+  22:	00 c0       	rjmp	.+0      	; 0x24 <crc16_update+0x24>
+                crc = (crc >> 1) ^ 0xA001;
+            else
+                crc = (crc >> 1);
+  24:	76 95       	lsr	r23
+  26:	67 95       	ror	r22
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  28:	01 96       	adiw	r24, 0x01	; 1
+  2a:	88 30       	cpi	r24, 0x08	; 8
+  2c:	91 05       	cpc	r25, r1
+  2e:	01 f4       	brne	.+0      	; 0x30 <crc16_update+0x30>
+            else
+                crc = (crc >> 1);
+        }
+
+        return crc;
+    }
+  30:	cb 01       	movw	r24, r22
+  32:	08 95       	ret
+
+00000034 <makeCRC>:
+
+
+uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
+{
+  34:	cf 93       	push	r28
+  36:	df 93       	push	r29
+  38:	ec 01       	movw	r28, r24
+
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+  3a:	30 e0       	ldi	r19, 0x00	; 0
+  3c:	e0 e0       	ldi	r30, 0x00	; 0
+  3e:	f0 e0       	ldi	r31, 0x00	; 0
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
+  40:	a1 e0       	ldi	r26, 0x01	; 1
+  42:	b0 ea       	ldi	r27, 0xA0	; 160
+  44:	00 c0       	rjmp	.+0      	; 0x46 <makeCRC+0x12>
+  46:	36 95       	lsr	r19
+  48:	27 95       	ror	r18
+  4a:	2a 27       	eor	r18, r26
+  4c:	3b 27       	eor	r19, r27
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  4e:	31 96       	adiw	r30, 0x01	; 1
+  50:	e8 30       	cpi	r30, 0x08	; 8
+  52:	f1 05       	cpc	r31, r1
+  54:	01 f0       	breq	.+0      	; 0x56 <makeCRC+0x22>
+        {
+            if (crc & 1)
+  56:	20 fd       	sbrc	r18, 0
+  58:	00 c0       	rjmp	.+0      	; 0x5a <makeCRC+0x26>
+                crc = (crc >> 1) ^ 0xA001;
+            else
+                crc = (crc >> 1);
+  5a:	36 95       	lsr	r19
+  5c:	27 95       	ror	r18
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  5e:	31 96       	adiw	r30, 0x01	; 1
+  60:	e8 30       	cpi	r30, 0x08	; 8
+  62:	f1 05       	cpc	r31, r1
+  64:	01 f4       	brne	.+0      	; 0x66 <makeCRC+0x32>
+
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+  66:	e6 2f       	mov	r30, r22
+  68:	f0 e0       	ldi	r31, 0x00	; 0
+  6a:	e2 27       	eor	r30, r18
+  6c:	f3 27       	eor	r31, r19
+  6e:	20 e0       	ldi	r18, 0x00	; 0
+  70:	30 e0       	ldi	r19, 0x00	; 0
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
+  72:	a1 e0       	ldi	r26, 0x01	; 1
+  74:	b0 ea       	ldi	r27, 0xA0	; 160
+  76:	00 c0       	rjmp	.+0      	; 0x78 <makeCRC+0x44>
+  78:	f6 95       	lsr	r31
+  7a:	e7 95       	ror	r30
+  7c:	ea 27       	eor	r30, r26
+  7e:	fb 27       	eor	r31, r27
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  80:	2f 5f       	subi	r18, 0xFF	; 255
+  82:	3f 4f       	sbci	r19, 0xFF	; 255
+  84:	28 30       	cpi	r18, 0x08	; 8
+  86:	31 05       	cpc	r19, r1
+  88:	01 f0       	breq	.+0      	; 0x8a <makeCRC+0x56>
+        {
+            if (crc & 1)
+  8a:	e0 fd       	sbrc	r30, 0
+  8c:	00 c0       	rjmp	.+0      	; 0x8e <makeCRC+0x5a>
+                crc = (crc >> 1) ^ 0xA001;
+            else
+                crc = (crc >> 1);
+  8e:	f6 95       	lsr	r31
+  90:	e7 95       	ror	r30
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  92:	2f 5f       	subi	r18, 0xFF	; 255
+  94:	3f 4f       	sbci	r19, 0xFF	; 255
+  96:	28 30       	cpi	r18, 0x08	; 8
+  98:	31 05       	cpc	r19, r1
+  9a:	01 f4       	brne	.+0      	; 0x9c <makeCRC+0x68>
+
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+  9c:	50 e0       	ldi	r21, 0x00	; 0
+  9e:	4e 27       	eor	r20, r30
+  a0:	5f 27       	eor	r21, r31
+  a2:	80 e0       	ldi	r24, 0x00	; 0
+  a4:	90 e0       	ldi	r25, 0x00	; 0
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
+  a6:	21 e0       	ldi	r18, 0x01	; 1
+  a8:	30 ea       	ldi	r19, 0xA0	; 160
+  aa:	00 c0       	rjmp	.+0      	; 0xac <makeCRC+0x78>
+  ac:	56 95       	lsr	r21
+  ae:	47 95       	ror	r20
+  b0:	42 27       	eor	r20, r18
+  b2:	53 27       	eor	r21, r19
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  b4:	01 96       	adiw	r24, 0x01	; 1
+  b6:	88 30       	cpi	r24, 0x08	; 8
+  b8:	91 05       	cpc	r25, r1
+  ba:	01 f0       	breq	.+0      	; 0xbc <makeCRC+0x88>
+        {
+            if (crc & 1)
+  bc:	40 fd       	sbrc	r20, 0
+  be:	00 c0       	rjmp	.+0      	; 0xc0 <makeCRC+0x8c>
+                crc = (crc >> 1) ^ 0xA001;
+            else
+                crc = (crc >> 1);
+  c0:	56 95       	lsr	r21
+  c2:	47 95       	ror	r20
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  c4:	01 96       	adiw	r24, 0x01	; 1
+  c6:	88 30       	cpi	r24, 0x08	; 8
+  c8:	91 05       	cpc	r25, r1
+  ca:	01 f4       	brne	.+0      	; 0xcc <makeCRC+0x98>
+
+    check = crc16_update(check,addr);
+    check = crc16_update(check,len);
+    check = crc16_update(check,type);
+
+    if (input!=NULL && len > 0)
+  cc:	20 97       	sbiw	r28, 0x00	; 0
+  ce:	01 f0       	breq	.+0      	; 0xd0 <makeCRC+0x9c>
+  d0:	66 23       	and	r22, r22
+  d2:	01 f0       	breq	.+0      	; 0xd4 <makeCRC+0xa0>
+  d4:	7c 2f       	mov	r23, r28
+  d6:	ce 01       	movw	r24, r28
+  d8:	fc 01       	movw	r30, r24
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
+  da:	21 e0       	ldi	r18, 0x01	; 1
+  dc:	30 ea       	ldi	r19, 0xA0	; 160
+
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+  de:	80 81       	ld	r24, Z
+  e0:	90 e0       	ldi	r25, 0x00	; 0
+  e2:	48 27       	eor	r20, r24
+  e4:	59 27       	eor	r21, r25
+  e6:	80 e0       	ldi	r24, 0x00	; 0
+  e8:	90 e0       	ldi	r25, 0x00	; 0
+  ea:	00 c0       	rjmp	.+0      	; 0xec <makeCRC+0xb8>
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
+  ec:	56 95       	lsr	r21
+  ee:	47 95       	ror	r20
+  f0:	42 27       	eor	r20, r18
+  f2:	53 27       	eor	r21, r19
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+  f4:	01 96       	adiw	r24, 0x01	; 1
+  f6:	88 30       	cpi	r24, 0x08	; 8
+  f8:	91 05       	cpc	r25, r1
+  fa:	01 f0       	breq	.+0      	; 0xfc <makeCRC+0xc8>
+        {
+            if (crc & 1)
+  fc:	40 fd       	sbrc	r20, 0
+  fe:	00 c0       	rjmp	.+0      	; 0x100 <makeCRC+0xcc>
+                crc = (crc >> 1) ^ 0xA001;
+            else
+                crc = (crc >> 1);
+ 100:	56 95       	lsr	r21
+ 102:	47 95       	ror	r20
+uint16_t crc16_update(uint16_t crc, uint8_t a)
+    {
+        int i;
+
+        crc ^= a;
+        for (i = 0; i < 8; ++i)
+ 104:	01 96       	adiw	r24, 0x01	; 1
+ 106:	88 30       	cpi	r24, 0x08	; 8
+ 108:	91 05       	cpc	r25, r1
+ 10a:	01 f4       	brne	.+0      	; 0x10c <makeCRC+0xd8>
+ 10c:	31 96       	adiw	r30, 0x01	; 1
+    check = crc16_update(check,addr);
+    check = crc16_update(check,len);
+    check = crc16_update(check,type);
+
+    if (input!=NULL && len > 0)
+    for (i=0; i<len; i++)
+ 10e:	8e 2f       	mov	r24, r30
+ 110:	87 1b       	sub	r24, r23
+ 112:	86 17       	cp	r24, r22
+ 114:	00 f0       	brcs	.+0      	; 0x116 <makeCRC+0xe2>
+        check = crc16_update(check,input[i]);
+
+
+    return check;
+
+}
+ 116:	ca 01       	movw	r24, r20
+ 118:	df 91       	pop	r29
+ 11a:	cf 91       	pop	r28
+ 11c:	08 95       	ret
+
+0000011e <sendFirstByte>:
+
+
+}
+
+// zahájení pøenosu - odeslání prvního bytu
+void sendFirstByte(volatile uint8_t *tUDR, volatile tcomm_state *c) {
+ 11e:	fc 01       	movw	r30, r24
+ 120:	db 01       	movw	r26, r22
+
+	c->send_state = PS_SYNC1;
+ 122:	1c 92       	st	X, r1
+	*tUDR = SYNC1;
+ 124:	8a ea       	ldi	r24, 0xAA	; 170
+ 126:	80 83       	st	Z, r24
+
+}
+ 128:	08 95       	ret
+
+0000012a <sendPacket>:
+
+
+// funkce volaná z pøerušení TX_Complete
+// PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY
+void sendPacket(volatile uint8_t *tUDR, volatile tcomm_state *c) {
+ 12a:	dc 01       	movw	r26, r24
+ 12c:	fb 01       	movw	r30, r22
+
+	static uint8_t index = 0;
+
+	switch (c->send_state) {
+ 12e:	80 81       	ld	r24, Z
+ 130:	83 30       	cpi	r24, 0x03	; 3
+ 132:	01 f4       	brne	.+0      	; 0x134 <sendPacket+0xa>
+ 134:	00 c0       	rjmp	.+0      	; 0x136 <sendPacket+0xc>
+ 136:	84 30       	cpi	r24, 0x04	; 4
+ 138:	00 f0       	brcs	.+0      	; 0x13a <sendPacket+0x10>
+ 13a:	85 30       	cpi	r24, 0x05	; 5
+ 13c:	01 f0       	breq	.+0      	; 0x13e <sendPacket+0x14>
+ 13e:	85 30       	cpi	r24, 0x05	; 5
+ 140:	00 f0       	brcs	.+0      	; 0x142 <sendPacket+0x18>
+ 142:	86 30       	cpi	r24, 0x06	; 6
+ 144:	01 f0       	breq	.+0      	; 0x146 <sendPacket+0x1c>
+ 146:	87 30       	cpi	r24, 0x07	; 7
+ 148:	01 f0       	breq	.+0      	; 0x14a <sendPacket+0x20>
+ 14a:	08 95       	ret
+ 14c:	81 30       	cpi	r24, 0x01	; 1
+ 14e:	01 f0       	breq	.+0      	; 0x150 <sendPacket+0x26>
+ 150:	82 30       	cpi	r24, 0x02	; 2
+ 152:	00 f0       	brcs	.+0      	; 0x154 <sendPacket+0x2a>
+
+		} break;
+
+		case PS_ADDR: {
+			// délka data
+			c->send_state = PS_LEN;
+ 154:	83 e0       	ldi	r24, 0x03	; 3
+ 156:	80 83       	st	Z, r24
+			*tUDR = c->op.len;
+ 158:	83 a1       	ldd	r24, Z+35	; 0x23
+ 15a:	8c 93       	st	X, r24
+ 15c:	08 95       	ret
+
+		} break;
+
+		case PS_TYPE: {
+			// odeslání prvního bytu obsahu
+			c->send_state = PS_DATA;
+ 15e:	85 e0       	ldi	r24, 0x05	; 5
+ 160:	80 83       	st	Z, r24
+			*tUDR = c->op.data[index++];
+ 162:	80 91 00 00 	lds	r24, 0x0000
+ 166:	e8 0f       	add	r30, r24
+ 168:	f1 1d       	adc	r31, r1
+ 16a:	93 81       	ldd	r25, Z+3	; 0x03
+ 16c:	9c 93       	st	X, r25
+ 16e:	8f 5f       	subi	r24, 0xFF	; 255
+ 170:	80 93 00 00 	sts	0x0000, r24
+ 174:	08 95       	ret
+
+	switch (c->send_state) {
+
+		case PS_SYNC1: {
+			// odeslání druhého s. bytu
+			c->send_state = PS_SYNC2;
+ 176:	81 e0       	ldi	r24, 0x01	; 1
+ 178:	80 83       	st	Z, r24
+			*tUDR = SYNC2;
+ 17a:	8b ea       	ldi	r24, 0xAB	; 171
+ 17c:	8c 93       	st	X, r24
+ 17e:	08 95       	ret
+
+		} break;
+
+		case PS_CRC2: {
+			// konec pøenosu paketu
+			c->send_state = PS_READY;
+ 180:	88 e0       	ldi	r24, 0x08	; 8
+ 182:	80 83       	st	Z, r24
+			c->packets_sended++;
+ 184:	80 a5       	ldd	r24, Z+40	; 0x28
+ 186:	91 a5       	ldd	r25, Z+41	; 0x29
+ 188:	a2 a5       	ldd	r26, Z+42	; 0x2a
+ 18a:	b3 a5       	ldd	r27, Z+43	; 0x2b
+ 18c:	01 96       	adiw	r24, 0x01	; 1
+ 18e:	a1 1d       	adc	r26, r1
+ 190:	b1 1d       	adc	r27, r1
+ 192:	80 a7       	std	Z+40, r24	; 0x28
+ 194:	91 a7       	std	Z+41, r25	; 0x29
+ 196:	a2 a7       	std	Z+42, r26	; 0x2a
+ 198:	b3 a7       	std	Z+43, r27	; 0x2b
+ 19a:	08 95       	ret
+
+		} break;
+
+		case PS_DATA: {
+			// odesílání obsahu paketu
+			if (index < c->op.len) *tUDR = c->op.data[index++];
+ 19c:	83 a1       	ldd	r24, Z+35	; 0x23
+ 19e:	90 91 00 00 	lds	r25, 0x0000
+ 1a2:	98 17       	cp	r25, r24
+ 1a4:	00 f4       	brcc	.+0      	; 0x1a6 <sendPacket+0x7c>
+ 1a6:	e9 0f       	add	r30, r25
+ 1a8:	f1 1d       	adc	r31, r1
+ 1aa:	83 81       	ldd	r24, Z+3	; 0x03
+ 1ac:	8c 93       	st	X, r24
+ 1ae:	9f 5f       	subi	r25, 0xFF	; 255
+ 1b0:	90 93 00 00 	sts	0x0000, r25
+ 1b4:	08 95       	ret
+
+		} break;
+
+		case PS_CRC1: {
+			// horní byte CRC
+			c->send_state = PS_CRC2;
+ 1b6:	87 e0       	ldi	r24, 0x07	; 7
+ 1b8:	80 83       	st	Z, r24
+			*tUDR = (uint8_t)(c->op.crc>>8);
+ 1ba:	85 a1       	ldd	r24, Z+37	; 0x25
+ 1bc:	96 a1       	ldd	r25, Z+38	; 0x26
+ 1be:	9c 93       	st	X, r25
+ 1c0:	08 95       	ret
+
+		} break;
+
+		case PS_SYNC2: {
+			// odeslání adresy pøíjemce
+			c->send_state = PS_ADDR;
+ 1c2:	82 e0       	ldi	r24, 0x02	; 2
+ 1c4:	80 83       	st	Z, r24
+			*tUDR = c->op.addr;
+ 1c6:	87 a1       	ldd	r24, Z+39	; 0x27
+ 1c8:	8c 93       	st	X, r24
+ 1ca:	08 95       	ret
+
+		} break;
+
+		case PS_LEN: {
+			// pøeskoèení odesílání dat, pokud je délka 0
+			if (c->op.len>0) c->send_state = PS_TYPE;
+ 1cc:	83 a1       	ldd	r24, Z+35	; 0x23
+ 1ce:	88 23       	and	r24, r24
+ 1d0:	01 f0       	breq	.+0      	; 0x1d2 <sendPacket+0xa8>
+ 1d2:	84 e0       	ldi	r24, 0x04	; 4
+ 1d4:	80 83       	st	Z, r24
+			else c->send_state = PS_DATA;
+			// typ paketu
+			*tUDR = c->op.packet_type;
+ 1d6:	84 a1       	ldd	r24, Z+36	; 0x24
+ 1d8:	8c 93       	st	X, r24
+ 1da:	08 95       	ret
+		case PS_DATA: {
+			// odesílání obsahu paketu
+			if (index < c->op.len) *tUDR = c->op.data[index++];
+			else {
+				// spodní byte CRC
+				c->send_state = PS_CRC1;
+ 1dc:	86 e0       	ldi	r24, 0x06	; 6
+ 1de:	80 83       	st	Z, r24
+				index = 0;
+ 1e0:	10 92 00 00 	sts	0x0000, r1
+				// vynulovani horniho bytu
+				*tUDR = (uint8_t)(c->op.crc&0xFF);
+ 1e4:	85 a1       	ldd	r24, Z+37	; 0x25
+ 1e6:	96 a1       	ldd	r25, Z+38	; 0x26
+ 1e8:	8c 93       	st	X, r24
+ 1ea:	08 95       	ret
+		} break;
+
+		case PS_LEN: {
+			// pøeskoèení odesílání dat, pokud je délka 0
+			if (c->op.len>0) c->send_state = PS_TYPE;
+			else c->send_state = PS_DATA;
+ 1ec:	85 e0       	ldi	r24, 0x05	; 5
+ 1ee:	80 83       	st	Z, r24
+ 1f0:	00 c0       	rjmp	.+0      	; 0x1f2 <comm_state_init>
+
+000001f2 <comm_state_init>:
+	}
+
+}
+
+// inicializace struktury typu tcomm_state
+void comm_state_init(volatile tcomm_state *c) {
+ 1f2:	fc 01       	movw	r30, r24
+
+	if (c!=NULL) {
+ 1f4:	00 97       	sbiw	r24, 0x00	; 0
+ 1f6:	01 f0       	breq	.+0      	; 0x1f8 <comm_state_init+0x6>
+
+		c->send_state = PS_READY;
+ 1f8:	88 e0       	ldi	r24, 0x08	; 8
+ 1fa:	80 83       	st	Z, r24
+		c->receive_state = PR_READY;
+ 1fc:	8a e0       	ldi	r24, 0x0A	; 10
+ 1fe:	81 83       	std	Z+1, r24	; 0x01
+		c->packets_sended = 0;
+ 200:	10 a6       	std	Z+40, r1	; 0x28
+ 202:	11 a6       	std	Z+41, r1	; 0x29
+ 204:	12 a6       	std	Z+42, r1	; 0x2a
+ 206:	13 a6       	std	Z+43, r1	; 0x2b
+		c->receive_timeout = 0;
+ 208:	12 82       	std	Z+2, r1	; 0x02
+		c->packets_bad_received = 0;
+ 20a:	11 aa       	std	Z+49, r1	; 0x31
+ 20c:	10 aa       	std	Z+48, r1	; 0x30
+		c->packets_received = 0;
+ 20e:	14 a6       	std	Z+44, r1	; 0x2c
+ 210:	15 a6       	std	Z+45, r1	; 0x2d
+ 212:	16 a6       	std	Z+46, r1	; 0x2e
+ 214:	17 a6       	std	Z+47, r1	; 0x2f
+		c->packets_timeouted = 0;
+ 216:	13 aa       	std	Z+51, r1	; 0x33
+ 218:	12 aa       	std	Z+50, r1	; 0x32
+		c->frame_error = 0;
+ 21a:	15 aa       	std	Z+53, r1	; 0x35
+ 21c:	14 aa       	std	Z+52, r1	; 0x34
+ 21e:	08 95       	ret
+
+00000220 <receivePacket>:
+
+}
+
+
+// PR_SYNC1, PR_SYNC2, PR_ADDR, PR_LEN, PR_TYPE, PR_DATA, PR_CRC1, PR_CRC2, PR_PACKET_RECEIVED, PR_READY
+void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
+ 220:	48 2f       	mov	r20, r24
+ 222:	db 01       	movw	r26, r22
+
+	static uint8_t index = 0;
+
+	c->receive_timeout = 0;
+ 224:	fb 01       	movw	r30, r22
+ 226:	12 82       	std	Z+2, r1	; 0x02
+
+	//if (c!=NULL) {
+
+	switch (c->receive_state) {
+ 228:	81 81       	ldd	r24, Z+1	; 0x01
+ 22a:	84 30       	cpi	r24, 0x04	; 4
+ 22c:	01 f4       	brne	.+0      	; 0x22e <receivePacket+0xe>
+ 22e:	00 c0       	rjmp	.+0      	; 0x230 <receivePacket+0x10>
+ 230:	85 30       	cpi	r24, 0x05	; 5
+ 232:	00 f0       	brcs	.+0      	; 0x234 <receivePacket+0x14>
+ 234:	86 30       	cpi	r24, 0x06	; 6
+ 236:	01 f0       	breq	.+0      	; 0x238 <receivePacket+0x18>
+ 238:	86 30       	cpi	r24, 0x06	; 6
+ 23a:	00 f0       	brcs	.+0      	; 0x23c <receivePacket+0x1c>
+ 23c:	87 30       	cpi	r24, 0x07	; 7
+ 23e:	01 f4       	brne	.+0      	; 0x240 <receivePacket+0x20>
+ 240:	00 c0       	rjmp	.+0      	; 0x242 <receivePacket+0x22>
+ 242:	8b 30       	cpi	r24, 0x0B	; 11
+ 244:	01 f0       	breq	.+0      	; 0x246 <receivePacket+0x26>
+ 246:	08 95       	ret
+ 248:	82 30       	cpi	r24, 0x02	; 2
+ 24a:	01 f4       	brne	.+0      	; 0x24c <receivePacket+0x2c>
+ 24c:	00 c0       	rjmp	.+0      	; 0x24e <receivePacket+0x2e>
+ 24e:	83 30       	cpi	r24, 0x03	; 3
+ 250:	00 f0       	brcs	.+0      	; 0x252 <receivePacket+0x32>
+
+	} break;
+
+	case PR_LEN: {
+
+		if (tUDR<BUFF_LEN) {
+ 252:	40 32       	cpi	r20, 0x20	; 32
+ 254:	00 f4       	brcc	.+0      	; 0x256 <receivePacket+0x36>
+
+			c->receive_state = PR_TYPE;
+ 256:	84 e0       	ldi	r24, 0x04	; 4
+ 258:	fb 01       	movw	r30, r22
+ 25a:	81 83       	std	Z+1, r24	; 0x01
+			c->ip.len = tUDR;
+ 25c:	aa 5a       	subi	r26, 0xAA	; 170
+ 25e:	bf 4f       	sbci	r27, 0xFF	; 255
+ 260:	4c 93       	st	X, r20
+ 262:	08 95       	ret
+
+	c->receive_timeout = 0;
+
+	//if (c!=NULL) {
+
+	switch (c->receive_state) {
+ 264:	81 30       	cpi	r24, 0x01	; 1
+ 266:	01 f4       	brne	.+0      	; 0x268 <receivePacket+0x48>
+
+
+
+	case PR_SYNC2:  {
+
+		if (tUDR==SYNC2) c->receive_state = PR_ADDR;
+ 268:	4b 3a       	cpi	r20, 0xAB	; 171
+ 26a:	01 f4       	brne	.+0      	; 0x26c <receivePacket+0x4c>
+ 26c:	00 c0       	rjmp	.+0      	; 0x26e <receivePacket+0x4e>
+		if (tUDR<BUFF_LEN) {
+
+			c->receive_state = PR_TYPE;
+			c->ip.len = tUDR;
+
+		} else	c->receive_state = PR_READY;
+ 26e:	8a e0       	ldi	r24, 0x0A	; 10
+ 270:	fd 01       	movw	r30, r26
+ 272:	81 83       	std	Z+1, r24	; 0x01
+ 274:	08 95       	ret
+
+	} break;
+
+	case PR_DATA: {
+
+		c->ip.data[index++] = tUDR;
+ 276:	80 91 00 00 	lds	r24, 0x0000
+ 27a:	fb 01       	movw	r30, r22
+ 27c:	e8 0f       	add	r30, r24
+ 27e:	f1 1d       	adc	r31, r1
+ 280:	46 ab       	std	Z+54, r20	; 0x36
+ 282:	8f 5f       	subi	r24, 0xFF	; 255
+ 284:	80 93 00 00 	sts	0x0000, r24
+
+		// pøíjem dat dokonèen
+		if (index==c->ip.len) {
+ 288:	aa 5a       	subi	r26, 0xAA	; 170
+ 28a:	bf 4f       	sbci	r27, 0xFF	; 255
+ 28c:	9c 91       	ld	r25, X
+ 28e:	a6 55       	subi	r26, 0x56	; 86
+ 290:	b0 40       	sbci	r27, 0x00	; 0
+ 292:	89 17       	cp	r24, r25
+ 294:	01 f4       	brne	.+0      	; 0x296 <receivePacket+0x76>
+			c->receive_state = PR_CRC1;
+ 296:	86 e0       	ldi	r24, 0x06	; 6
+ 298:	fd 01       	movw	r30, r26
+ 29a:	81 83       	std	Z+1, r24	; 0x01
+			index = 0;
+ 29c:	10 92 00 00 	sts	0x0000, r1
+ 2a0:	08 95       	ret
+
+	switch (c->receive_state) {
+
+	case PR_WAITING: {
+
+		if (tUDR==SYNC1) c->receive_state = PR_SYNC2;
+ 2a2:	4a 3a       	cpi	r20, 0xAA	; 170
+ 2a4:	01 f4       	brne	.+0      	; 0x2a6 <receivePacket+0x86>
+ 2a6:	81 e0       	ldi	r24, 0x01	; 1
+ 2a8:	fb 01       	movw	r30, r22
+ 2aa:	81 83       	std	Z+1, r24	; 0x01
+ 2ac:	08 95       	ret
+
+	} break;
+
+	case PR_CRC1: {
+
+		c->receive_state = PR_CRC2;
+ 2ae:	87 e0       	ldi	r24, 0x07	; 7
+ 2b0:	fb 01       	movw	r30, r22
+ 2b2:	81 83       	std	Z+1, r24	; 0x01
+		c->ip.crc = tUDR;
+ 2b4:	84 2f       	mov	r24, r20
+ 2b6:	90 e0       	ldi	r25, 0x00	; 0
+ 2b8:	a8 5a       	subi	r26, 0xA8	; 168
+ 2ba:	bf 4f       	sbci	r27, 0xFF	; 255
+ 2bc:	11 96       	adiw	r26, 0x01	; 1
+ 2be:	9c 93       	st	X, r25
+ 2c0:	8e 93       	st	-X, r24
+ 2c2:	08 95       	ret
+	} break;
+
+	case PR_CRC2: {
+
+		uint16_t p = tUDR;
+		c->ip.crc |= (p<<8);
+ 2c4:	fb 01       	movw	r30, r22
+ 2c6:	e8 5a       	subi	r30, 0xA8	; 168
+ 2c8:	ff 4f       	sbci	r31, 0xFF	; 255
+ 2ca:	20 81       	ld	r18, Z
+ 2cc:	31 81       	ldd	r19, Z+1	; 0x01
+ 2ce:	94 2f       	mov	r25, r20
+ 2d0:	80 e0       	ldi	r24, 0x00	; 0
+ 2d2:	82 2b       	or	r24, r18
+ 2d4:	93 2b       	or	r25, r19
+ 2d6:	91 83       	std	Z+1, r25	; 0x01
+ 2d8:	80 83       	st	Z, r24
+
+		c->receive_state = PR_PACKET_RECEIVED;
+ 2da:	88 e0       	ldi	r24, 0x08	; 8
+ 2dc:	fb 01       	movw	r30, r22
+ 2de:	81 83       	std	Z+1, r24	; 0x01
+ 2e0:	08 95       	ret
+
+	} break;
+
+	case PR_ADDR: {
+
+		c->receive_state = PR_LEN;
+ 2e2:	83 e0       	ldi	r24, 0x03	; 3
+ 2e4:	fb 01       	movw	r30, r22
+ 2e6:	81 83       	std	Z+1, r24	; 0x01
+		c->ip.addr = tUDR;
+ 2e8:	a6 5a       	subi	r26, 0xA6	; 166
+ 2ea:	bf 4f       	sbci	r27, 0xFF	; 255
+ 2ec:	4c 93       	st	X, r20
+ 2ee:	08 95       	ret
+	} break;
+
+	case PR_TYPE: {
+
+		// pøeskoèení pøíjmu dat, pokud je délka dat 0
+		if (c->ip.len>0) c->receive_state = PR_DATA;
+ 2f0:	aa 5a       	subi	r26, 0xAA	; 170
+ 2f2:	bf 4f       	sbci	r27, 0xFF	; 255
+ 2f4:	8c 91       	ld	r24, X
+ 2f6:	a6 55       	subi	r26, 0x56	; 86
+ 2f8:	b0 40       	sbci	r27, 0x00	; 0
+ 2fa:	88 23       	and	r24, r24
+ 2fc:	01 f0       	breq	.+0      	; 0x2fe <receivePacket+0xde>
+ 2fe:	85 e0       	ldi	r24, 0x05	; 5
+ 300:	fd 01       	movw	r30, r26
+ 302:	81 83       	std	Z+1, r24	; 0x01
+		else c->receive_state = PR_CRC1;
+		c->ip.packet_type = tUDR;
+ 304:	a9 5a       	subi	r26, 0xA9	; 169
+ 306:	bf 4f       	sbci	r27, 0xFF	; 255
+ 308:	4c 93       	st	X, r20
+ 30a:	08 95       	ret
+
+	case PR_TYPE: {
+
+		// pøeskoèení pøíjmu dat, pokud je délka dat 0
+		if (c->ip.len>0) c->receive_state = PR_DATA;
+		else c->receive_state = PR_CRC1;
+ 30c:	86 e0       	ldi	r24, 0x06	; 6
+ 30e:	fd 01       	movw	r30, r26
+ 310:	81 83       	std	Z+1, r24	; 0x01
+ 312:	00 c0       	rjmp	.+0      	; 0x314 <receivePacket+0xf4>
+
+
+
+	case PR_SYNC2:  {
+
+		if (tUDR==SYNC2) c->receive_state = PR_ADDR;
+ 314:	82 e0       	ldi	r24, 0x02	; 2
+ 316:	fb 01       	movw	r30, r22
+ 318:	81 83       	std	Z+1, r24	; 0x01
+ 31a:	08 95       	ret
+
+0000031c <checkPacket>:
+	//}
+
+}
+
+// zkontroluje CRC paketu
+uint8_t checkPacket(volatile tcomm_state *c) {
+ 31c:	cf 93       	push	r28
+ 31e:	df 93       	push	r29
+ 320:	ec 01       	movw	r28, r24
+
+	uint16_t crc = makeCRC(c->ip.data,c->ip.len,c->ip.packet_type,c->ip.addr);
+ 322:	ca 5a       	subi	r28, 0xAA	; 170
+ 324:	df 4f       	sbci	r29, 0xFF	; 255
+ 326:	69 91       	ld	r22, Y+
+ 328:	48 81       	ld	r20, Y
+ 32a:	23 96       	adiw	r28, 0x03	; 3
+ 32c:	28 81       	ld	r18, Y
+ 32e:	ca 55       	subi	r28, 0x5A	; 90
+ 330:	d0 40       	sbci	r29, 0x00	; 0
+ 332:	ce 01       	movw	r24, r28
+ 334:	c6 96       	adiw	r24, 0x36	; 54
+ 336:	0e 94 00 00 	call	0	; 0x0 <crc16_update>
+
+	if (crc == c->ip.crc) {
+ 33a:	c8 5a       	subi	r28, 0xA8	; 168
+ 33c:	df 4f       	sbci	r29, 0xFF	; 255
+ 33e:	28 81       	ld	r18, Y
+ 340:	39 81       	ldd	r19, Y+1	; 0x01
+ 342:	c8 55       	subi	r28, 0x58	; 88
+ 344:	d0 40       	sbci	r29, 0x00	; 0
+ 346:	82 17       	cp	r24, r18
+ 348:	93 07       	cpc	r25, r19
+ 34a:	01 f0       	breq	.+0      	; 0x34c <checkPacket+0x30>
+		return 1;
+
+	} else {
+
+		// chyba CRC :-(
+		c->packets_bad_received++;
+ 34c:	88 a9       	ldd	r24, Y+48	; 0x30
+ 34e:	99 a9       	ldd	r25, Y+49	; 0x31
+ 350:	01 96       	adiw	r24, 0x01	; 1
+ 352:	99 ab       	std	Y+49, r25	; 0x31
+ 354:	88 ab       	std	Y+48, r24	; 0x30
+		c->receive_state = PR_BAD_CRC;
+ 356:	8c e0       	ldi	r24, 0x0C	; 12
+ 358:	89 83       	std	Y+1, r24	; 0x01
+ 35a:	80 e0       	ldi	r24, 0x00	; 0
+		return 0;
+
+	}
+
+
+}
+ 35c:	df 91       	pop	r29
+ 35e:	cf 91       	pop	r28
+ 360:	08 95       	ret
+
+	uint16_t crc = makeCRC(c->ip.data,c->ip.len,c->ip.packet_type,c->ip.addr);
+
+	if (crc == c->ip.crc) {
+
+		c->receive_state = PR_PACKET_RECEIVED;
+ 362:	88 e0       	ldi	r24, 0x08	; 8
+ 364:	89 83       	std	Y+1, r24	; 0x01
+		c->packets_received++;
+ 366:	8c a5       	ldd	r24, Y+44	; 0x2c
+ 368:	9d a5       	ldd	r25, Y+45	; 0x2d
+ 36a:	ae a5       	ldd	r26, Y+46	; 0x2e
+ 36c:	bf a5       	ldd	r27, Y+47	; 0x2f
+ 36e:	01 96       	adiw	r24, 0x01	; 1
+ 370:	a1 1d       	adc	r26, r1
+ 372:	b1 1d       	adc	r27, r1
+ 374:	8c a7       	std	Y+44, r24	; 0x2c
+ 376:	9d a7       	std	Y+45, r25	; 0x2d
+ 378:	ae a7       	std	Y+46, r26	; 0x2e
+ 37a:	bf a7       	std	Y+47, r27	; 0x2f
+ 37c:	81 e0       	ldi	r24, 0x01	; 1
+		return 0;
+
+	}
+
+
+}
+ 37e:	df 91       	pop	r29
+ 380:	cf 91       	pop	r28
+ 382:	08 95       	ret
+
+00000384 <receiveTimeout>:
+
+void receiveTimeout(volatile tcomm_state *c) {
+ 384:	fc 01       	movw	r30, r24
+
+	if (c->receive_state!=PR_PACKET_RECEIVED && c->receive_state!=PR_READY) {
+ 386:	81 81       	ldd	r24, Z+1	; 0x01
+ 388:	88 30       	cpi	r24, 0x08	; 8
+ 38a:	01 f0       	breq	.+0      	; 0x38c <receiveTimeout+0x8>
+ 38c:	81 81       	ldd	r24, Z+1	; 0x01
+ 38e:	8a 30       	cpi	r24, 0x0A	; 10
+ 390:	01 f0       	breq	.+0      	; 0x392 <receiveTimeout+0xe>
+
+		// chyba pøi pøenosu
+		if (c->receive_timeout++ > MAXTIMEOUT) {
+ 392:	82 81       	ldd	r24, Z+2	; 0x02
+ 394:	8f 5f       	subi	r24, 0xFF	; 255
+ 396:	82 83       	std	Z+2, r24	; 0x02
+ 398:	81 50       	subi	r24, 0x01	; 1
+ 39a:	83 30       	cpi	r24, 0x03	; 3
+ 39c:	00 f0       	brcs	.+0      	; 0x39e <receiveTimeout+0x1a>
+
+			c->receive_timeout = 0;
+ 39e:	12 82       	std	Z+2, r1	; 0x02
+			c->packets_timeouted++;
+ 3a0:	82 a9       	ldd	r24, Z+50	; 0x32
+ 3a2:	93 a9       	ldd	r25, Z+51	; 0x33
+ 3a4:	01 96       	adiw	r24, 0x01	; 1
+ 3a6:	93 ab       	std	Z+51, r25	; 0x33
+ 3a8:	82 ab       	std	Z+50, r24	; 0x32
+			c->receive_state = PR_TIMEOUT;
+ 3aa:	89 e0       	ldi	r24, 0x09	; 9
+ 3ac:	81 83       	std	Z+1, r24	; 0x01
+ 3ae:	08 95       	ret
+
+000003b0 <makePacket>:
+
+}
+
+
+
+void makePacket(tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint8_t addr) {
+ 3b0:	ef 92       	push	r14
+ 3b2:	ff 92       	push	r15
+ 3b4:	0f 93       	push	r16
+ 3b6:	1f 93       	push	r17
+ 3b8:	cf 93       	push	r28
+ 3ba:	df 93       	push	r29
+ 3bc:	ec 01       	movw	r28, r24
+ 3be:	7b 01       	movw	r14, r22
+ 3c0:	14 2f       	mov	r17, r20
+
+		p->addr = addr;
+ 3c2:	0c a3       	std	Y+36, r16	; 0x24
+		p->len = len;
+ 3c4:	48 a3       	std	Y+32, r20	; 0x20
+		p->packet_type = packet_type;
+ 3c6:	29 a3       	std	Y+33, r18	; 0x21
+
+
+		p->crc = makeCRC(data,len,packet_type,addr);
+ 3c8:	cb 01       	movw	r24, r22
+ 3ca:	64 2f       	mov	r22, r20
+ 3cc:	42 2f       	mov	r20, r18
+ 3ce:	20 2f       	mov	r18, r16
+ 3d0:	0e 94 00 00 	call	0	; 0x0 <crc16_update>
+ 3d4:	9b a3       	std	Y+35, r25	; 0x23
+ 3d6:	8a a3       	std	Y+34, r24	; 0x22
+
+		// kopírování dat
+		if (len < BUFF_LEN && len > 0 && data !=NULL) memcpy(p->data,data,len);
+ 3d8:	81 2f       	mov	r24, r17
+ 3da:	81 50       	subi	r24, 0x01	; 1
+ 3dc:	8f 31       	cpi	r24, 0x1F	; 31
+ 3de:	00 f4       	brcc	.+0      	; 0x3e0 <makePacket+0x30>
+ 3e0:	e1 14       	cp	r14, r1
+ 3e2:	f1 04       	cpc	r15, r1
+ 3e4:	01 f0       	breq	.+0      	; 0x3e6 <makePacket+0x36>
+ 3e6:	ce 01       	movw	r24, r28
+ 3e8:	b7 01       	movw	r22, r14
+ 3ea:	41 2f       	mov	r20, r17
+ 3ec:	50 e0       	ldi	r21, 0x00	; 0
+ 3ee:	0e 94 00 00 	call	0	; 0x0 <crc16_update>
+
+
+
+}
+ 3f2:	df 91       	pop	r29
+ 3f4:	cf 91       	pop	r28
+ 3f6:	1f 91       	pop	r17
+ 3f8:	0f 91       	pop	r16
+ 3fa:	ff 90       	pop	r15
+ 3fc:	ef 90       	pop	r14
+ 3fe:	08 95       	ret
