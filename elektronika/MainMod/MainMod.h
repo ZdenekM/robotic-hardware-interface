@@ -6,14 +6,14 @@
 // data odesílaná do PC
 enum {COMMSTATE} tpcdata;
 
+// stavy menu
+typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_JOYSTICK} tmenu_states;
+
 // stav modulu - menu, tlaèítka, èas atd.
 typedef struct {
 
-	// stavy menu
-	enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_JOYSTICK} tmenu_states;
-
 	// aktuální stav menu
-	volatile uint8_t menu_state;
+	volatile tmenu_states menu_state;
 
 	// poèítadlo pro krátké zapnutí podsvìtlení po stisku tlaèítka
 	volatile uint16_t backlight;
@@ -26,7 +26,8 @@ typedef struct {
 	volatile uint16_t joy_x, joy_y;
 
 	// stav tlaèítek - po pøeètení vynulovat
-	uint8_t buttons;
+	volatile uint8_t buttons;
+
 	#define ABUTT1 0
 	#define ABUTT2 1
 	#define ABUTT3 2
@@ -46,7 +47,7 @@ typedef struct {
 	volatile int16_t act_speed;
 
 	// vzdálenost ujetá od posledního povelu
-	volatile int16_t distance;
+	volatile int32_t distance;
 
 	// parametry regulatoru, * 10
 	volatile uint8_t P, I, D;
@@ -59,6 +60,9 @@ typedef struct {
 
 	// teplota motoru
 	volatile uint8_t temp;
+
+	// výkon motoru
+	volatile uint8_t load;
 
 } tmotor;
 

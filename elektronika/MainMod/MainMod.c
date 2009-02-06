@@ -3,7 +3,6 @@
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
 
-// TODO diagnostické info z modulu
 // TODO obsluha komunikace s pc
 // TODO joystick - obsluha tlaèítek
 
@@ -123,7 +122,7 @@ inline void set_uarts() {
 	//UBRR1L = 68; // 14400
 	//UBRR1L = 25; // 38400
 	//UBRR1L = 12; // 76800
-	UBRR1L = 3; // 250000
+	UBRR1L = 103;
 	UBRR1H = 0;
 
 	UCSR1A = (0<<U2X1)|(0<<MPCM1);
@@ -145,6 +144,7 @@ void motor_init(volatile tmotor *m) {
 	m->req_speed = 0;
 	m->state = 0;
 	m->temp = 0;
+	m->load = 0;
 
 }
 
@@ -159,7 +159,7 @@ inline void set_adc(void) {
 
 }
 
-#define MOV 4
+#define MOV 10
 uint16_t moving_average_x(uint16_t value)
 {
        static uint16_t buffer[MOV], i=0;
@@ -186,27 +186,7 @@ uint16_t moving_average_y(uint16_t value)
 
 
 
-enum {JOY_Y=6,JOY_X=7};
-// spustí AD pøevod pro urèení vychýlení joysticku
-uint16_t joystick_xy(uint8_t dir) {
 
-
-
-	// nastavení kanálu
-	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
-	ADMUX |= dir&0x3F; // nastaví kanál
-
-	// spustí pøevod
-	SETBIT(ADCSRA,ADSC);
-
-	// èeká na dokonèení pøevodu
-	while (CHECKBIT(ADCSRA,ADSC ));
-
-	if (dir==JOY_X) return 1023-moving_average_x(ADCW);
-	else return moving_average_y(ADCW);
-	//return ADCW;
-
-}
 
 
 // odeslání paketu - extra funkce pro každý modul
@@ -243,7 +223,7 @@ uint8_t sendEcho(uint8_t addr) {
 
 	for(i=0; i<30;i++) data[i] = i*2;
 
-	for(sent=1; sent<=100;sent++) {
+	for(sent=1; sent<=10;sent++) {
 
 				// vytvoøení paketu
 		makePacket(&comm_state.op,data,30,P_ECHO,addr);
@@ -254,17 +234,17 @@ uint8_t sendEcho(uint8_t addr) {
 		C_CLEARBIT(RS485_SEND);
 		// èekání na odpovìï
 		comm_state.receive_state = PR_WAITING;
-		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_BAD_CRC);
+		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT);
 
 		// crc souhlasí -> úspìšné pøijetí paketu
-		if (comm_state.receive_state==PR_PACKET_RECEIVED) rec++;
+		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) rec++;
 
 		comm_state.receive_state = PR_READY;
 
 	}
 
-	// 100 pokusù -> rec = úpìšnost v %
-	return rec;
+	// 10 pokusù -> rec*10 = úpìšnost v %
+	return rec*10;
 
 }
 
@@ -285,7 +265,7 @@ void initModules() {
 	char buff[9];
 	uint8_t res,state;
 
-	// MotorControl1
+	// MotorControl - left
 	state = sendEcho(10);
 
 	lcd_gotoxy(0,1);
@@ -428,6 +408,7 @@ void updateTime()
 		}
 	}
 
+
 }
 
 
@@ -560,6 +541,11 @@ void motStat(volatile tmotor *m) {
 	sprintf(abuff,"AS:%7d",m->act_speed);
 	lcd_puts(abuff);
 
+	// proud motorem
+	lcd_gotoxy(0,3);
+	sprintf(abuff,"LO:%7u",m->load);
+	lcd_puts(abuff);
+
 	// teplota motoru
 	lcd_gotoxy(10,1);
 	sprintf(abuff,"TM:%7u",m->temp);
@@ -568,6 +554,11 @@ void motStat(volatile tmotor *m) {
 	// proud motorem
 	lcd_gotoxy(10,2);
 	sprintf(abuff,"CU:%7u",m->current);
+	lcd_puts(abuff);
+
+	// ujetá vzdálenost
+	lcd_gotoxy(10,3);
+	sprintf(abuff,"DI:%7d",m->distance);
 	lcd_puts(abuff);
 
 
@@ -718,31 +709,37 @@ void sendCommStat() {
 
 }
 
-// dekóduje pøijaté info z modulu sMotorControl
+// dekóduje pøijaté info z modulu MotorControl
 void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 
 		// údaje pro pøední motor ----------------------------------
 
 		// požadovaná rychlost
 		mf->req_speed = comm_state.ip.data[0];
-		mf->req_speed |= (int16_t)comm_state.ip.data[1]<<8;
+		mf->req_speed |= ((int16_t)comm_state.ip.data[1])<<8;
 
 		// aktuální rychlost
 		mf->act_speed = comm_state.ip.data[2];
 		mf->act_speed |= (int16_t)comm_state.ip.data[3]<<8;
 
-		// ujetá vzdálenost
-		mf->distance = comm_state.ip.data[4];
-		mf->distance |= (int16_t)comm_state.ip.data[5]<<8;
-
 		// stav motoru
-		mf->state = comm_state.ip.data[6];
+		mf->state = comm_state.ip.data[4];
 
 		// proud motoru
-		mf->current = comm_state.ip.data[7];
+		mf->current = comm_state.ip.data[5];
 
 		// teplota motoru
-		mf->temp = comm_state.ip.data[8];
+		mf->temp = comm_state.ip.data[6];
+
+		// výkon motoru
+		mf->load = comm_state.ip.data[7];
+
+		// ujetá vzdálenost
+		mf->distance = comm_state.ip.data[8];
+		mf->distance  |= (int32_t)comm_state.ip.data[9]<<8;
+		mf->distance  |= (int32_t)comm_state.ip.data[10]<<16;
+		mf->distance  |= (int32_t)comm_state.ip.data[11]<<24;
+
 
 		// údaje pro zadní motor -------------------------------------------------
 
@@ -751,22 +748,46 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 		mr->req_speed |= (int16_t)comm_state.ip.data[1]<<8;
 
 		// aktuální rychlost
-		mr->act_speed = comm_state.ip.data[9];
-		mr->act_speed |= (int16_t)comm_state.ip.data[10]<<8;
-
-		// ujetá vzdálenost
-		mr->distance = comm_state.ip.data[11];
-		mr->distance |= (int16_t)comm_state.ip.data[12]<<8;
+		mr->act_speed = comm_state.ip.data[12];
+		mr->act_speed |= (int16_t)comm_state.ip.data[13]<<8;
 
 		// stav motoru
-		mr->state = comm_state.ip.data[13];
+		mr->state = comm_state.ip.data[14];
 
 		// proud motoru
-		mr->current = comm_state.ip.data[14];
+		mr->current = comm_state.ip.data[15];
 
 		// teplota motoru
-		mr->temp = comm_state.ip.data[15];
+		mr->temp = comm_state.ip.data[16];
 
+		// výkon motoru
+		mr->load = comm_state.ip.data[17];
+
+		// ujetá vzdálenost
+		mr->distance = comm_state.ip.data[18];
+		mr->distance  |= (int32_t)comm_state.ip.data[19]<<8;
+		mr->distance  |= (int32_t)comm_state.ip.data[20]<<16;
+		mr->distance  |= (int32_t)comm_state.ip.data[21]<<24;
+
+}
+
+enum {JOY_Y=6,JOY_X=7};
+// spustí AD pøevod pro urèení vychýlení joysticku
+uint16_t joystick_xy(uint8_t dir) {
+
+	// nastavení kanálu
+	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
+	ADMUX |= dir&0x3F; // nastaví kanál
+
+	// spustí pøevod
+	SETBIT(ADCSRA,ADSC);
+
+	// èeká na dokonèení pøevodu
+	while (CHECKBIT(ADCSRA,ADSC ));
+
+	cli();
+	if (dir==JOY_X) return 1023-ADCW;
+	else return ADCW;
 
 }
 
@@ -786,6 +807,14 @@ int main(void)
 
     while (1) {
 
+    	// pøepínání režimu lcd ---------------------------------------------------------------------------
+    	if (CHECKBIT(mod_state.buttons,ABUTT1)) {
+    	    lcd_clrscr();
+    	    if (++mod_state.menu_state > M_JOYSTICK) mod_state.menu_state = M_STANDBY;
+    	    CLEARBIT(mod_state.buttons,ABUTT1);
+
+    	    }
+
 
     	if (C_CHECKBIT(MLCD)) {
 
@@ -793,6 +822,7 @@ int main(void)
 
     		// obsluha lcd
     		manageLcd();
+
     	}
 
     	// odeslání dat do PC ---------------------------------------------------------------------------
@@ -807,44 +837,43 @@ int main(void)
 
     	// obsluha joysticku ---------------------------------------------------------------------------
     	// TODO: zapínat joystick flagem -> stisknutí obou tlaèítek zároveò
-    	//if (mod_state.menu_state==M_JOYSTICK) {
 
-    		// podle výpoètu -> max rychlost = cca 1,4m/s = 144cm/s
-    		mod_state.joy_x = joystick_xy(JOY_X);
+
+			mod_state.joy_x = joystick_xy(JOY_X);
+    		sei();
+
     		mod_state.joy_y = joystick_xy(JOY_Y);
+    		sei();
 
-
-
-    	//}
 
     	// TODO: nastavení rychlosti pouze pøi aktivaci joysticku, nebo pøi pøíjmu dat z PC
-    	// TODO: pøidat k joysticku odpory, aby nelítaly hodnoty když není pøipojený
 
     	// pokus - nastavení rychlosti podle joysticku
 
+
     	int16_t sp = 0;
 
+
     	// TODO: opravit - nefunguje -> data se posílají, jen dokud se na MainMod nepøepne menu &*#!?ß
-    	sp = ((int16_t)mod_state.joy_y-511)/4;
+    	sp = (int16_t)(mod_state.joy_y-511)/2;
 
+    	// práh
+    	if (sp > -5 && sp < 5) sp = 0;
 
-    	uint8_t sarr[2];
+    	//if ((sp-5) > m_lr.req_speed || (sp+5) < m_lr.req_speed) {
 
-    	sarr[0] = (uint8_t)sp;
-    	sarr[1] = (uint8_t)(sp>>8);
+    		//C_FLIPBIT(LCD_BL);
 
-    	makePacket(&comm_state.op,sarr,2,P_COMM,10);
+			uint8_t sarr[2];
 
-    	sendPacketE();
+			sarr[0] = sp;
+			sarr[1] = sp>>8;
 
+			makePacket(&comm_state.op,sarr,2,P_COMM,10);
 
-    	// pøepínání režimu lcd ---------------------------------------------------------------------------
-    	if (CHECKBIT(mod_state.buttons,ABUTT1)) {
-    		lcd_clrscr();
-    		if (++mod_state.menu_state > M_JOYSTICK) mod_state.menu_state = M_STANDBY;
-    		CLEARBIT(mod_state.buttons,ABUTT1);
+			sendPacketE();
 
-    	}
+    	//}
 
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
@@ -890,15 +919,13 @@ int main(void)
     	C_CLEARBIT(RS485_SEND);
     	// èekání na odpovìï
     	comm_state.receive_state = PR_WAITING;
-    	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_BAD_CRC);
+    	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT);
 
     	// crc souhlasí -> úspìšné pøijetí paketu
-    	if (comm_state.receive_state==PR_PACKET_RECEIVED) {
+    	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
     		// dekódování pøijatých dat
     		decodeMotorInfo(&m_lf,&m_lr);
-
-
 
     	};
 
@@ -906,8 +933,9 @@ int main(void)
 
 
 
+    	_delay_ms(100);
 
-    }
+    } // while
 
     return 0;
 }
