@@ -49,7 +49,7 @@ all: MotorControl.elf secondary-outputs
 MotorControl.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: AVR C Linker'
-	avr-gcc -Wl,-Map,MotorControl.map -L/home/zdenal/robotic-hardware-interface/CommLib/Debug -mmcu=atmega8 -o"MotorControl.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	avr-gcc -Wl,-Map,MotorControl.map -mmcu=atmega8 -o"MotorControl.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

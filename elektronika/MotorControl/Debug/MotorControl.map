@@ -2,6 +2,12 @@ Archive member included because of file (symbol)
 
 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
                               ./MotorControl.o (sendFirstByte)
+/usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_mulsi3.o)
+                              ./MotorControl.o (__mulsi3)
+/usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_udivmodhi4.o)
+                              ./MotorControl.o (__udivmodhi4)
+/usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_divmodhi4.o)
+                              ./MotorControl.o (__divmodhi4)
 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
                               /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/crtm8.o (exit)
 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
@@ -14,9 +20,9 @@ Archive member included because of file (symbol)
 Allocating common symbols
 Common symbol       size              file
 
-motor2              0x24              ./MotorControl.o
-comm_state          0x5b              ./MotorControl.o
-motor1              0x24              ./MotorControl.o
+motor2              0x22              ./MotorControl.o
+comm_state          0x6b              ./MotorControl.o
+motor1              0x22              ./MotorControl.o
 
 Memory Configuration
 
@@ -125,7 +131,7 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x0000000000000000      0x972
+.text           0x0000000000000000      0xdd0
  *(.vectors)
  .vectors       0x0000000000000000       0x26 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/crtm8.o
                 0x0000000000000000                __vectors
@@ -185,55 +191,72 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a
                 0x000000000000005c                __vector_12
                 0x000000000000005c                __bad_interrupt
                 0x000000000000005c                __vector_6
-                0x000000000000005c                __vector_3
                 0x000000000000005c                __vector_17
                 0x000000000000005c                __vector_7
                 0x000000000000005c                __vector_5
                 0x000000000000005c                __vector_4
+                0x000000000000005c                __vector_9
                 0x000000000000005c                __vector_2
                 0x000000000000005c                __vector_15
                 0x000000000000005c                __vector_14
                 0x000000000000005c                __vector_10
                 0x000000000000005c                __vector_16
                 0x000000000000005c                __vector_18
- .text          0x000000000000005e      0x526 ./MotorControl.o
-                0x00000000000000ba                motor_reg
-                0x00000000000000a8                motor2_backwd
+ .text          0x000000000000005e      0x8d0 ./MotorControl.o
+                0x00000000000000d0                motor_reg
+                0x00000000000000a6                motor2_backwd
                 0x000000000000005e                motor_init
-                0x00000000000000ae                motor2_stop
-                0x00000000000000b4                motor2_free
-                0x00000000000004e6                __vector_11
-                0x0000000000000498                __vector_13
-                0x000000000000035e                sendPacketE
-                0x00000000000000a2                motor2_forwd
-                0x000000000000037a                main
-                0x0000000000000318                __vector_9
-                0x00000000000000f0                __vector_8
-                0x000000000000013e                read_enc
- .text          0x0000000000000584      0x3d8 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
-                0x00000000000005b8                makeCRC
-                0x000000000000069e                sendFirstByte
-                0x00000000000006aa                sendPacket
-                0x0000000000000766                comm_state_init
-                0x00000000000008e0                receiveTimeout
-                0x000000000000090c                makePacket
-                0x0000000000000584                crc16_update
-                0x0000000000000794                receivePacket
- .text          0x000000000000095c        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
- .text          0x000000000000095c        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
- .text          0x000000000000095c        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_clear_bss.o)
- .text          0x000000000000095c       0x12 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/libc.a(memcpy.o)
-                0x000000000000095c                memcpy
-                0x000000000000096e                . = ALIGN (0x2)
+                0x00000000000000ac                motor2_stop
+                0x00000000000000b2                motor2_free
+                0x0000000000000452                __vector_3
+                0x00000000000008a4                __vector_11
+                0x00000000000000c4                motor1_stop
+                0x0000000000000856                __vector_13
+                0x00000000000000ca                motor1_free
+                0x0000000000000498                motor_current
+                0x00000000000000be                motor1_backwd
+                0x0000000000000694                sendPacketE
+                0x00000000000000a0                motor2_forwd
+                0x00000000000006b0                main
+                0x00000000000000b8                motor1_forwd
+                0x000000000000026e                __vector_8
+                0x00000000000002c6                read_enc
+                0x00000000000004ce                makeMotorInfo
+ .text          0x000000000000092e      0x400 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+                0x0000000000000962                makeCRC
+                0x0000000000000a4c                sendFirstByte
+                0x0000000000000a58                sendPacket
+                0x0000000000000b20                comm_state_init
+                0x0000000000000c4a                checkPacket
+                0x0000000000000cb2                receiveTimeout
+                0x0000000000000cde                makePacket
+                0x000000000000092e                crc16_update
+                0x0000000000000b4e                receivePacket
+ .text          0x0000000000000d2e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_mulsi3.o)
+ .text          0x0000000000000d2e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_udivmodhi4.o)
+ .text          0x0000000000000d2e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_divmodhi4.o)
+ .text          0x0000000000000d2e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
+ .text          0x0000000000000d2e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
+ .text          0x0000000000000d2e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_clear_bss.o)
+ .text          0x0000000000000d2e       0x12 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/libc.a(memcpy.o)
+                0x0000000000000d2e                memcpy
+                0x0000000000000d40                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x000000000000096e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
- .text.libgcc   0x000000000000096e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
- .text.libgcc   0x000000000000096e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_clear_bss.o)
-                0x000000000000096e                . = ALIGN (0x2)
+ .text.libgcc   0x0000000000000d40       0x3e /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_mulsi3.o)
+                0x0000000000000d40                __mulsi3
+ .text.libgcc   0x0000000000000d7e       0x28 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_udivmodhi4.o)
+                0x0000000000000d7e                __udivmodhi4
+ .text.libgcc   0x0000000000000da6       0x26 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_divmodhi4.o)
+                0x0000000000000da6                __divmodhi4
+                0x0000000000000da6                _div
+ .text.libgcc   0x0000000000000dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
+ .text.libgcc   0x0000000000000dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
+ .text.libgcc   0x0000000000000dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_clear_bss.o)
+                0x0000000000000dcc                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x000000000000096e        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
-                0x000000000000096e                exit
-                0x000000000000096e                _exit
+ .fini9         0x0000000000000dcc        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
+                0x0000000000000dcc                exit
+                0x0000000000000dcc                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -252,16 +275,19 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x000000000000096e        0x4 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
+ .fini0         0x0000000000000dcc        0x4 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
  *(.fini0)
-                0x0000000000000972                _etext = .
+                0x0000000000000dd0                _etext = .
 
-.data           0x0000000000800060        0x0 load address 0x0000000000000972
+.data           0x0000000000800060        0x0 load address 0x0000000000000dd0
                 0x0000000000800060                PROVIDE (__data_start, .)
  *(.data)
  .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/crtm8.o
  .data          0x0000000000800060        0x0 ./MotorControl.o
  .data          0x0000000000800060        0x0 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_mulsi3.o)
+ .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_udivmodhi4.o)
+ .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_divmodhi4.o)
  .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
  .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
  .data          0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_clear_bss.o)
@@ -274,45 +300,48 @@ LOAD /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a
                 0x0000000000800060                _edata = .
                 0x0000000000800060                PROVIDE (__data_end, .)
 
-.bss            0x0000000000800060       0xa6 load address 0x0000000000000972
+.bss            0x0000000000800060       0xb2 load address 0x0000000000000dd0
                 0x0000000000800060                PROVIDE (__bss_start, .)
  *(.bss)
  .bss           0x0000000000800060        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/crtm8.o
  .bss           0x0000000000800060        0x1 ./MotorControl.o
                 0x0000000000800060                ena_st
  .bss           0x0000000000800061        0x2 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_mulsi3.o)
+ .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_udivmodhi4.o)
+ .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_divmodhi4.o)
  .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_exit.o)
  .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_copy_data.o)
  .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/avr4/libgcc.a(_clear_bss.o)
  .bss           0x0000000000800063        0x0 /usr/lib/gcc/avr/4.3.2/../../../../avr/lib/avr4/libc.a(memcpy.o)
  *(.bss*)
  *(COMMON)
- COMMON         0x0000000000800063       0xa3 ./MotorControl.o
+ COMMON         0x0000000000800063       0xaf ./MotorControl.o
                 0x0000000000800063                motor2
-                0x0000000000800087                comm_state
-                0x00000000008000e2                motor1
-                0x0000000000800106                PROVIDE (__bss_end, .)
-                0x0000000000000972                __data_load_start = LOADADDR (.data)
-                0x0000000000000972                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x0000000000800085                comm_state
+                0x00000000008000f0                motor1
+                0x0000000000800112                PROVIDE (__bss_end, .)
+                0x0000000000000dd0                __data_load_start = LOADADDR (.data)
+                0x0000000000000dd0                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0000000000800106        0x0
-                0x0000000000800106                PROVIDE (__noinit_start, .)
+.noinit         0x0000000000800112        0x0
+                0x0000000000800112                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x0000000000800106                PROVIDE (__noinit_end, .)
-                0x0000000000800106                _end = .
-                0x0000000000800106                PROVIDE (__heap_start, .)
+                0x0000000000800112                PROVIDE (__noinit_end, .)
+                0x0000000000800112                _end = .
+                0x0000000000800112                PROVIDE (__heap_start, .)
 
 .eeprom         0x0000000000810000        0x0
  *(.eeprom*)
                 0x0000000000810000                __eeprom_end = .
 
-.stab           0x0000000000000000      0xc6c
+.stab           0x0000000000000000      0xc9c
  *(.stab)
- .stab          0x0000000000000000      0xc6c /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .stab          0x0000000000000000      0xc9c /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
 
-.stabstr        0x0000000000000000      0xd7a
+.stabstr        0x0000000000000000      0xdf8
  *(.stabstr)
- .stabstr       0x0000000000000000      0xd7a /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
+ .stabstr       0x0000000000000000      0xdf8 /home/zdenal/robotic-hardware-interface/CommLib/Debug/libCommLib.a(comm.o)
 
 .stab.excl
  *(.stab.excl)

@@ -3,20 +3,20 @@
 
 #include "../CommLib/comm.h"
 
-// frekvence regulace
-#define F_REG 50
+// maximální rychlost (mm/s)
+#define V_MAX 250
 
-// prumer kola
-#define WHEEL_DIAM 100
+// délka jednoho ètvrt pulzu
+#define TICK_LEN 0.0300917
 
-// pocet pulzu enkoderu na otacku
-#define PULSES_PER_REV 360
+// prumer kola 115 mm
+// obvod kola 361,1 mm
+// max rychlost (pri 150 RPM) 900 mm/s
+// 1 ot kola == 12.000 imp
+// 1 imp. == 0,0300917 mm
+// 1 mm == 33,23 imp
+// 150 RPM == 600imp za 1/50s
 
-// vypocet delky jednoho pulzu
-#define PULSE_LEN ((WHEEL_DIAM*3.14*2)/360)
-
-// prevod cm/s na pocet pulzu za iteraci regulatoru
-#define CM2PS(CM) (CM*10/PULSE_LEN/F_REG)
 
 
 typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_OVERTEMP} tmotor_state;
@@ -27,19 +27,19 @@ typedef struct {
 	volatile uint16_t act;
 
 	// poèet tikù enkodéru od minule
-	volatile int32_t enc;
-
-	// minulá hodnota
-	volatile int32_t last_enc;
+	volatile int16_t enc;
 
 	// žádaná rychlost
 	volatile int16_t req_speed;
 
+	// žádaná rychlost - s rampou
+	volatile int16_t areq_speed;
+
 	// aktuální skuteèná rychlost
 	volatile int16_t act_speed;
 
-	// vzdálenost ujetá od posledního povelu
-	volatile int16_t distance;
+	// ujetá vzdálenost (v mm)
+	volatile int32_t distance;
 
 	// minulá skuteèná rychlost
 	volatile int16_t last_speed;
@@ -47,7 +47,7 @@ typedef struct {
 	// suma odchylky
 	volatile int32_t sum;
 
-	// parametry regulatoru, * 10
+	// parametry regulatoru
 	volatile uint8_t P, I, D;
 
 	// stav motoru
@@ -68,7 +68,7 @@ typedef struct {
 } tmotor;
 
 // inicializace struktury typu tmotor
-extern void motor_init(tmotor *m);
+extern void motor_init(volatile tmotor *m);
 
 // motor 2 dopøedu
 extern void motor2_forwd(void);
@@ -87,7 +87,7 @@ static inline void ioinit (void);
 
 
 // funkce implementující PID regulaci
-extern uint16_t motor_reg(tmotor *m);
+extern uint16_t motor_reg(volatile tmotor *m);
 
 // ètení enkodérù
 extern void read_enc(void);
