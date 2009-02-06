@@ -114,6 +114,9 @@ extern void receivePacket(uint8_t tUDR, volatile tcomm_state *c);
 // obsluha poèítadla pro timeout
 extern void receiveTimeout(volatile tcomm_state *c);
 
+// zkontroluje CRC paketu
+extern uint8_t checkPacket(volatile tcomm_state *c);
+
 // uvolnìní paketu
 extern void freePacket(volatile tpacket *p);
 

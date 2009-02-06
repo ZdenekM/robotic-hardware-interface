@@ -283,20 +283,7 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 		uint16_t p = tUDR;
 		c->ip.crc |= (p<<8);
 
-		uint16_t crc = makeCRC(c->ip.data,c->ip.len,c->ip.packet_type,c->ip.addr);
-
-		if (crc == c->ip.crc) {
-
-			c->receive_state = PR_PACKET_RECEIVED;
-			c->packets_received++;
-
-		} else {
-
-			// chyba CRC :-(
-			c->packets_bad_received++;
-			c->receive_state = PR_BAD_CRC;
-
-		}
+		c->receive_state = PR_PACKET_RECEIVED;
 
 	} break;
 
@@ -317,6 +304,29 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 	} // switch
 
 	//}
+
+}
+
+// zkontroluje CRC paketu
+uint8_t checkPacket(volatile tcomm_state *c) {
+
+	uint16_t crc = makeCRC(c->ip.data,c->ip.len,c->ip.packet_type,c->ip.addr);
+
+	if (crc == c->ip.crc) {
+
+		c->receive_state = PR_PACKET_RECEIVED;
+		c->packets_received++;
+		return 1;
+
+	} else {
+
+		// chyba CRC :-(
+		c->packets_bad_received++;
+		c->receive_state = PR_BAD_CRC;
+		return 0;
+
+	}
+
 
 }
 
