@@ -31,7 +31,7 @@
 </tool>
 <tool id="de.innot.avreclipse.tool.compiler.winavr.app.debug.1691957976" name="AVR Compiler" superClass="de.innot.avreclipse.tool.compiler.winavr.app.debug">
 <option id="de.innot.avreclipse.compiler.option.debug.level.1648771568" name="Generate Debugging Info" superClass="de.innot.avreclipse.compiler.option.debug.level" value="de.innot.avreclipse.compiler.option.debug.level.none" valueType="enumerated"/>
-<option id="de.innot.avreclipse.compiler.option.optimize.1397132408" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
+<option id="de.innot.avreclipse.compiler.option.optimize.1397132408" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.two" valueType="enumerated"/>
 <option id="de.innot.avreclipse.compiler.option.omitfcpu.1741729799" name="Omit F_CPU" superClass="de.innot.avreclipse.compiler.option.omitfcpu" value="true" valueType="boolean"/>
 <option id="de.innot.avreclipse.compiler.option.optimize.packstruct.1044730005" name="Pack structs (-fpack-struct)" superClass="de.innot.avreclipse.compiler.option.optimize.packstruct" value="false" valueType="boolean"/>
 <inputType id="de.innot.avreclipse.compiler.winavr.input.733242314" name="C Source Files" superClass="de.innot.avreclipse.compiler.winavr.input"/>
@@ -41,9 +41,7 @@
 <option id="de.innot.avreclipse.cppcompiler.option.optimize.725904719" name="Optimization Level" superClass="de.innot.avreclipse.cppcompiler.option.optimize"/>
 </tool>
 <tool id="de.innot.avreclipse.tool.linker.winavr.app.debug.118800461" name="AVR C Linker" superClass="de.innot.avreclipse.tool.linker.winavr.app.debug">
-<option id="de.innot.avreclipse.linker.option.libpath.1492120124" name="Libraries Path (-L)" superClass="de.innot.avreclipse.linker.option.libpath" valueType="stringList">
-<listOptionValue builtIn="false" value="/home/zdenal/robotic-hardware-interface/CommLib/Debug"/>
-</option>
+<option id="de.innot.avreclipse.linker.option.libpath.1492120124" name="Libraries Path (-L)" superClass="de.innot.avreclipse.linker.option.libpath" valueType="stringList"/>
 <option id="de.innot.avreclipse.linker.option.otherobjs.788417451" name="Other Objects (*.o)" superClass="de.innot.avreclipse.linker.option.otherobjs" valueType="userObjs">
 <listOptionValue builtIn="false" value="&quot;${workspace_loc:/CommLib/Debug/libCommLib.a}&quot;"/>
 </option>
