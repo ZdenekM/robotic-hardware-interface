@@ -65,7 +65,7 @@ all: MainMod.elf secondary-outputs
 MainMod.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: AVR C++ Linker'
-	avr-g++ -Wl,-Map,MainMod.map,--cref -L/home/zdenal/robotic-hardware-interface/CommLib/Debug -mmcu=atmega64 -o"MainMod.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	avr-g++ -Wl,-Map,MainMod.map,--cref -mmcu=atmega64 -o"MainMod.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
