@@ -17,7 +17,7 @@ C_DEPS += \
 %.o: ../%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: AVR Compiler'
-	avr-gcc -Wall -O2 -fpack-struct -fshort-enums -funsigned-char -funsigned-bitfields -v -mmcu=atmega64 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o"$@" "$<"
+	avr-gcc -Wall -Os -fpack-struct -fshort-enums -mcall-prologues -std=c99 -funsigned-char -funsigned-bitfields -v -mmcu=atmega64 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o"$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
