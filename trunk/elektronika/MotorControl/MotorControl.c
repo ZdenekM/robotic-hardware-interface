@@ -76,7 +76,7 @@
 #define ADDR 10
 
 
-volatile uint8_t ena_st=0;
+volatile static uint8_t ena_st=0;
 
 #define PEN1A ena_st, 0
 #define PEN1B ena_st, 1
@@ -90,14 +90,14 @@ volatile uint8_t ena_st=0;
 
 // GLOBÁLNÍ PROMÌNNÉ
 // stav komunikace
-volatile tcomm_state comm_state;
+volatile static tcomm_state comm_state;
 
-volatile tmotor motor1;
-volatile tmotor motor2;
+volatile static tmotor motor1;
+volatile static tmotor motor2;
 
 
 // inicializace struktury motor
-void motor_init(volatile tmotor *m) {
+static inline void motor_init(volatile tmotor *m) {
 
 	m->enc = 0;
 	m->req_speed = 0;
@@ -325,7 +325,7 @@ uint16_t motor_reg(volatile tmotor *m) {
 
 				// omezeni max. vel. akcniho zas.
 				// výpoèet sumy -> suma = suma + odchylka
-				if (act>ICR1) act = ICR1;
+				if (act>=ICR1) act = ICR1;
 				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade všechny meze
 
 
@@ -548,15 +548,15 @@ void makeMotorInfo() {
 	// teplota zadního motoru
 	data[16] = motor2.temp;
 
-	// výkon zadního motoru
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {data[17] = (uint8_t)((motor2.act*100)/ICR1);}
-
 	// ujetá vzdálenost
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-	data[18] = motor2.distance;
-	data[19] = motor2.distance>>8;
-	data[20] = motor2.distance>>16;
-	data[21] = motor2.distance>>24; }
+	data[17] = motor2.distance;
+	data[18] = motor2.distance>>8;
+	data[19] = motor2.distance>>16;
+	data[20] = motor2.distance>>24; }
+
+	// výkon zadního motoru
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {data[21] = (uint8_t)((motor2.act*100)/ICR1);}
 
 	makePacket(&comm_state.op,data,22,P_INFO,0);
 
@@ -675,24 +675,26 @@ int main(void) {
 
 				int16_t sp = 0;
 
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-					sp = comm_state.ip.data[0];
-					sp |= (int16_t)comm_state.ip.data[1]<<8;
-					}
 
-				//if (sp != motor1.req_speed) {
+				sp = comm_state.ip.data[0];
+				sp |= (int16_t)comm_state.ip.data[1]<<8;
 
 					if (sp > V_MAX) sp = V_MAX;
 					if (sp < -V_MAX) sp = -V_MAX;
 
-					C_FLIPBIT(LED);
+
+					static int16_t last_sp;
+
+					// signalizovat zmìnu požadované rychlosti
+					if (last_sp != sp) C_FLIPBIT(LED);
+
+					last_sp = sp;
 
 					ATOMIC_BLOCK(ATOMIC_FORCEON) {
 					motor1.req_speed = sp;
 					motor2.req_speed = sp;
 					}
 
-				//}
 
 			} break;
 
