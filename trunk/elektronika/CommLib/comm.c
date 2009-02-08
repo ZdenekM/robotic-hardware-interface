@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <avr/io.h>
+#include <util/atomic.h>
 #include "comm.h"
 
 #ifndef _AVR035_H_
@@ -78,8 +79,9 @@ void makePacket(tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint
 		p->len = len;
 		p->packet_type = packet_type;
 
+		uint16_t crc = makeCRC(data,len,packet_type,addr);
 
-		p->crc = makeCRC(data,len,packet_type,addr);
+		ATOMIC_BLOCK(ATOMIC_FORCEON) {p->crc = crc;}
 
 		// kopírování dat
 		if (len < BUFF_LEN && len > 0 && data !=NULL) memcpy(p->data,data,len);
@@ -180,6 +182,7 @@ void sendPacket(volatile uint8_t *tUDR, volatile tcomm_state *c) {
 
 }
 
+// volá se pøed povolením pøerušení
 // inicializace struktury typu tcomm_state
 void comm_state_init(volatile tcomm_state *c) {
 
@@ -307,6 +310,7 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 
 }
 
+// volá se z main
 // zkontroluje CRC paketu
 uint8_t checkPacket(volatile tcomm_state *c) {
 
@@ -315,13 +319,13 @@ uint8_t checkPacket(volatile tcomm_state *c) {
 	if (crc == c->ip.crc) {
 
 		c->receive_state = PR_PACKET_RECEIVED;
-		c->packets_received++;
+		ATOMIC_BLOCK(ATOMIC_FORCEON) {c->packets_received++;}
 		return 1;
 
 	} else {
 
 		// chyba CRC :-(
-		c->packets_bad_received++;
+		ATOMIC_BLOCK(ATOMIC_FORCEON) {c->packets_bad_received++;}
 		c->receive_state = PR_BAD_CRC;
 		return 0;
 
