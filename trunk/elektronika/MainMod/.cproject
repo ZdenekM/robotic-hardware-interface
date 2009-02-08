@@ -31,7 +31,7 @@
 </tool>
 <tool id="de.innot.avreclipse.tool.compiler.winavr.app.debug.2029293409" name="AVR Compiler" superClass="de.innot.avreclipse.tool.compiler.winavr.app.debug">
 <option id="de.innot.avreclipse.compiler.option.debug.level.1878517780" name="Generate Debugging Info" superClass="de.innot.avreclipse.compiler.option.debug.level" value="de.innot.avreclipse.compiler.option.debug.level.none" valueType="enumerated"/>
-<option id="de.innot.avreclipse.compiler.option.optimize.423315262" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.two" valueType="enumerated"/>
+<option id="de.innot.avreclipse.compiler.option.optimize.423315262" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
 <option id="de.innot.avreclipse.compiler.option.incpath.726881606" name="Include Paths (-I)" superClass="de.innot.avreclipse.compiler.option.incpath"/>
 <option id="de.innot.avreclipse.compiler.option.omitfcpu.565337137" name="Omit F_CPU" superClass="de.innot.avreclipse.compiler.option.omitfcpu" value="true" valueType="boolean"/>
 <option id="de.innot.avreclipse.compiler.option.def.1101551039" name="Define Syms (-D)" superClass="de.innot.avreclipse.compiler.option.def"/>
@@ -42,8 +42,8 @@
 <option id="de.innot.avreclipse.compiler.option.debug.type.605701511" name="Debug Info Format" superClass="de.innot.avreclipse.compiler.option.debug.type"/>
 <option id="de.innot.avreclipse.compiler.option.optimize.packstruct.2135208961" name="Pack structs (-fpack-struct)" superClass="de.innot.avreclipse.compiler.option.optimize.packstruct" value="true" valueType="boolean"/>
 <option id="de.innot.avreclipse.compiler.option.optimize.shortenums.1774302608" name="Short enums (-fshort-enums)" superClass="de.innot.avreclipse.compiler.option.optimize.shortenums" value="true" valueType="boolean"/>
-<option id="de.innot.avreclipse.compiler.option.optimize.other.788561797" name="Other Optimization Flags" superClass="de.innot.avreclipse.compiler.option.optimize.other"/>
-<option id="de.innot.avreclipse.compiler.option.std.1409883027" name="Language Standard" superClass="de.innot.avreclipse.compiler.option.std"/>
+<option id="de.innot.avreclipse.compiler.option.optimize.other.788561797" name="Other Optimization Flags" superClass="de.innot.avreclipse.compiler.option.optimize.other" value="-mcall-prologues" valueType="string"/>
+<option id="de.innot.avreclipse.compiler.option.std.1409883027" name="Language Standard" superClass="de.innot.avreclipse.compiler.option.std" value="de.innot.avreclipse.compiler.option.std.c99" valueType="enumerated"/>
 <option id="de.innot.avreclipse.compiler.option.language.uchar.1105225829" name="char is unsigned (-funsigned-char)" superClass="de.innot.avreclipse.compiler.option.language.uchar"/>
 <option id="de.innot.avreclipse.compiler.option.language.ubitfields.1962390065" name="bitfields are unsigned (-funsigned-bitfields)" superClass="de.innot.avreclipse.compiler.option.language.ubitfields"/>
 <option id="de.innot.avreclipse.compiler.option.verbose.472741055" name="Verbose (-v)" superClass="de.innot.avreclipse.compiler.option.verbose" value="true" valueType="boolean"/>
@@ -66,7 +66,7 @@
 <option id="de.innot.avreclipse.cpplinker.option.nostart.261217925" name="No startup or default libs (-nostdlib)" superClass="de.innot.avreclipse.cpplinker.option.nostart"/>
 <option id="de.innot.avreclipse.cpplinker.option.otherlinkargs.625392525" name="Other Arguments" superClass="de.innot.avreclipse.cpplinker.option.otherlinkargs"/>
 <option id="de.innot.avreclipse.cpplinker.option.libs.10639259" name="Libraries (-l)" superClass="de.innot.avreclipse.cpplinker.option.libs"/>
-<option id="de.innot.avreclipse.cpplinker.option.libpath.238765815" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath" valueType="stringList"/>
+<option id="de.innot.avreclipse.cpplinker.option.libpath.238765815" name="Libraries Path (-L)" superClass="de.innot.avreclipse.cpplinker.option.libpath"/>
 <option id="de.innot.avreclipse.cpplinker.option.otherlink.919699653" name="(-Xlinker) Options" superClass="de.innot.avreclipse.cpplinker.option.otherlink"/>
 <option id="de.innot.avreclipse.cpplinker.option.otherobjs.1837861025" name="Other Objects (*.o)" superClass="de.innot.avreclipse.cpplinker.option.otherobjs" valueType="userObjs">
 <listOptionValue builtIn="false" value="&quot;${workspace_loc:/CommLib/Debug/libCommLib.a}&quot;"/>
