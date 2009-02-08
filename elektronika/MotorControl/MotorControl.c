@@ -20,6 +20,7 @@
 #include <string.h>
 #include <avr/sfr_defs.h>
 #include <avr/pgmspace.h>
+#include <util/atomic.h>
 
 #include "../CommLib/comm.h"
 #include "MotorControl.h"
@@ -283,7 +284,7 @@ static inline void ioinit (void) {
 
 }
 
-
+// volá se z pøerušení
 // PID regulátor
 uint16_t motor_reg(volatile tmotor *m) {
 
@@ -378,8 +379,8 @@ ISR(TIMER1_OVF_vect) {
 
 }
 
-
-// cteni enkoderu - nejde to vyresit nejak univerzalne??
+// volá se z pøerušení
+// ètení enkoderù
 void read_enc(void) {
 
 	// vzestupna hrana - EN2A
@@ -494,6 +495,7 @@ ISR(USART_TXC_vect) {
 
 }
 
+// volá se z main
 // vytvoøení paketu s info o stavu motorù
 void makeMotorInfo() {
 
@@ -502,12 +504,14 @@ void makeMotorInfo() {
 
 	// ********************************************
 	// požadovaná rychlost - stejná pro oba motory
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[0] = motor1.req_speed;
-	data[1] = motor1.req_speed>>8;
+	data[1] = motor1.req_speed>>8; }
 
 	// aktuální rychlost pøedního motoru
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[2] = motor1.act_speed;
-	data[3] = motor1.act_speed>>8;
+	data[3] = motor1.act_speed>>8; }
 
 	// stav pøedního motoru
 	data[4] = motor1.state;
@@ -519,19 +523,21 @@ void makeMotorInfo() {
 	data[6] = motor1.temp;
 
 	// ujetá vzdálenost
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[7] = motor1.distance;
 	data[8] = motor1.distance>>8;
 	data[9] = motor1.distance>>16;
-	data[10] = motor1.distance>>24;
+	data[10] = motor1.distance>>24; }
 
 
 	// výkon pøedního motoru
-	data[11] = (uint8_t)((motor1.act*100)/ICR1);
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {data[11] = (uint8_t)((motor1.act*100)/ICR1);}
 
 	// ********************************************
 	// aktuální rychlost zadního motoru
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[12] = motor2.act_speed;
-	data[13] = motor2.act_speed>>8;
+	data[13] = motor2.act_speed>>8; }
 
 	// stav zadního motoru
 	data[14] = motor2.state;
@@ -543,13 +549,14 @@ void makeMotorInfo() {
 	data[16] = motor2.temp;
 
 	// výkon zadního motoru
-	data[17] = (uint8_t)((motor2.act*100)/ICR1);
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {data[17] = (uint8_t)((motor2.act*100)/ICR1);}
 
 	// ujetá vzdálenost
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[18] = motor2.distance;
 	data[19] = motor2.distance>>8;
 	data[20] = motor2.distance>>16;
-	data[21] = motor2.distance>>24;
+	data[21] = motor2.distance>>24; }
 
 	makePacket(&comm_state.op,data,22,P_INFO,0);
 
@@ -580,7 +587,7 @@ void sendPacketE() {
 }
 
 
-
+// volá se z main
 // mìøení proudu motory
 void motor_current() {
 
@@ -622,7 +629,7 @@ int main(void) {
 	while(1) {
 
 		// mìøení proudu motory
-		//motor_current();
+		motor_current();
 
 
 		// pøepnutí na pøíjem
@@ -668,8 +675,10 @@ int main(void) {
 
 				int16_t sp = 0;
 
-				sp = comm_state.ip.data[0];
-				sp |= (int16_t)comm_state.ip.data[1]<<8;
+				ATOMIC_BLOCK(ATOMIC_FORCEON) {
+					sp = comm_state.ip.data[0];
+					sp |= (int16_t)comm_state.ip.data[1]<<8;
+					}
 
 				//if (sp != motor1.req_speed) {
 
@@ -678,10 +687,10 @@ int main(void) {
 
 					C_FLIPBIT(LED);
 
-					cli();
+					ATOMIC_BLOCK(ATOMIC_FORCEON) {
 					motor1.req_speed = sp;
 					motor2.req_speed = sp;
-					sei();
+					}
 
 				//}
 
