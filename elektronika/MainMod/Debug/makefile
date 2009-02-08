@@ -89,7 +89,7 @@ MainMod.eep: MainMod.elf
 
 sizedummy: MainMod.elf
 	@echo 'Invoking: Print Size'
-	-avr-size --format=berkeley -t MainMod.elf
+	-avr-size --format=sysv MainMod.elf
 	@echo 'Finished building: $@'
 	@echo ' '
 

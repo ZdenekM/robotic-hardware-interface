@@ -93,7 +93,7 @@
 <option id="de.innot.avreclipse.objcopy.eeprom.option.input.21470273" name="Input File" superClass="de.innot.avreclipse.objcopy.eeprom.option.input"/>
 </tool>
 <tool id="de.innot.avreclipse.tool.size.winavr.app.debug.1789480616" name="Print Size" superClass="de.innot.avreclipse.tool.size.winavr.app.debug">
-<option id="de.innot.avreclipse.size.option.format.1616067416" name="Size Format" superClass="de.innot.avreclipse.size.option.format"/>
+<option id="de.innot.avreclipse.size.option.format.1616067416" name="Size Format" superClass="de.innot.avreclipse.size.option.format" value="de.innot.avreclipse.size.option.format.sysv" valueType="enumerated"/>
 <option id="de.innot.avreclipse.size.option.formatwithavr.1450555224" name="Size Format" superClass="de.innot.avreclipse.size.option.formatwithavr"/>
 <option id="de.innot.avreclipse.size.option.totals.1993031665" name="Show Totals" superClass="de.innot.avreclipse.size.option.totals"/>
 <option id="de.innot.avreclipse.size.option.hex.210780247" name="Display as hex" superClass="de.innot.avreclipse.size.option.hex"/>
