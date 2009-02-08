@@ -68,7 +68,7 @@ typedef struct {
 } tmotor;
 
 // inicializace struktury typu tmotor
-extern void motor_init(volatile tmotor *m);
+static inline void motor_init(volatile tmotor *m);
 
 // motor 2 dopøedu
 extern void motor2_forwd(void);
