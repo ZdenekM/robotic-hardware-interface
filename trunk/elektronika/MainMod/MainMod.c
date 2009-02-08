@@ -68,22 +68,22 @@
 
 // *****************************************************
 // stavové promìnné modulu
-volatile tmod_state mod_state;
+volatile static tmod_state mod_state;
 
 // stav komunikace - rs485
-volatile tcomm_state comm_state;
+volatile static tcomm_state comm_state;
 
 // stav komunikace - rs232
-volatile tcomm_state pccomm_state;
+volatile static tcomm_state pccomm_state;
 
 // promìnné pro motory
 // lf = left front, lr = left rear
 // rf = right front, rr = right rear
-volatile tmotor m_lf,m_lr,m_rf,m_rr;
+volatile static tmotor m_lf,m_lr,m_rf,m_rr;
 
 
 // flagy pro obsluhu perif.
-volatile uint8_t flags = 0;
+volatile static uint8_t flags = 0;
 
 #define MLCD flags, 0
 #define MRS232 flags, 1
@@ -161,6 +161,7 @@ inline void set_adc(void) {
 
 }
 
+// TODO: zváit lepší zpùsob filtrování
 // volá se z main
 #define MOV 10
 uint16_t moving_average_x(uint16_t value)
@@ -192,7 +193,7 @@ uint16_t moving_average_y(uint16_t value)
 
 
 
-
+// volá se z main
 // odeslání paketu - extra funkce pro kadı modul
 void sendPacketE() {
 
@@ -273,11 +274,11 @@ void initModules() {
 	state = sendEcho(10);
 
 	lcd_gotoxy(0,1);
-	if (state>90) lcd_puts_P("MC (10) OK :-)");
+	if (state>=70) lcd_puts_P("MC (10) OK :-)");
 	else lcd_puts_P("MC (10) KO :-(");
 
 	lcd_gotoxy(0,2);
-	res = snprintf(buff,9,"ECHO:%3u",state);
+	res = snprintf_P(buff,9,PSTR("ECHO:%3u"),state);
 	lcd_puts(buff);
 	lcd_gotoxy(8,2);
 	lcd_puts_P("%");
@@ -431,31 +432,31 @@ void writeTime() {
 // zobrazí na lcd statistiky komunikace
 void commStat(volatile tcomm_state *p) {
 
-	char abuff[10];
+	char abuff[11];
 
 	// odeslanıch paketù
 	lcd_gotoxy(0,1);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"SE:%7u",(unsigned int)p->packets_sended);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("SE:%7u"),(unsigned int)p->packets_sended);}
 	lcd_puts(abuff);
 
 	// poèet pøijatıch paketù
 	lcd_gotoxy(0,2);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"RE:%7u",(unsigned int)p->packets_received);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("RE:%7u"),(unsigned int)p->packets_received);}
 	lcd_puts(abuff);
 
 	// poèet chyb rámce
 	lcd_gotoxy(0,3);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"FE:%7u",p->frame_error);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("FE:%7u"),p->frame_error);}
 	lcd_puts(abuff);
 
 	// poèet paketù s vadnım CRC
 	lcd_gotoxy(10,1);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"BR:%7u",p->packets_bad_received);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("BR:%7u"),p->packets_bad_received);}
 	lcd_puts(abuff);
 
 	// poèet timeoutù
 	lcd_gotoxy(10,2);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"TO:%7u",p->packets_timeouted);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("TO:%7u"),p->packets_timeouted);}
 	lcd_puts(abuff);
 
 }
@@ -464,19 +465,19 @@ void commStat(volatile tcomm_state *p) {
 // zobrazí na LCD stav joysticku
 void joy() {
 
-	char abuff[10];
+	char abuff[11];
 
 	lcd_gotoxy(0,0);
 	lcd_puts_P("Joystick");
 
 	// osa x
 	lcd_gotoxy(0,1);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"JX:%7d",mod_state.joy_x);}
+	sprintf_P(abuff,PSTR("JX:%7d"),mod_state.joy_x);
 	lcd_puts(abuff);
 
 	// osa y
 	lcd_gotoxy(0,2);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"JY:%7d",mod_state.joy_y);}
+	sprintf_P(abuff,PSTR("JY:%7d"),mod_state.joy_y);
 	lcd_puts(abuff);
 
 
@@ -536,21 +537,21 @@ ISR(USART1_TX_vect) {
 // na LCD zobrazí info z motoru
 void motStat(volatile tmotor *m) {
 
-	char abuff[10];
+	char abuff[11];
 
 	// po. rychlost
 	lcd_gotoxy(0,1);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"RS:%7d",m->req_speed);}
+	sprintf_P(abuff,PSTR("RS:%7d"),m->req_speed);
 	lcd_puts(abuff);
 
 	// akt. rychlost
 	lcd_gotoxy(0,2);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"AS:%7d",m->act_speed);}
+	sprintf_P(abuff,PSTR("AS:%7d"),m->act_speed);
 	lcd_puts(abuff);
 
 	// proud motorem
 	lcd_gotoxy(0,3);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"LO:%7u",m->load);}
+	sprintf_P(abuff,PSTR("LO:%7u"),m->load);
 	lcd_puts(abuff);
 
 	// teplota motoru
@@ -565,80 +566,8 @@ void motStat(volatile tmotor *m) {
 
 	// ujetá vzdálenost
 	lcd_gotoxy(10,3);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf(abuff,"DI:%7d",m->distance);}
+	sprintf_P(abuff,PSTR("DI:%7d"),m->distance);
 	lcd_puts(abuff);
-
-
-}
-
-
-void manageLcd() {
-
-	switch (mod_state.menu_state) {
-
-		case M_INIT: {
-
-
-		} break;
-
-		case M_STANDBY: {
-
-			writeTime();
-			standBy();
-
-		} break;
-
-		case M_COMMSTAT: {
-
-			writeTime();
-			lcd_gotoxy(0,0);
-			lcd_puts_P("CommStat");
-			commStat(&comm_state);
-
-		} break;
-
-		case M_PCCOMMSTAT: {
-
-			writeTime(&mod_state);
-			lcd_gotoxy(0,0);
-			lcd_puts_P("PCCommStat");
-			commStat(&pccomm_state);
-
-		} break;
-
-		// levı pøední motor
-		case M_MLF: {
-
-			writeTime(&mod_state);
-			lcd_gotoxy(0,0);
-			lcd_puts_P("M_LF");
-			motStat(&m_lf);
-
-		} break;
-
-		// levı zadní motor
-		case M_MLR: {
-
-			writeTime(&mod_state);
-			lcd_gotoxy(0,0);
-			lcd_puts_P("M_LR");
-			motStat(&m_lr);
-
-
-		} break;
-
-		// TODO: tlaèítka
-		case M_JOYSTICK: {
-
-			writeTime();
-			joy();
-
-
-
-		} break;
-
-
-	} // switch
 
 
 }
@@ -721,20 +650,19 @@ void sendCommStat() {
 
 }
 
+// volá se z main
 // dekóduje pøijaté info z modulu MotorControl
 void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 
 		// údaje pro pøední motor ----------------------------------
 
 		// poadovaná rychlost
-		ATOMIC_BLOCK(ATOMIC_FORCEON){
 		mf->req_speed = comm_state.ip.data[0];
-		mf->req_speed |= ((int16_t)comm_state.ip.data[1])<<8; }
+		mf->req_speed |= ((int16_t)comm_state.ip.data[1])<<8;
 
 		// aktuální rychlost
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		mf->act_speed = comm_state.ip.data[2];
-		mf->act_speed |= (int16_t)comm_state.ip.data[3]<<8; }
+		mf->act_speed |= (int16_t)comm_state.ip.data[3]<<8;
 
 		// stav motoru
 		mf->state = comm_state.ip.data[4];
@@ -745,28 +673,25 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 		// teplota motoru
 		mf->temp = comm_state.ip.data[6];
 
-		// vıkon motoru
-		mf->load = comm_state.ip.data[7];
-
 		// ujetá vzdálenost
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {
-		mf->distance = comm_state.ip.data[8];
-		mf->distance  |= (int32_t)comm_state.ip.data[9]<<8;
-		mf->distance  |= (int32_t)comm_state.ip.data[10]<<16;
-		mf->distance  |= (int32_t)comm_state.ip.data[11]<<24; }
+		mf->distance = comm_state.ip.data[7];
+		mf->distance  |= (int32_t)comm_state.ip.data[8]<<8;
+		mf->distance  |= (int32_t)comm_state.ip.data[9]<<16;
+		mf->distance  |= (int32_t)comm_state.ip.data[10]<<24;
+
+		// vıkon motoru
+		mf->load = comm_state.ip.data[11];
 
 
 		// údaje pro zadní motor -------------------------------------------------
 
 		// poadovaná rychlost
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		mr->req_speed = comm_state.ip.data[0];
-		mr->req_speed |= (int16_t)comm_state.ip.data[1]<<8; }
+		mr->req_speed |= (int16_t)comm_state.ip.data[1]<<8;
 
 		// aktuální rychlost
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		mr->act_speed = comm_state.ip.data[12];
-		mr->act_speed |= (int16_t)comm_state.ip.data[13]<<8; }
+		mr->act_speed |= (int16_t)comm_state.ip.data[13]<<8;
 
 		// stav motoru
 		mr->state = comm_state.ip.data[14];
@@ -777,15 +702,14 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 		// teplota motoru
 		mr->temp = comm_state.ip.data[16];
 
-		// vıkon motoru
-		mr->load = comm_state.ip.data[17];
-
 		// ujetá vzdálenost
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {
-		mr->distance = comm_state.ip.data[18];
-		mr->distance  |= (int32_t)comm_state.ip.data[19]<<8;
-		mr->distance  |= (int32_t)comm_state.ip.data[20]<<16;
-		mr->distance  |= (int32_t)comm_state.ip.data[21]<<24; }
+		mr->distance = comm_state.ip.data[17];
+		mr->distance  |= (int32_t)comm_state.ip.data[18]<<8;
+		mr->distance  |= (int32_t)comm_state.ip.data[19]<<16;
+		mr->distance  |= (int32_t)comm_state.ip.data[20]<<24;
+
+		// vıkon motoru
+		mr->load = comm_state.ip.data[21];
 
 }
 
@@ -803,8 +727,9 @@ uint16_t joystick_xy(uint8_t dir) {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	if (dir==JOY_X) return 1023-ADCW;
-	else return ADCW;
+	// TODO: zkusit najít efektivnìjší filtrování
+	if (dir==JOY_X) return moving_average_x(1023-ADCW);
+	else return moving_average_y(ADCW);
 
 }
 
@@ -841,7 +766,71 @@ int main(void)
     		C_CLEARBIT(MLCD);
 
     		// obsluha lcd
-    		manageLcd();
+    		switch (mod_state.menu_state) {
+
+    			case M_INIT: {
+
+
+    			} break;
+
+    			case M_STANDBY: {
+
+    				writeTime();
+    				standBy();
+
+    			} break;
+
+    			case M_COMMSTAT: {
+
+    				writeTime();
+    				lcd_gotoxy(0,0);
+    				lcd_puts_P("CommStat");
+    				commStat(&comm_state);
+
+    			} break;
+
+    			case M_PCCOMMSTAT: {
+
+    				writeTime(&mod_state);
+    				lcd_gotoxy(0,0);
+    				lcd_puts_P("PCCommStat");
+    				commStat(&pccomm_state);
+
+    			} break;
+
+    			// levı pøední motor
+    			case M_MLF: {
+
+    				writeTime(&mod_state);
+    				lcd_gotoxy(0,0);
+    				lcd_puts_P("M_LF");
+    				motStat(&m_lf);
+
+    			} break;
+
+    			// levı zadní motor
+    			case M_MLR: {
+
+    				writeTime(&mod_state);
+    				lcd_gotoxy(0,0);
+    				lcd_puts_P("M_LR");
+    				motStat(&m_lr);
+
+
+    			} break;
+
+    			// TODO: tlaèítka
+    			case M_JOYSTICK: {
+
+    				writeTime();
+    				joy();
+
+
+
+    			} break;
+
+
+    		} // switch
 
     	}
 
@@ -851,7 +840,7 @@ int main(void)
     	    		C_CLEARBIT(MRS232);
 
     	    		// odeslání statistiky komunikace s moduly do PC
-    	    		sendCommStat(&comm_state,&pccomm_state);
+    	    		//sendCommStat(&comm_state,&pccomm_state);
 
     	    	}
 
@@ -863,10 +852,8 @@ int main(void)
 			x = joystick_xy(JOY_X);
 			y = joystick_xy(JOY_Y);
 
-			ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				mod_state.joy_x = x;
-				mod_state.joy_y = y;
-				}
+			mod_state.joy_x = x;
+			mod_state.joy_y = y;
 
 
     	// TODO: nastavení rychlosti pouze pøi aktivaci joysticku, nebo pøi pøíjmu dat z PC
@@ -876,16 +863,14 @@ int main(void)
 
     	int16_t sp = 0;
 
-
-    	// TODO: opravit - nefunguje -> data se posílají, jen dokud se na MainMod nepøepne menu &*#!?ß
-    	ATOMIC_BLOCK(ATOMIC_FORCEON) {sp = (int16_t)(mod_state.joy_y-511)/2;}
+    	sp = (int16_t)(mod_state.joy_y-511)/2;
 
     	// práh
     	if (sp > -5 && sp < 5) sp = 0;
 
-    	//if ((sp-5) > m_lr.req_speed || (sp+5) < m_lr.req_speed) {
 
-    		//C_FLIPBIT(LCD_BL);
+    	if ((sp-5) > m_lr.req_speed || (sp+5) < m_lr.req_speed) {
+
 
 			uint8_t sarr[2];
 
@@ -896,7 +881,13 @@ int main(void)
 
 			sendPacketE();
 
-    	//}
+			// odeslání do PC
+			makePacket(&pccomm_state.op,sarr,2,P_COMM,10);
+			sendFirstByte(&UDR0,&pccomm_state);
+			while(pccomm_state.send_state != PS_READY);
+
+
+    	}
 
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
