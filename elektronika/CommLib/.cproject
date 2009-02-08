@@ -27,8 +27,10 @@
 </tool>
 <tool id="de.innot.avreclipse.tool.compiler.winavr.lib.debug.1507939544" name="AVR Compiler" superClass="de.innot.avreclipse.tool.compiler.winavr.lib.debug">
 <option id="de.innot.avreclipse.compiler.option.debug.level.764646652" name="Generate Debugging Info" superClass="de.innot.avreclipse.compiler.option.debug.level"/>
-<option id="de.innot.avreclipse.compiler.option.optimize.1032205543" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.two" valueType="enumerated"/>
-<option id="de.innot.avreclipse.compiler.option.optimize.packstruct.2135977805" name="Pack structs (-fpack-struct)" superClass="de.innot.avreclipse.compiler.option.optimize.packstruct" value="false" valueType="boolean"/>
+<option id="de.innot.avreclipse.compiler.option.optimize.1032205543" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
+<option id="de.innot.avreclipse.compiler.option.optimize.packstruct.2135977805" name="Pack structs (-fpack-struct)" superClass="de.innot.avreclipse.compiler.option.optimize.packstruct" value="true" valueType="boolean"/>
+<option id="de.innot.avreclipse.compiler.option.std.1292812916" name="Language Standard" superClass="de.innot.avreclipse.compiler.option.std" value="de.innot.avreclipse.compiler.option.std.c99" valueType="enumerated"/>
+<option id="de.innot.avreclipse.compiler.option.optimize.other.151611209" superClass="de.innot.avreclipse.compiler.option.optimize.other" value="-mcall-prologues" valueType="string"/>
 <inputType id="de.innot.avreclipse.compiler.winavr.input.1347788181" name="C Source Files" superClass="de.innot.avreclipse.compiler.winavr.input"/>
 </tool>
 <tool id="de.innot.avreclipse.tool.cppcompiler.lib.debug.1473020706" name="AVR C++ Compiler" superClass="de.innot.avreclipse.tool.cppcompiler.lib.debug">
