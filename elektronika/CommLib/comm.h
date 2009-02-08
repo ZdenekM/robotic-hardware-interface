@@ -93,14 +93,14 @@ typedef struct {
 void comm_state_init(volatile tcomm_state *c);
 
 // spoèítání CRC pro pole o zadané délce
-extern uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr);
+extern uint16_t makeCRC(volatile uint8_t *input, uint8_t len, uint8_t type, uint8_t addr);
 
 
 // pomocná funkce pro výpoèet CRC
 extern uint16_t crc16_update(uint16_t crc, uint8_t a);
 
 // sestavení paketu pro komunikaci
-extern void makePacket(tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint8_t addr);
+extern void makePacket(volatile tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint8_t addr);
 
 // zahájení pøenosu - odeslání prvního bytu
 extern void sendFirstByte(volatile uint8_t *tUDR, volatile tcomm_state *c);
