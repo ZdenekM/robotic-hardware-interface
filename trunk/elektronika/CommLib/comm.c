@@ -51,7 +51,7 @@ uint16_t crc16_update(uint16_t crc, uint8_t a)
     }
 
 
-uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
+uint16_t makeCRC(volatile uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
 {
     uint8_t i;
     uint16_t check;
@@ -72,23 +72,23 @@ uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
 }
 
 
-
-void makePacket(tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint8_t addr) {
+// volá se z main
+void makePacket(volatile tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_type, uint8_t addr) {
 
 		p->addr = addr;
 		p->len = len;
 		p->packet_type = packet_type;
 
-		uint16_t crc = makeCRC(data,len,packet_type,addr);
-
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {p->crc = crc;}
+		p->crc = makeCRC(data,len,packet_type,addr);
 
 		// kopírování dat
-		if (len < BUFF_LEN && len > 0 && data !=NULL) memcpy(p->data,data,len);
+		if (len < BUFF_LEN && len > 0 && data !=NULL)
+			ATOMIC_BLOCK(ATOMIC_FORCEON) {memcpy(p->data,data,len);}
 
 
 
 }
+
 
 // zahájení pøenosu - odeslání prvního bytu
 void sendFirstByte(volatile uint8_t *tUDR, volatile tcomm_state *c) {
@@ -319,13 +319,13 @@ uint8_t checkPacket(volatile tcomm_state *c) {
 	if (crc == c->ip.crc) {
 
 		c->receive_state = PR_PACKET_RECEIVED;
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {c->packets_received++;}
+		c->packets_received++;
 		return 1;
 
 	} else {
 
 		// chyba CRC :-(
-		ATOMIC_BLOCK(ATOMIC_FORCEON) {c->packets_bad_received++;}
+		c->packets_bad_received++;
 		c->receive_state = PR_BAD_CRC;
 		return 0;
 
