@@ -2,10 +2,11 @@
 // autor: Zdenìk Materna, zdenek.materna@gmail.com
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
-// TODO: regulátor
+// TODO: naèítání konstant regulátoru z EEPROM, nastavení z MainMod
 // TODO: mìøení proudu
 // TODO: mìøení teploty motoru
 // TODO: zastavení pøi nadmìrném proudu motorem
+// TODO: zastavení pøi výpadku komunikace
 
 
 #define F_CPU 16000000UL  // 16 MHz
@@ -95,6 +96,9 @@ volatile static tcomm_state comm_state;
 volatile static tmotor motor1;
 volatile static tmotor motor2;
 
+// poèítadlo pro timeout komunikace -> zastavení
+volatile static uint8_t comm_to = 0;
+
 
 // inicializace struktury motor
 static inline void motor_init(volatile tmotor *m) {
@@ -104,12 +108,14 @@ static inline void motor_init(volatile tmotor *m) {
 	m->act_speed = 0;
 	m->last_speed = 0;
 	m->areq_speed = 0;
+	m->penc = 0;
+	m->enc_count = 0;
 	m->sum = 0;
 	m->act = 0;
 
-	m->P = 10;
-	m->I = 3;
-	m->D = 1;
+	m->P = 30;
+	m->I = 8;
+	m->D = 4;
 
 	m->forwd = NULL;
 	m->backwd = NULL;
@@ -131,8 +137,6 @@ void motor2_forwd(void) {
 // motor 2 dozadu
 void motor2_backwd(void) {
 
-
-
 	C_SETBIT(INPUT4);
 	C_CLEARBIT(INPUT3);
 
@@ -141,16 +145,16 @@ void motor2_backwd(void) {
 // motor 2 stop
 void motor2_stop(void) {
 
-		C_SETBIT(INPUT3);
-		C_SETBIT(INPUT4);
+	C_SETBIT(INPUT3);
+	C_SETBIT(INPUT4);
 
 }
 
 // motor 2 volno
 void motor2_free(void) {
 
-		C_CLEARBIT(INPUT3);
-		C_CLEARBIT(INPUT4);
+	C_CLEARBIT(INPUT3);
+	C_CLEARBIT(INPUT4);
 
 }
 
@@ -165,8 +169,6 @@ void motor1_forwd(void) {
 // motor 1 dozadu
 void motor1_backwd(void) {
 
-
-
 	C_SETBIT(INPUT2);
 	C_CLEARBIT(INPUT1);
 
@@ -175,16 +177,16 @@ void motor1_backwd(void) {
 // motor 1 stop
 void motor1_stop(void) {
 
-		C_SETBIT(INPUT1);
-		C_SETBIT(INPUT2);
+	C_SETBIT(INPUT1);
+	C_SETBIT(INPUT2);
 
 }
 
 // motor 1 volno
 void motor1_free(void) {
 
-		C_CLEARBIT(INPUT1);
-		C_CLEARBIT(INPUT2);
+	C_CLEARBIT(INPUT1);
+	C_CLEARBIT(INPUT2);
 
 }
 
@@ -216,10 +218,6 @@ static inline void ioinit (void) {
 	UCSRB = (1<<UCSZ2)|(1<<TXCIE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
 	UCSRC = (1<<URSEL)|(1<<USBS)|(0<<UMSEL)|(0<<UPM1)|(0<<UPM0)|(1<<UCSZ1)|(1<<UCSZ0);
 
-	// ct0, 80kHz, 8x presc, normal mode - ètení enkodérù
-	//TCCR0 = (0<<CS02)|(1<<CS01)|(0<<CS00);
-	//TCNT0 = 25;
-
 	// ct2, 40kHz - ètení enkodérù, CTC mode
 	// 199 - 40kHz N=1
 	// 32 - 30kHz N=8
@@ -230,7 +228,8 @@ static inline void ioinit (void) {
 	// 100 Hz - CT1 - PWM pro motory, regulace
 	// 50 Hz -> 2500
 	// 100 Hz -> 1250
-	ICR1 = 2500; //  PWM period - TOP
+	#define PWM_TOP 2500
+	ICR1 = PWM_TOP; //  PWM period - TOP
 
 	TCCR1A = (1<<WGM11) | (1<<WGM10) | (1<<COM1A1) | (0<<COM1A0) | (1<<COM1B1) | (0<<COM1B0); // phase correct, 10-bit
 	TCCR1B = (0<<CS12) | (1<<CS11) | (1<<CS10) | (0<<WGM13) | (0<<WGM12); // 64x presc.
@@ -291,48 +290,56 @@ uint16_t motor_reg(volatile tmotor *m) {
 	// výpoèet aktuální rychlosti 50/33 = 1.5
 	m->act_speed = m->enc + m->enc/2;
 
-	// rampa pro žádanou rychlost
-	if (m->req_speed > m->areq_speed) m->areq_speed++;
-	if (m->req_speed < m->areq_speed) m->areq_speed--;
+	m->penc += m->enc;
 
-	// výpoèet ujeté vzdálenosti
-	// TODO: poèítat z více mìøení -> menší chyba
-	m->distance += m->act_speed/50;
+	// urèení 1s -> výpoèet ujeté vzd;
+	if (++m->enc_count>50) {
+
+		m->enc_count = 0;
+		m->distance += m->penc/33;
+		m->penc = 0;
+
+	}
 
 	// vynulování poèítadla impulzù
 	m->enc = 0;
+
+	// rampa pro žádanou rychlost
+	if (m->req_speed > m->areq_speed) m->areq_speed++;
+	else if (m->req_speed < m->areq_speed) m->areq_speed--;
+
 
 		switch(m->state) {
 
 			// motor normalne bezi - PID regulace
 			case MOT_RUNNING: {
 
+				// akèní zásah, odchylka
 				int16_t e = m->areq_speed - m->act_speed;
-
-				int16_t act;
 
 				// výpoèet akèního zásahu
 				// akce = P*odchylka + I*suma - D*(speed - last_speed)
-				act = (m->P)*e + (m->I)*(m->sum) - (m->D)*(m->act_speed - m->last_speed);
+				m->act = (m->P)*e + (m->I)*(m->sum) - (m->D)*(m->act_speed - m->last_speed);
 
 				// urèení smìru otáèení
-				if (act>0) m->forwd();
-				else if (act < 0) m->backwd();
+				if (m->act>0) m->forwd();
+				else if (m->act < 0) m->backwd();
 				else m->free();
 
-				// pøevedení na abs. hodnotu
-				act = abs(act);
+
+				// pøevedení akèního zásahu na abs. hodnotu
+				m->act = labs(m->act)/10;
 
 				// omezeni max. vel. akcniho zas.
-				// výpoèet sumy -> suma = suma + odchylka
-				if (act>=ICR1) act = ICR1;
+				// výpoèet sumy (suma = suma + odchylka)
+				if (m->act>=PWM_TOP) m->act = PWM_TOP;
 				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade všechny meze
 
 
 				// ulozeni aktualni rychlosti
 				m->last_speed = m->act_speed;
 
-				m->act = act;
+				return (uint16_t)m->act;
 
 
 			} break;
@@ -364,7 +371,9 @@ uint16_t motor_reg(volatile tmotor *m) {
 		} // switch
 
 
-	return m->act;
+	return 0;
+
+
 
 
 
@@ -373,9 +382,20 @@ uint16_t motor_reg(volatile tmotor *m) {
 // 50 Hz -> regulace
 ISR(TIMER1_OVF_vect) {
 
-		OCR1B = motor_reg(&motor2);
-		OCR1A = motor_reg(&motor1);
+	// volani regulátorù
+	OCR1B = motor_reg(&motor2);
+	OCR1A = motor_reg(&motor1);
 
+	// poèítadlo timeoutu pro pøíjem po RS485
+	receiveTimeout(&comm_state);
+
+	// zastavení v pøípadì výpadku komunikace na 1s
+	if (++comm_to==50) {
+
+		motor1.req_speed = 0;
+		motor2.req_speed = 0;
+
+	}
 
 }
 
@@ -524,14 +544,20 @@ void makeMotorInfo() {
 
 	// ujetá vzdálenost
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-	data[7] = motor1.distance;
-	data[8] = motor1.distance>>8;
-	data[9] = motor1.distance>>16;
-	data[10] = motor1.distance>>24; }
+	data[7] = (int32_t)motor1.distance;
+	data[8] = (int32_t)motor1.distance>>8;
+	data[9] = (int32_t)motor1.distance>>16;
+	data[10] = (int32_t)motor1.distance>>24; }
 
 
-	// výkon pøedního motoru
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {data[11] = (uint8_t)((motor1.act*100)/ICR1);}
+	static uint8_t pl1=0;
+	uint8_t l1;
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {l1 = motor1.act/25;}
+
+	// výkon pøedního motoru (pro ICR1==2500) - DP
+	data[11] =  (l1 + pl1)/2;
+
+	pl1 = l1;
 
 	// ********************************************
 	// aktuální rychlost zadního motoru
@@ -550,13 +576,19 @@ void makeMotorInfo() {
 
 	// ujetá vzdálenost
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-	data[17] = motor2.distance;
-	data[18] = motor2.distance>>8;
-	data[19] = motor2.distance>>16;
-	data[20] = motor2.distance>>24; }
+	data[17] = (int32_t)motor2.distance;
+	data[18] = (int32_t)motor2.distance>>8;
+	data[19] = (int32_t)motor2.distance>>16;
+	data[20] = (int32_t)motor2.distance>>24; }
+
+	static uint8_t pl2=0;
+	uint8_t l2;
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {l2 = motor2.act/25;}
 
 	// výkon zadního motoru
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {data[21] = (uint8_t)((motor2.act*100)/ICR1);}
+	data[21] = (l2 + pl2)/2;
+
+	pl2 = l2;
 
 	makePacket(&comm_state.op,data,22,P_INFO,0);
 
@@ -621,12 +653,13 @@ int main(void) {
 
 	C_SETBIT(LED);
 
-
 	motor1.state = MOT_RUNNING;
 	motor2.state = MOT_RUNNING;
 
 
+
 	while(1) {
+
 
 		// mìøení proudu motory
 		motor_current();
@@ -635,22 +668,20 @@ int main(void) {
 		// pøepnutí na pøíjem
 		C_CLEARBIT(RS485_SEND);
 
+
 		comm_state.receive_state = PR_WAITING;
 
 		// èekání na pøíjem paketu
-		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state != PR_READY);
-
+		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state != PR_READY && comm_state.receive_state!=PR_TIMEOUT);
 
 		// pokud byl pøijat paket -> rozhodnutí podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
-			//C_FLIPBIT(LED);
+			comm_to = 0;
 
 			switch(comm_state.ip.packet_type) {
 
 			case P_ECHO: {
-
-
 
 				// vytvoøení ECHO paketu
 				makePacket(&comm_state.op,comm_state.ip.data,comm_state.ip.len,P_ECHO,0);
@@ -682,14 +713,6 @@ int main(void) {
 					if (sp > V_MAX) sp = V_MAX;
 					if (sp < -V_MAX) sp = -V_MAX;
 
-
-					static int16_t last_sp;
-
-					// signalizovat zmìnu požadované rychlosti
-					if (last_sp != sp) C_FLIPBIT(LED);
-
-					last_sp = sp;
-
 					ATOMIC_BLOCK(ATOMIC_FORCEON) {
 					motor1.req_speed = sp;
 					motor2.req_speed = sp;
@@ -702,6 +725,8 @@ int main(void) {
 
 
 		} // if
+
+
 
 		comm_state.receive_state = PR_READY;
 
