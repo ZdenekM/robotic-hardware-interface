@@ -24,10 +24,16 @@ typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_O
 typedef struct {
 
 	// akèní zásah (hodnota OCR1x)
-	volatile uint16_t act;
+	volatile int16_t act;
 
 	// poèet tikù enkodéru od minule
 	volatile int16_t enc;
+
+	// pomocné poèítadlo impulzù pro výpoèet ujeté vzd.
+	volatile int32_t penc;
+
+	// pomocné poèítadlo pro urèení 1s
+	volatile uint8_t enc_count;
 
 	// žádaná rychlost
 	volatile int16_t req_speed;
