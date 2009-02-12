@@ -14,7 +14,7 @@
 #define BUFF_LEN 32
 
 // timeout pro pøíjem paketu - 2x 10ms = 20ms
-#define MAXTIMEOUT 2
+#define MAXTIMEOUT 5
 
 
 typedef struct {
