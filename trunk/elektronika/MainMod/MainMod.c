@@ -717,6 +717,9 @@ enum {JOY_Y=6,JOY_X=7};
 // spustí AD pøevod pro urèení vychýlení joysticku
 uint16_t joystick_xy(uint8_t dir) {
 
+	static uint16_t lx=0,ly=0;
+	uint16_t val;
+
 	// nastavení kanálu
 	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
 	ADMUX |= dir&0x3F; // nastaví kanál
@@ -727,9 +730,25 @@ uint16_t joystick_xy(uint8_t dir) {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
+	if (dir==JOY_X) {
+
+		// dolní propust
+		val = ADCW/2 + lx/2;
+		lx = ADCW;
+
+	} else {
+
+		// dolní propust
+		val = ADCW/2 + ly/2;
+		ly = ADCW;
+
+	}
+
+	return val;
+
 	// TODO: zkusit najít efektivnìjší filtrování
-	if (dir==JOY_X) return moving_average_x(1023-ADCW);
-	else return moving_average_y(ADCW);
+	//if (dir==JOY_X) return moving_average_x(1023-ADCW);
+	//else return moving_average_y(ADCW);
 
 }
 
