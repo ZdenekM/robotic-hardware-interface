@@ -4,6 +4,7 @@ Vývoj bude rozdělen do několika etap - verzí. Každá verze bude mít stanov
 
 == Aktuálně přidaná funkčnost ==
 
+  * odladění chyb v PID regulaci
   * obsluha joysticku (zjišťování vychýlení)
   * zprovozněna komunikace mezi moduly
 
