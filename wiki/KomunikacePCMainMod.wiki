@@ -1,5 +1,28 @@
-==Popis komunikace mezi PC a MainMod==
+== Popis komunikace mezi PC a MainMod ==
 
 PC posílá povely k jízdě přímo (požadovaná vzdálenost), nebo povel k otočení (požadovaný úhel otočení). Modul MainMod potom zajišťuje provedení těchto příkazů (kontroluje ujetou vzdálenost atd.).
 
-TODO: doplnit popis komunikace.
+=== Náměty na vylepšení ===
+
+  * PC by v paketu mohl posílat celé sekvence povelů
+
+=== Jízda rovně ===
+
+PC pošle modulu MainMod paket typu P_MOVE_STRAIGHT, požadovanou vzdálenost v mm a požadovanou rychlost (opět v mm/s).
+
+||P_MOVE_STRAIGHT||dist||speed||
+
+  * dist ... požadovaná vzdálenost (s2)
+  * speed ... žádaná rychlost (s2)
+
+=== Otočení o zadaný úhel ===
+
+||P_MOVE_ROUND||angle||
+
+  * angle ... požadovaný úhel otočení (s2)
+
+Přípustné hodnoty pro úhel otočení: 90, 180 (robot se otáčí doprava), -90, -180 (doleva).
+
+=== Vyčtení údajů ze senzorů ===
+
+TODO: doplnit.
