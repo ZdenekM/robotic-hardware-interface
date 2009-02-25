@@ -30,10 +30,12 @@ Přípustné hodnoty pro úhel otočení: 90, 180 (robot se otáčí doprava), -
 
 MainMod na tento paket neodpovídá - PC musí zkontrolovat úspěšnost provedení požadované operace podle informací ze senzorů.
 
-=== Vyčtení údajů o pohybu ===
+=== Vyčtení údajů o pohybu a stavu motorů ===
 
 PC_MOVE_INFO
 
+TODO: doplnit
+
 === Vyčtení údajů ze senzorů překážek ===
 
-TODO: doplnit.
+TODO: doplnit
