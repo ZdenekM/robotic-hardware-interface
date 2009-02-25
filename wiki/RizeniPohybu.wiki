@@ -2,11 +2,6 @@
 
 Popis řízení pohybu a zejména komunikace mezi PC a jednotlivými moduly.
 
-==Popis komunikace mezi PC a MainMod==
-
-PC posílá povely k jízdě přímo (požadovaná vzdálenost), nebo povel k otočení (požadovaný úhel otočení). Modul MainMod potom zajišťuje provedení těchto příkazů (kontroluje ujetou vzdálenost atd.).
-
-TODO: doplnit popis komunikace.
 
 ==Popis komunikace mezi MainMod a moduly MotorControl==
 
