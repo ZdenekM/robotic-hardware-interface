@@ -7,6 +7,7 @@ První modul vyvíjeného systému. Modul MotorControl je určen k řízení dvo
   * navržená, vyrobená a osazená deska (ke stažení)
   * zprovozněná komunikace
   * vyzkoušený PID regulátor (bohužel na jiném motoru a jiném enkodéru než bude finální)
+  * odladěný PID regulátor, plynulý rozjezd/dojezd
 
 ==Plánované funkce modulu==
 
