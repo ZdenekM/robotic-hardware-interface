@@ -8,16 +8,16 @@ PC posílá povely k jízdě přímo (požadovaná vzdálenost), nebo povel k ot
 
 === Jízda rovně ===
 
-PC pošle modulu MainMod paket typu P_MOVE_STRAIGHT, požadovanou vzdálenost v mm a požadovanou rychlost (opět v mm/s).
+PC pošle modulu MainMod paket typu PC_MOVE_STRAIGHT, požadovanou vzdálenost v mm a požadovanou rychlost (opět v mm/s).
 
-||P_MOVE_STRAIGHT||dist||speed||
+||PC_MOVE_STRAIGHT||dist||speed||
 
   * dist ... požadovaná vzdálenost (s2)
   * speed ... žádaná rychlost (s2)
 
 === Otočení o zadaný úhel ===
 
-||P_MOVE_ROUND||angle||
+||PC_MOVE_ROUND||angle||
 
   * angle ... požadovaný úhel otočení (s2)
 
