@@ -5,6 +5,7 @@ PC posílá povely k jízdě přímo (požadovaná vzdálenost), nebo povel k ot
 === Náměty na vylepšení ===
 
   * PC by v paketu mohl posílat celé sekvence povelů
+  * otočení o libovolný úhel
 
 === Jízda rovně ===
 
@@ -15,7 +16,11 @@ PC pošle modulu MainMod paket typu PC_MOVE_STRAIGHT, požadovanou vzdálenost v
   * dist ... požadovaná vzdálenost (s2)
   * speed ... žádaná rychlost (s2)
 
+MainMod na tento paket neodpovídá - PC musí zkontrolovat úspěšnost provedení požadované operace podle informací ze senzorů.
+
 === Otočení o zadaný úhel ===
+
+PC pošle paket s hodnotou požadovaného úhlu otočení. Hodnoty jsou pevně dané.
 
 ||PC_MOVE_ROUND||angle||
 
@@ -23,6 +28,12 @@ PC pošle modulu MainMod paket typu PC_MOVE_STRAIGHT, požadovanou vzdálenost v
 
 Přípustné hodnoty pro úhel otočení: 90, 180 (robot se otáčí doprava), -90, -180 (doleva).
 
-=== Vyčtení údajů ze senzorů ===
+MainMod na tento paket neodpovídá - PC musí zkontrolovat úspěšnost provedení požadované operace podle informací ze senzorů.
+
+=== Vyčtení údajů o pohybu ===
+
+PC_MOVE_INFO
+
+=== Vyčtení údajů ze senzorů překážek ===
 
 TODO: doplnit.
