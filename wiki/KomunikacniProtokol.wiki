@@ -2,6 +2,8 @@
 
 Komunikace po lince RS485 bude poloduplexní (nelze zároveň vysílat a přijímat), typu master-slave. Pro zmenšení zatížení mikroprocesorů bude využita 9 bitová komunikace a MPCM.
 
+Stejný protokol je použit i pro komunikaci s PC, ale komunikace probíhá v 8 bitovém režimu.
+
 ==Návrh protokolu==
 
 Při tvorbě návrhu byl použit jako inspirace protokol Martina Lockera (ROBONET) a dále protokol Tomáše Paseky uvedený v jeho diplomové práci (Návrh a realizace autonomního robotu pro kategorii IEEE Micromouse).
@@ -44,13 +46,21 @@ Komunikaci vždy inicializuje master. Slave moduly posílají data jen pokud jso
 
 ===Typy paketů===
 
-TODO
+Typy paketů používané pro komunikaci mezi moduly:
+
+  * P_ECHO - odeslání echo paketu
+  * P_MOTOR_COMM - příkaz pro motor
+  * P_MOTOR_INFO - informace z motorů
+  * P_COMM_INFO - informace o stavu komunikace
+
+Typy užívané pro komunikaci s PC:
+
+  * P_ECHO
+  * PC_MOVE_STRAIGHT - pohyb rovně
+  * PC_MOVE_ROUND - otočení o zadaný úhel
+
+TODO: doplnit hodnoty konstant
 
 ==Realizace komunikace v procesorech AVR==
 
 TODO: přerušení receive_complet, transmit_complet, alokace bufferů, ukládání nastavení a statistiky do struktury atd.
-
-
-== Komunikace s řídicím PC ==
-
-TODO
