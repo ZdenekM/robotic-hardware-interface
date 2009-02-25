@@ -1,14 +1,14 @@
 ==Popis komunikace mezi MainMod a moduly MotorControl==
 
-Modul MainMod pošle příslušnému modulu MotorControl pouze požadovanou rychlost a pak sleduje ujetou vzdálenost. Pokud ujetá vzdálenost = požadovaná vzdálenost, pošle paket s nulovou požadovanou rychlostí. Pro rychlost je používána jednotka cm/s. Požadovaná rychlost je společná pro oba motory, které ovládá jeden modul MotorControl.
+Modul MainMod pošle příslušnému modulu MotorControl pouze požadovanou rychlost a pak sleduje ujetou vzdálenost. V okmažiku, kdy je potřeba zastavit, pošle paket s nulovou požadovanou rychlostí. Tento je však třeba poslat s předstihem - je nutno započítat zrychlení při zpomalování robotu. Pro rychlost je používána jednotka mm/s. Požadovaná rychlost je společná pro oba motory ovládané jedním modulem MotorControl.
 
-Paket posílaný modulem MainMod (pouze typ + datová část):
+=== Paket posílaný modulem MainMod (pouze typ + datová část):===
 
 _Údaje v závorce značí počet bytů a případné znaménko (u = unsigned, s = signed). Písmeno f na konci proměnné značí přední motor (front), r naopak značí zadní motor (rear)._
 
 ||P_COMM|||rspeed||
 
-  * P_COMM ... typ paketu příkaz (u1)
+  * P_MOTOR_COMM ... typ paketu příkaz (u1)
   * rspeed ... požadovaná rychlost (s2)
 
 Na paket typu P_COMM modul MotorControl neodpovídá. Informace o stavu motorů pošle po přijetí paketu P_INFO.
