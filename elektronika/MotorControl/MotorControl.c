@@ -6,8 +6,6 @@
 // TODO: mìøení proudu
 // TODO: mìøení teploty motoru
 // TODO: zastavení pøi nadmìrném proudu motorem
-// TODO: zastavení pøi výpadku komunikace
-
 
 #define F_CPU 16000000UL  // 16 MHz
 
@@ -74,7 +72,7 @@
 
 // TODO: uložení adresy do EEPROM
 // adresa na RS485
-#define ADDR 10
+#define ADDR 11
 
 
 volatile static uint8_t ena_st=0;
@@ -211,7 +209,7 @@ static inline void ioinit (void) {
 	//UBRRL = 68; //14400
 	//UBRRL = 25; // 38400
 	//UBRRL = 12; // 76800
-	UBRRL = 103; // 250000
+	UBRRL = 12;
 	UBRRH = 0;
 
 	UCSRA = (0<<U2X)|(1<<MPCM);
@@ -389,13 +387,14 @@ ISR(TIMER1_OVF_vect) {
 	// poèítadlo timeoutu pro pøíjem po RS485
 	receiveTimeout(&comm_state);
 
+
 	// zastavení v pøípadì výpadku komunikace na 1s
-	if (++comm_to==50) {
+	if (comm_to==50) {
 
 		motor1.req_speed = 0;
 		motor2.req_speed = 0;
 
-	}
+	} else comm_to++;
 
 }
 
@@ -590,7 +589,7 @@ void makeMotorInfo() {
 
 	pl2 = l2;
 
-	makePacket(&comm_state.op,data,22,P_INFO,0);
+	makePacket(&comm_state.op,data,22,P_MOTOR_INFO,0);
 
 }
 
@@ -651,11 +650,9 @@ int main(void) {
 
 	ioinit();
 
-	C_SETBIT(LED);
 
 	motor1.state = MOT_RUNNING;
 	motor2.state = MOT_RUNNING;
-
 
 
 	while(1) {
@@ -672,15 +669,20 @@ int main(void) {
 		comm_state.receive_state = PR_WAITING;
 
 		// èekání na pøíjem paketu
-		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state != PR_READY && comm_state.receive_state!=PR_TIMEOUT);
+		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
+
 
 		// pokud byl pøijat paket -> rozhodnutí podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
+			//C_FLIPBIT(LED);
+
+			// vynulování poèítadla pro timeout komunikace -> zastavení motorù
 			comm_to = 0;
 
 			switch(comm_state.ip.packet_type) {
 
+			// požadavek na odeslání echo paketu
 			case P_ECHO: {
 
 				// vytvoøení ECHO paketu
@@ -691,18 +693,9 @@ int main(void) {
 
 			} break;
 
-			case P_INFO: {
 
-				// vytvoøení paketu
-				makeMotorInfo();
-
-				// odeslání paketu
-				sendPacketE();
-
-			} break;
-
-			case P_COMM: {
-
+			// pøíjem požadované rychlosti
+			case P_MOTOR_COMM: {
 
 				int16_t sp = 0;
 
@@ -718,6 +711,19 @@ int main(void) {
 					motor2.req_speed = sp;
 					}
 
+
+			} break;
+
+			// požadavek na odeslání informací z motorù
+			case P_MOTOR_INFO: {
+
+				C_FLIPBIT(LED);
+
+				// vytvoøení paketu
+				makeMotorInfo();
+
+				// odeslání paketu
+				sendPacketE();
 
 			} break;
 
