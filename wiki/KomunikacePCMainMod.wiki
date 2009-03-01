@@ -32,10 +32,21 @@ MainMod na tento paket neodpovídá - PC musí zkontrolovat úspěšnost provede
 
 === Vyčtení údajů o pohybu a stavu motorů ===
 
-PC_MOVE_INFO
+Na paket typu PC_MOVE_INFO odpoví MainMod paketem téhož typu s následujícím obsahem:
+
+||PC_MOVE_INFO||rspeedl||aspeedl||distl||rspeedr||aspeedr||distr||
+
+  * rspeedx ... žádaná rychlost (s2)
+  * aspeedx ... aktuální rychlost (s2)
+  * distx ... ujetá vzdálenost (s4)
+
+Celkem tedy 16 bytů. Hodnota pro určitou stranu je vždy aritmetickým průměrem údajů z předního a zadního motoru.
+
+Detailnější informace o stavu motorů je možno získat paketem typu PC_MOVE_AINFO.
 
 TODO: doplnit
 
 === Vyčtení údajů ze senzorů překážek ===
 
 TODO: doplnit
+
