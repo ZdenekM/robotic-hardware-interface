@@ -16,7 +16,7 @@ PC pošle modulu MainMod paket typu PC_MOVE_STRAIGHT, požadovanou vzdálenost v
   * dist ... požadovaná vzdálenost (s2)
   * speed ... žádaná rychlost (s2)
 
-MainMod na tento paket neodpovídá - PC musí zkontrolovat úspěšnost provedení požadované operace podle informací ze senzorů.
+MainMod na tento paket neodpovídá - PC musí zkontrolovat úspěšnost provedení požadované operace podle informací z odometrie.
 
 === Otočení o zadaný úhel ===
 
@@ -49,4 +49,3 @@ TODO: doplnit
 === Vyčtení údajů ze senzorů překážek ===
 
 TODO: doplnit
-
