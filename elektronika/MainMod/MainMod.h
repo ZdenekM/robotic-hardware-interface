@@ -7,7 +7,7 @@
 enum {COMMSTATE} tpcdata;
 
 // stavy menu
-typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_JOYSTICK} tmenu_states;
+typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_JOYSTICK} tmenu_states;
 
 // stav modulu - menu, tlaèítka, èas atd.
 typedef struct {
@@ -46,7 +46,7 @@ typedef struct {
 	// aktuální skuteèná rychlost
 	volatile int16_t act_speed;
 
-	// vzdálenost ujetá od posledního povelu
+	// ujetá vzdálenost
 	volatile int32_t distance;
 
 	// parametry regulatoru, * 10
@@ -103,8 +103,6 @@ extern void sendPacketE();
 // provìøí komunikaci s modulem zadané adresy
 // vrací úspìšnost v %
 extern uint8_t sendEcho(uint8_t addr);
-
-extern void initModule(char *mod_name, uint8_t addr);
 
 // inicializace modulù - echo
 extern void initModules();
