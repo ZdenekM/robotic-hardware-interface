@@ -32,5 +32,6 @@ Přidání modulu pro obsluhu senzorů - SensMod.
 
   * odesílání informací ze senzorů do PC
   * zastavení před detekovanou překážkou
+  * nastavení PID z PC
   * ...
 ----
