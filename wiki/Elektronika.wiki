@@ -29,4 +29,4 @@ Každý modul obsahuje vlastní stabilizátor napětí. Použity jsou obvody 75L
 
 Pro poloduplexní komunikaci po sběrnici RS485 využívají moduly nejlevnější transceiver ttl<>RS485, obvod 75176 ([http://www.gme.cz/cz/index.php?page=product&detail=959-001 gme.cz]). Obvod nezajišťuje přepínání směru, to je tedy nutné řešit programově jedním pinem procesoru. Obě linky jsou připojeny přes odpory připojeny na zem, respektive 5V pro definování klidového stavu a omezení šumu.
 
-Více zde: KomunikacniProtokol
+Více zde: KomunikacniProtokol, KomunikaceMeziModuly.
