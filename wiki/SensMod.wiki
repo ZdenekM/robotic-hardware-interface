@@ -1,5 +1,9 @@
 ==Senzorický modul==
 
+Modul SensMod slouží pro obsluhu senzorů robotu.
+
+Popis komunikace s MainMod zde: KomunikaceMeziModuly.
+
 Modul SensMod bude pracovat s následujícími senzory:
 
   * 4x infračervený dálkoměr Sharp (bude již však možno připojit více)
