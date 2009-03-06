@@ -239,8 +239,10 @@ ISR(TIMER0_OVF_vect){
 	// poèítadlo timeoutu pro pøíjem po RS485
 	receiveTimeout(&comm_state);
 
+	// TODO: dodìlat rozlišení fast a full scan
+
 	// us mìøení nebylo spuštìno
-	if (!CHECKBIT(TCCR1B,CS11)) {
+	if (!CHECKBIT(TCCR1B,CS11) && mod_state.s_state==S_FAST_SCAN) {
 
 		// spuštìní mìøení
 		C_SETBIT(US_TRIG);
@@ -254,6 +256,62 @@ ISR(TIMER0_OVF_vect){
 
 
 	// TODO: obsluha infra mìøení
+
+
+}
+
+// mìøení mimo pøerušení
+void us_measure(uint8_t index) {
+
+	// spuštìní mìøení
+	C_SETBIT(US_TRIG);
+	_delay_us(10);
+	C_CLEARBIT(US_TRIG);
+
+	TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
+
+	// èekání na dokonèení mìøení
+	while (CHECKBIT(TCCR1B,CS11));
+
+	// uložení výsledku do pole, us_fast jako pom. promìnná
+	mod_state.us_full[index] = mod_state.us_fast;
+	mod_state.us_fast = 0;
+
+}
+
+void makeFullScan() {
+
+	//OCR2 = 22; // 22 - støední poloha serva, 35 - zcela vlevo, 9 - zcela vpravo, 15 - vpravo (45st), 28 - vlevo (45st)
+
+	mod_state.s_state = S_FULL_SCAN;
+
+	// èekání na dokonèení pøedchozího mìøení
+	while (CHECKBIT(TCCR1B,CS11));
+
+	OCR2 = 35; // 0st
+	_delay_ms(2*150);
+	us_measure(0);
+
+	OCR2 = 28; // 45st
+	_delay_ms(150);
+	us_measure(1);
+
+	OCR2 = 22; // 90st
+	_delay_ms(150);
+	us_measure(2);
+
+	OCR2 = 15; // 135st
+	_delay_ms(150);
+	us_measure(3);
+
+	OCR2 = 9; // 180st
+	_delay_ms(150);
+	us_measure(4);
+
+	OCR2 = 22;
+	_delay_ms(2*150);
+
+	mod_state.s_state = S_FAST_SCAN;
 
 
 }
@@ -273,6 +331,9 @@ int main(void) {
 
 		// pøepnutí na pøíjem
 		C_CLEARBIT(RS485_SEND);
+
+		// funkce realizující plné mìøení
+		//makeFullScan();
 
 
 		comm_state.receive_state = PR_WAITING;
