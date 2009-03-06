@@ -7,7 +7,7 @@
 enum {COMMSTATE} tpcdata;
 
 // stavy menu
-typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_JOYSTICK} tmenu_states;
+typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_SENS,M_JOYSTICK} tmenu_states;
 
 // stav modulu - menu, tlaèítka, èas atd.
 typedef struct {
@@ -65,6 +65,21 @@ typedef struct {
 	volatile uint8_t load;
 
 } tmotor;
+
+// stav senzorù
+typedef struct {
+
+	// pole pro uložení zmìøených vzdáleností ze Sharpù
+	volatile uint16_t sharp[4];
+
+	// pole pro uložení full scan dat z ultrazvuku (0, 45, 90, 135, 180)
+	volatile uint16_t us_full[5];
+
+	// prom. pro uložení rychlého scanování (za jízdy)
+	volatile uint16_t us_fast;
+
+
+} tsens;
 
 
 extern inline void set_uarts();
