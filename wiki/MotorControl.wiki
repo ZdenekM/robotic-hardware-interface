@@ -2,19 +2,24 @@
 
 První modul vyvíjeného systému. Modul MotorControl je určen k řízení dvou stejnosměrných  [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=75_101&products_id=405 motorků GHM-16]. Protože je [http://shop.snailinstruments.com/index.php?main_page=product_info&cPath=77&products_id=382 podvozek MOB-03] tvořen čtveřicí těchto DC motorků, bude na řízení pohonů potřeba dvojice těchto modulů. Modul je samozřejmě univerzální, takže je možné využít jakýkoliv motorek s enkodérem s podobnými parametry. 
 
+Popis komunikace modulů s MainMod zde: KomunikaceMeziModuly.
+
 ==Aktuální stav==
 
   * navržená, vyrobená a osazená deska (ke stažení)
   * zprovozněná komunikace
   * vyzkoušený PID regulátor (bohužel na jiném motoru a jiném enkodéru než bude finální)
   * odladěný PID regulátor, plynulý rozjezd/dojezd
+  * odesílání informací o ujeté vzdálenosti, aktuální rychlosti
+  * zastavení při výpadku komunikace
 
 ==Plánované funkce modulu==
 
   * řízení budiče L298HN, čtení dvou enkodérů (QME-01)
-  * řízení rychlosti pomocí PID regulátorů, brždění
+  * řízení rychlosti pomocí PID regulátorů, brzdění
   * plynulý rozjezd a zastavení
   * měření proudu a teploty motorů
+  * zastavení při výpadku komunikace, enkodérů (otázka, jak to vyřešit)
 
 ==Parametry pohonu==
 
@@ -36,4 +41,4 @@ Výrobce LynxMotion, dodavatel HobbyRobot.
 ==Možná vylepšení modulu==
 
   * použít lepší integrovaný H-bridge, s integrovanými ochr. diodami -> víc místa na DPS
-  * použít jiný procesor s diferenciálními vstupy AD převodníku -> menší odpory pro měření proudu
+  * použít jiný procesor s diferenciálními vstupy AD převodníku -> menší odpory pro měření proudu (přesnější měření)
