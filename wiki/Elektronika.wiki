@@ -1,6 +1,6 @@
 ==Popis společných vlastností modulů==
 
-Jednotlivé moduly se mnoha věcech podobají.
+Jednotlivé moduly se v mnoha věcech podobají.
 
 ===Konektory===
 
