@@ -2,15 +2,18 @@
 
 Řídicí modul bude zpracovávat povely z PC, komunikovat s podřízenými moduly a zajišťovat některé autonomní, diagnostické a kontrolní funkce.
 
+Popis komunikace tohoto modulu s PC: KomunikacePCMainMod
+
 == Aktuální stav ==
 
   * navržená a vyrobená DPS
   * zprovozněná komunikace směrem k modulům i směrem k PC, obsluha LCD, tlačítek, snímání stavu joysticku
+  * jízda dopředu/vzad (ovládání joystickem), vyzkoušena komunikace s PC
 
 == Plánované funkce ==
 
-  * výstup informací na LCD, ovládání a nastavování parametrů pomocí tlačítek
-  * komunikace s PC (příjem povelů, odesílání dat)
+  * výstup informací na LCD, ovládání a nastavování parametrů (např. PID konstant) pomocí tlačítek
+  * komunikace s PC (příjem povelů, odesílání dat, nastavování parametrů)
   * vysílání povelů do podřízených modulů, sběr a zpracování dat
   * diagnostické funkce
     * zjištění funkčnosti pohonů (krátké popojetí, přečtení ujeté vzdálenosti)
@@ -23,12 +26,11 @@
   * možnost ovládat robota pomocí analogového joysticku - přímo, bez PC
   * funkce "náhodná projížďka" - samostatná jízda s vyhýbáním se překážkám
 
-Řídící modul by měl programu v PC například umožnit nastavení PID konstant apod.
 
 == Použité součástky ==
 
   * mikroprocesor atmega64 (nejlevnější s 2x UART)
-  * alfanumerický LCD (16x4 nebo 20x4 znaků)
+  * alfanumerický LCD (20x4 znaků)
   * stabilizátor 78L05 SMD
   * MAX232CWE
   * SN75176A - RS485 tranceiver
