@@ -85,6 +85,10 @@ volatile static tmotor m_lf,m_lr,m_rf,m_rr;
 // flagy pro obsluhu perif.
 volatile static uint8_t flags = 0;
 
+// stav senzorù
+volatile static tsens sens;
+
+
 #define MLCD flags, 0
 #define MRS232 flags, 1
 
@@ -274,6 +278,15 @@ void initModules() {
 	snprintf_P(buff,15,PSTR("MCR (11) %3u\%"),state);
 	lcd_puts(buff);
 
+	_delay_ms(1);
+
+	// SensMod
+	state = sendEcho(21);
+
+	lcd_gotoxy(0,3);
+	snprintf_P(buff,15,PSTR("SEM (21) %3u\%"),state);
+	lcd_puts(buff);
+
 
 	_delay_ms(2000);
 	lcd_clrscr();
@@ -442,6 +455,11 @@ void commStat(volatile tcomm_state *p) {
 	// poèet timeoutù
 	lcd_gotoxy(10,2);
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("TO:%7u"),p->packets_timeouted);}
+	lcd_puts(abuff);
+
+	// chyba synchronizace
+	lcd_gotoxy(10,3);
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("SY:%7u"),p->sync_error);}
 	lcd_puts(abuff);
 
 }
@@ -737,6 +755,39 @@ uint16_t joystick_xy(uint8_t dir) {
 
 }
 
+// zobrazí informace ze senzorù na LCD
+void sensInfo() {
+
+	char abuff[11];
+
+	lcd_gotoxy(0,1);
+	sprintf_P(abuff,PSTR("UF:%7u"),sens.us_fast);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(0,1);
+	sprintf_P(abuff,PSTR("UF:%7u"),sens.us_fast);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(0,2);
+	sprintf_P(abuff,PSTR("S1:%7u"),sens.sharp[0]);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(0,3);
+	sprintf_P(abuff,PSTR("S2:%7u"),sens.sharp[1]);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(10,1);
+	sprintf_P(abuff,PSTR("S3:%7u"),sens.sharp[2]);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(10,2);
+	sprintf_P(abuff,PSTR("S4:%7u"),sens.sharp[3]);
+	lcd_puts(abuff);
+
+
+
+}
+
 void manageLcd() {
 
 	// obsluha lcd
@@ -818,6 +869,15 @@ void manageLcd() {
 
 	    } break;
 
+	    case M_SENS: {
+
+	    	writeTime(&mod_state);
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("Sensors");
+	    	sensInfo();
+
+	    } break;
+
 	    // TODO: tlaèítka
 	    // zobrazení stavu joysticku
 	    case M_JOYSTICK: {
@@ -861,6 +921,54 @@ void getMotorInfo(uint8_t addr, volatile tmotor *front, volatile tmotor *rear) {
 
 }
 
+
+// naète z modulu SensMod
+void getFastSensorState() {
+
+	// ètení stavu levých motorù
+	makePacket(&comm_state.op,NULL,0,P_SENS_FAST,21);
+
+	sendPacketE();
+
+	C_CLEARBIT(RS485_SEND);
+
+	// èekání na odpovìï
+	comm_state.receive_state = PR_WAITING;
+	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
+
+	// crc souhlasí -> úspìšné pøijetí paketu
+	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
+
+	   // data ze sonaru
+	   sens.us_fast = comm_state.ip.data[0];
+	   sens.us_fast |= comm_state.ip.data[1]<<8;
+
+	   // levý pøední sharp
+	   sens.sharp[0] = comm_state.ip.data[2];
+	   sens.sharp[0] |= comm_state.ip.data[3]<<8;
+
+	   // pravý pøední sharp
+	   sens.sharp[1] = comm_state.ip.data[4];
+	   sens.sharp[1] |= comm_state.ip.data[5]<<8;
+
+	   // levý zadní sharp
+	   sens.sharp[2] = comm_state.ip.data[6];
+	   sens.sharp[2] |= comm_state.ip.data[7]<<8;
+
+	   // pravý zadní sharp
+	   sens.sharp[3] = comm_state.ip.data[8];
+	   sens.sharp[3] |= comm_state.ip.data[9]<<8;
+
+
+
+
+	   };
+
+	 comm_state.receive_state = PR_READY;
+
+
+}
+
 // nastavení rychlosti motorù
 void setMotorSpeed(uint8_t addr, int16_t speed) {
 
@@ -889,6 +997,8 @@ int main(void)
 	initModules();
 
 	mod_state.menu_state = M_STANDBY;
+
+	pccomm_state.receive_state = PR_WAITING;
 
     while (1) {
 
@@ -920,7 +1030,12 @@ int main(void)
     	    		// odeslání statistiky komunikace s moduly do PC
     	    		//sendCommStat(&comm_state,&pccomm_state);
 
+
+
     	    	}
+
+
+
 
     	// obsluha joysticku ---------------------------------------------------------------------------
     	// TODO: zapínat joystick flagem -> stisknutí obou tlaèítek zároveò
@@ -962,11 +1077,18 @@ int main(void)
     	// ètení stavu pravých motorù
 		getMotorInfo(11,&m_rf,&m_rr);
 
+		// naètení dat ze senzorù
+		getFastSensorState();
+
 
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
 
-    	if (pccomm_state.receive_state == PR_READY) pccomm_state.receive_state = PR_WAITING;
+    	//if (pccomm_state.receive_state == PR_READY) pccomm_state.receive_state = PR_WAITING;
+
+
+
+		//while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
     	// crc souhlasí -> úspìšné pøijetí paketu
     	if (pccomm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&pccomm_state)) {
@@ -1006,7 +1128,7 @@ int main(void)
     		} break;
 
     		// informace o stavu pohonù
-    		case P_MOTOR_INFO: {
+    		case PC_MOVE_INFO: {
 
 				int16_t aspeedl,aspeedr, rspeedl, rspeedr;
 				int32_t distl,distr;
@@ -1061,13 +1183,16 @@ int main(void)
 
     		} // switch
 
-    	pccomm_state.receive_state = PR_WAITING;
+    		pccomm_state.receive_state = PR_WAITING;
 
     	} // if
 
 
+    	if (pccomm_state.receive_state == PR_TIMEOUT || pccomm_state.receive_state == PR_READY) pccomm_state.receive_state = PR_WAITING;
 
-    	_delay_ms(100);
+
+
+    	//_delay_ms(100);
 
     } // while
 
