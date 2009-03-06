@@ -2,9 +2,9 @@
 
 Modul SensMod bude pracovat s následujícími senzory:
 
-  * 3x infračervený dálkoměr Sharp (bude již však možno připojit více)
-  * ultrazvukový dálkoměr
+  * 4x infračervený dálkoměr Sharp (bude již však možno připojit více)
+  * 1x ultrazvukový dálkoměr (na servu)
   * elektronický kompas
-  * taktilní senzory
+  * 4x taktilní senzory (mikrospínače)
 
-Množství senzorů bude možné rozšířit - bude možné připojit více Sharpů a také ultrazvukových dálkoměrů, případně jiných senzorů komunikujících po sběrnici IIC. Ultrazvukový senzor umístěný na servu umožní robotu vyhledávat překážky v různých směrech.
+Množství senzorů bude možné rozšířit - bude možné připojit více Sharpů, nebo jiných senzorů s analogovým výstupem, případně více senzorů komunikujících po sběrnici I2C. Ultrazvukový senzor umístěný na servu umožní robotu vyhledávat překážky v různých směrech. Při zastavení robota proběhne "skenování" okolí ultrazvukem - změření vzdálenosti k překážce v úhlech 0, 45, 90, 135 a 180˚.
