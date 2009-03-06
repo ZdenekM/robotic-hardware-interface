@@ -2,6 +2,12 @@
 
 Jednotlivé moduly se v mnoha věcech podobají.
 
+Seznam realizovaných modulů:
+
+  * MainMod (řídicí modul)
+  * MotorControl (ovládání motorů)
+  * SensMod (obsluha senzorů)
+
 ===Konektory===
 
 Zapojení použitých konektorů je převzato z [http://robotika.cz/wiki/StandardKonektory robotika.cz/wiki], kde je nabízen návrh standardu pro robotické moduly. Tento standard by měl umožnit kompatibilitu robotických modulů.  Konkrétně jsou (nebo budou) využity tyto konektory:
