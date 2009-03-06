@@ -2,37 +2,24 @@
 
 Vývoj bude rozdělen do několika etap - verzí. Každá verze bude mít stanoveno jeden nebo více cílů.
 
-== Aktuálně přidaná funkčnost ==
 
-  * odladění chyb v PID regulaci
-  * obsluha joysticku (zjišťování vychýlení)
-  * zprovozněna komunikace mezi moduly
-
-
-----
 == Verze 0.1 ==
 
 Nultá verze bude používat dva moduly MotorControl a modul MainMod.
-
-=== Cílová funkčnost ===
 
   * funkční protokol pro komunikaci mezi moduly (KomunikacniProtokol)
   * posílání stavových a diagnostických informací z použitých modulů do PC
   * čtení enkodérů, implementace PID regulátorů, plynulý rozjezd/dojezd
   * příjem povelů z PC pro nejjednodušší pohyby: jízda rovně
   * ovládání pomocí joysticku
-----
 
-----
+
 == Verze 0.2 ==
 
 Přidání modulu pro obsluhu senzorů - SensMod.
-
-=== Cílová funkčnost ===
 
   * odesílání informací ze senzorů do PC
   * zastavení před detekovanou překážkou
   * otočení o zadaný úhel (pomocí kompasu)
   * nastavení konstant PID regulátoru z PC
   * ...
-----
