@@ -217,7 +217,10 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 	case PR_WAITING: {
 
 		if (tUDR==SYNC1) c->receive_state = PR_SYNC2;
-		else c->receive_state = PR_READY;
+		else {
+			c->receive_state = PR_READY;
+			c->sync_error++;
+			}
 
 	} break;
 
@@ -226,7 +229,10 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 	case PR_SYNC2:  {
 
 		if (tUDR==SYNC2) c->receive_state = PR_ADDR;
-		else c->receive_state = PR_READY;
+		else {
+			c->receive_state = PR_READY;
+			c->sync_error++;
+		}
 
 
 	} break;
