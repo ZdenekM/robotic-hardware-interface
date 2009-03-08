@@ -18,6 +18,9 @@ typedef struct {
 	// prom. pro uložení rychlého scanování (za jízdy)
 	volatile uint16_t us_fast;
 
+	// promìnná pro uložení výsledku plného skenování (bez filtrování)
+	volatile uint16_t us_comp;
+
 	// údaje z kompasu
 	volatile uint16_t comp;
 
