@@ -959,7 +959,75 @@ void getFastSensorState() {
 	   sens.sharp[3] = comm_state.ip.data[8];
 	   sens.sharp[3] |= comm_state.ip.data[9]<<8;
 
+	   // TODO: taktilní senzory
 
+
+	   };
+
+	 comm_state.receive_state = PR_READY;
+
+
+}
+
+// naète z modulu SensMod
+void getFullSensorState() {
+
+	// ètení stavu levých motorù
+	makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
+
+	sendPacketE();
+
+	C_CLEARBIT(RS485_SEND);
+
+	// TODO: vyzkoušet, jestli je 1500ms dost
+	// èekání na dokonèení mìøení
+	_delay_ms(1500);
+
+	// èekání na odpovìï
+	comm_state.receive_state = PR_WAITING;
+	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
+
+	// crc souhlasí -> úspìšné pøijetí paketu
+	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
+
+	   // data ze sonaru
+	   // 0st
+	   sens.us_full[0] = comm_state.ip.data[0];
+	   sens.us_full[0] |= comm_state.ip.data[1]<<8;
+
+	   // 45st
+	   sens.us_full[1] = comm_state.ip.data[2];
+	   sens.us_full[1] |= comm_state.ip.data[3]<<8;
+
+	   // 90st
+	   sens.us_full[2] = comm_state.ip.data[4];
+	   sens.us_full[2] |= comm_state.ip.data[5]<<8;
+
+	   // 135st
+	   sens.us_full[3] = comm_state.ip.data[6];
+	   sens.us_full[3] |= comm_state.ip.data[7]<<8;
+
+	   // 180st
+	   sens.us_full[4] = comm_state.ip.data[8];
+	   sens.us_full[4] |= comm_state.ip.data[9]<<8;
+
+	   // levý pøední sharp
+	   sens.sharp[0] = comm_state.ip.data[10];
+	   sens.sharp[0] |= comm_state.ip.data[11]<<8;
+
+	   // pravý pøední sharp
+	   sens.sharp[1] = comm_state.ip.data[12];
+	   sens.sharp[1] |= comm_state.ip.data[13]<<8;
+
+	   // levý zadní sharp
+	   sens.sharp[2] = comm_state.ip.data[14];
+	   sens.sharp[2] |= comm_state.ip.data[15]<<8;
+
+	   // pravý zadní sharp
+	   sens.sharp[3] = comm_state.ip.data[16];
+	   sens.sharp[3] |= comm_state.ip.data[17]<<8;
+
+	   // TODO: taktilní senzory
 
 
 	   };
@@ -1084,12 +1152,6 @@ int main(void)
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
 
-    	//if (pccomm_state.receive_state == PR_READY) pccomm_state.receive_state = PR_WAITING;
-
-
-
-		//while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
-
     	// crc souhlasí -> úspìšné pøijetí paketu
     	if (pccomm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&pccomm_state)) {
 
@@ -1098,14 +1160,14 @@ int main(void)
     		//echo - poslat zpìt stejný paket
     		case P_ECHO: {
 
+    			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
+    			while(pccomm_state.send_state != PS_READY);
+
     			// vytvoøení ECHO paketu
     			makePacket(&pccomm_state.op,pccomm_state.ip.data,pccomm_state.ip.len,P_ECHO,0);
 
     			// zahájení pøenosu
     			sendFirstByte(&UDR0,&pccomm_state);
-
-    			// èekání na odeslání paketu
-    			while(pccomm_state.send_state != PS_READY);
 
 
     		} break;
@@ -1165,20 +1227,127 @@ int main(void)
 				arr[14] = distr>>16;
 				arr[15] = distr>>24;
 
-				// vytvoøení ECHO paketu
+				// èekání na pøípadné dokonèení odeslání pøedchozího paketu
+				while(pccomm_state.send_state != PS_READY);
+
 				makePacket(&pccomm_state.op,arr,16,P_MOTOR_INFO,0);
 
 				// zahájení pøenosu
 				sendFirstByte(&UDR0,&pccomm_state);
 
-				// èekání na odeslání paketu
-				while(pccomm_state.send_state != PS_READY);
+
+    		} break;
+
+    		case PC_MOVE_AINFO: {
+
+    			// TODO: dodìlat
+
+    		} break;
+
+    		// data ze senzorù - mìøeno za pohybu
+    		case P_SENS_FAST: {
+
+    			uint8_t arr[11];
+
+    			// ultrazvuk - rychlé mìøení
+    			arr[0] = sens.us_fast;
+    			arr[1] = sens.us_fast>>8;
+
+    			// sharp 1 (levý pøední)
+    			arr[2] = sens.sharp[0];
+    			arr[3] = sens.sharp[0]>>8;
+
+    			// sharp 2 (pravý pøední)
+    			arr[4] = sens.sharp[1];
+    			arr[5] = sens.sharp[1]>>8;
+
+    			// sharp 3 (levý zadní)
+    			arr[6] = sens.sharp[2];
+    			arr[7] = sens.sharp[2]>>8;
+
+    			// sharp 4 (pravý zadní)
+    			arr[8] = sens.sharp[3];
+    			arr[9] = sens.sharp[3]>>8;
+
+    			// TODO: taktilní senzory
+    			arr[10] = 0;
+
+    			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
+    			while(pccomm_state.send_state != PS_READY);
+
+    			// vytvoøení paketu
+    			makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
+
+    			// zahájení pøenosu
+    			sendFirstByte(&UDR0,&pccomm_state);
+
+    		} break;
+
+    		// plné mìøení - pouze když se stojí
+    		case P_SENS_FULL: {
+
+    			if (m_lf.act_speed == 0 && m_rf.act_speed == 0) {
+
+
+    				getFullSensorState();
+
+    				uint8_t arr[19];
+
+    				// us - 0st
+    				arr[0] = sens.us_full[0];
+    				arr[1] = sens.us_full[0]>>8;
+
+    				// us - 45st
+    				arr[2] = sens.us_full[1];
+    				arr[3] = sens.us_full[1]>>8;
+
+    				// us - 90st
+    				arr[4] = sens.us_full[2];
+    				arr[5] = sens.us_full[2]>>8;
+
+    				// us - 135st
+    				arr[6] = sens.us_full[3];
+    				arr[7] = sens.us_full[3]>>8;
+
+    				// us - 180st
+    				arr[8] = sens.us_full[4];
+    				arr[9] = sens.us_full[4]>>8;
+
+
+					// sharp 1 (levý pøední)
+    				arr[10] = sens.sharp[0];
+    				arr[11] = sens.sharp[0]>>8;
+
+    				// sharp 2 (pravý pøední)
+    				arr[12] = sens.sharp[1];
+    				arr[13] = sens.sharp[1]>>8;
+
+    				// sharp 3 (levý zadní)
+    				arr[14] = sens.sharp[2];
+    				arr[15] = sens.sharp[2]>>8;
+
+    				// sharp 4 (pravý zadní)
+    				arr[16] = sens.sharp[3];
+    				arr[17] = sens.sharp[3]>>8;
+
+    				// TODO: taktilní senzory
+    				arr[18] = 0;
+
+    				// èekání na pøípadné dokonèení odeslání pøedchozho paketu
+    				while(pccomm_state.send_state != PS_READY);
+
+    				// vytvoøení paketu
+    				makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
+
+    				// zahájení pøenosu
+    				sendFirstByte(&UDR0,&pccomm_state);
+
+
+    			}
 
 
 
     		} break;
-
-
 
 
     		} // switch
@@ -1192,7 +1361,7 @@ int main(void)
 
 
 
-    	//_delay_ms(100);
+    	_delay_ms(100);
 
     } // while
 
