@@ -64,3 +64,12 @@ Popis jednotlivých paketů:
   * tact ... taktilní (dotekové) senzory (u1)
 
 Pozn: v bytu tact odpovídá nejnižší bit levému přednímu senzoru (spínači) atd. Jednička indikuje kontakt.
+
+||P_SENS_FULL||us_dist_0||us_dist_45||us_dist_90||us_dist_135||us_dist_180||sharp1 ... sharp4||tact||
+
+  * us_dist_0 ... vzdálenost k překážce pod úhlem 0˚ (zcela vlevo) (u2)
+  * us_dist_180 ... 180˚ (zcela vpravo)
+  * sharp, tact ... viz předchozí popis
+
+Pozn: během měření, které trvá cca 1,5 vteřiny, elektronika nereaguje na další povely. Plné měření se provede jen pokud robot stojí (jinak by data byla k ničemu).
+
