@@ -115,7 +115,7 @@ static inline void ioinit (void) {
 	ADMUX = (1<<REFS1)|(1<<REFS0);
 
 	// povolení ADC, free running mode
-	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0)|(1<<ADFR)|(1<<ADSC)|(1<<ADIE);
+	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0)|(0<<ADFR)|(0<<ADSC)|(0<<ADIE);
 
 	// nastavení pøerušení od èasovaèù
 	TIMSK = (1<<TICIE1)|(1<<TOIE1)|(1<<TOIE0);
@@ -133,11 +133,6 @@ static inline void ioinit (void) {
 
 }
 
-ISR(ADC_vect) {
-
-	// TODO: dopsat obsluhu ADC
-
-}
 
 
 // input capture
@@ -156,8 +151,15 @@ ISR(TIMER1_CAPT_vect){
 	} else {
 
 		// TODO: dodìlat kalibraci podle teploty
-		// uložení výsledku
-		mod_state.us_fast = ICR1 / 118;
+
+		// filtrování
+		static uint16_t pICR1;
+
+		// uložení výsledku - v mm
+		mod_state.us_fast = ((ICR1 + pICR1)/2)/12;
+		mod_state.us_comp = ICR1/12;
+
+		pICR1 = ICR1;
 
 		// zastavení mìøení
 		CLEARBIT(TCCR1B,CS11);
@@ -255,12 +257,10 @@ ISR(TIMER0_OVF_vect){
 	}
 
 
-	// TODO: obsluha infra mìøení
-
 
 }
 
-// mìøení mimo pøerušení
+// mìøení sonarem mimo pøerušení
 void us_measure(uint8_t index) {
 
 	// spuštìní mìøení
@@ -268,14 +268,25 @@ void us_measure(uint8_t index) {
 	_delay_us(10);
 	C_CLEARBIT(US_TRIG);
 
+	uint16_t pom;
+
 	TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
 
 	// èekání na dokonèení mìøení
 	while (CHECKBIT(TCCR1B,CS11));
 
-	// uložení výsledku do pole, us_fast jako pom. promìnná
-	mod_state.us_full[index] = mod_state.us_fast;
-	mod_state.us_fast = 0;
+	// uložení vzd. do pom. prom.
+	pom = mod_state.us_comp;
+	mod_state.us_comp = 0;
+
+	TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
+
+	// èekání na dokonèení mìøení
+	while (CHECKBIT(TCCR1B,CS11));
+
+	// uložení výsledku do pole, filtrování prùmìrem dvou mìøení
+	mod_state.us_full[index] = (mod_state.us_comp + pom)/2;
+	mod_state.us_comp = 0;
 
 }
 
@@ -288,31 +299,70 @@ void makeFullScan() {
 	// èekání na dokonèení pøedchozího mìøení
 	while (CHECKBIT(TCCR1B,CS11));
 
+	// doba v ms pro servo na otoèení o 45st.
+	#define SDEL 150
+
 	OCR2 = 35; // 0st
-	_delay_ms(2*150);
+	_delay_ms(2*SDEL);
 	us_measure(0);
 
 	OCR2 = 28; // 45st
-	_delay_ms(150);
+	_delay_ms(SDEL);
 	us_measure(1);
 
 	OCR2 = 22; // 90st
-	_delay_ms(150);
+	_delay_ms(SDEL);
 	us_measure(2);
 
 	OCR2 = 15; // 135st
-	_delay_ms(150);
+	_delay_ms(SDEL);
 	us_measure(3);
 
 	OCR2 = 9; // 180st
-	_delay_ms(150);
+	_delay_ms(SDEL);
 	us_measure(4);
 
 	OCR2 = 22;
-	_delay_ms(2*150);
+	_delay_ms(2*SDEL);
 
 	mod_state.s_state = S_FAST_SCAN;
 
+
+}
+
+
+// spoèítá vzdálenost pøekážky z ADC
+uint16_t sharpDist(uint16_t adc) {
+
+	uint16_t pom = (125000/adc)-47;
+
+	// nula indikuje chybový stav - pøekroèení rozsahu
+	if (pom < 900) return pom;
+	else return 0;
+
+}
+
+
+void getChanData(uint8_t index, uint8_t chan) {
+
+	static uint16_t sharp[4];
+
+	ADMUX &= 0xF0;
+	ADMUX |= chan;
+	SETBIT(ADCSRA,ADSC);
+	while (CHECKBIT(ADCSRA,ADSC));
+	sharp[index] = (sharp[index] + ADCW)/2;
+	mod_state.sharp[index] = sharpDist(sharp[index]);
+
+}
+
+// obsluha Sharpù
+void getAnalogData() {
+
+	getChanData(0,6);
+	getChanData(1,7);
+	getChanData(2,0);
+	getChanData(3,1);
 
 }
 
@@ -332,9 +382,8 @@ int main(void) {
 		// pøepnutí na pøíjem
 		C_CLEARBIT(RS485_SEND);
 
-		// funkce realizující plné mìøení
-		//makeFullScan();
-
+		// obsluha Sharpù
+		getAnalogData();
 
 		comm_state.receive_state = PR_WAITING;
 
@@ -364,7 +413,7 @@ int main(void) {
 			// rychlé mìøení - jízda rovnì
 			case P_SENS_FAST: {
 
-				uint8_t arr[10];
+				uint8_t arr[11];
 
 				// ultrazvuk - rychlé mìøení
 				ATOMIC_BLOCK(ATOMIC_FORCEON) {
@@ -391,19 +440,22 @@ int main(void) {
 				arr[8] = mod_state.sharp[3];
 				arr[9] = mod_state.sharp[3]>>8; }
 
-				makePacket(&comm_state.op,arr,10,P_SENS_FAST,0);
+				// TODO: taktilní senzory
+				arr[10] = 0;
+
+				makePacket(&comm_state.op,arr,11,P_SENS_FAST,0);
 
 				sendPacketE();
 
-			}
+			} break;
 
 			// úplné mìøení - na místì, s otáèením serva
 			case P_SENS_FULL: {
 
+				// funkce realizující plné mìøení, trvá cca 1,5 sekundy
+				makeFullScan();
 
-				// TODO: doplnit funkènost
-
-				uint8_t arr[18];
+				uint8_t arr[19];
 
 				// us - 0st
 				ATOMIC_BLOCK(ATOMIC_FORCEON) {
@@ -451,7 +503,10 @@ int main(void) {
 				arr[16] = mod_state.sharp[3];
 				arr[17] = mod_state.sharp[3]>>8; }
 
-				makePacket(&comm_state.op,arr,18,P_SENS_FULL,0);
+				// TODO: taktilní senzory
+				arr[18] = 0;
+
+				makePacket(&comm_state.op,arr,19,P_SENS_FULL,0);
 
 				sendPacketE();
 
