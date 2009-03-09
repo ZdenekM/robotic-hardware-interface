@@ -74,6 +74,8 @@ void state_init(tmod_state *m) {
 
 	m->comp = 0;
 
+	m->tact = 0;
+
 
 }
 
@@ -241,8 +243,6 @@ ISR(TIMER0_OVF_vect){
 	// poèítadlo timeoutu pro pøíjem po RS485
 	receiveTimeout(&comm_state);
 
-	// TODO: dodìlat rozlišení fast a full scan
-
 	// us mìøení nebylo spuštìno
 	if (!CHECKBIT(TCCR1B,CS11) && mod_state.s_state==S_FAST_SCAN) {
 
@@ -255,6 +255,10 @@ ISR(TIMER0_OVF_vect){
 		TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
 
 	}
+
+
+	// TODO: obsluha taktilních senzorù -> zkopírovat z MainMod
+
 
 
 
@@ -351,6 +355,8 @@ void getChanData(uint8_t index, uint8_t chan) {
 	ADMUX |= chan;
 	SETBIT(ADCSRA,ADSC);
 	while (CHECKBIT(ADCSRA,ADSC));
+
+	// prùmìr se poèítá ze surových dat, ne ze vzdálenosti - pro vìtší pøesnost
 	sharp[index] = (sharp[index] + ADCW)/2;
 	mod_state.sharp[index] = sharpDist(sharp[index]);
 
@@ -394,8 +400,8 @@ int main(void) {
 		// pokud byl pøijat paket -> rozhodnutí podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
+			// indikace pøíjmu paketu
 			C_FLIPBIT(LED);
-
 
 			switch(comm_state.ip.packet_type) {
 
@@ -440,8 +446,8 @@ int main(void) {
 				arr[8] = mod_state.sharp[3];
 				arr[9] = mod_state.sharp[3]>>8; }
 
-				// TODO: taktilní senzory
-				arr[10] = 0;
+				// taktilní senzory
+				arr[10] = mod_state.tact;
 
 				makePacket(&comm_state.op,arr,11,P_SENS_FAST,0);
 
@@ -503,8 +509,8 @@ int main(void) {
 				arr[16] = mod_state.sharp[3];
 				arr[17] = mod_state.sharp[3]>>8; }
 
-				// TODO: taktilní senzory
-				arr[18] = 0;
+				// taktilní senzory
+				arr[18] = mod_state.tact;
 
 				makePacket(&comm_state.op,arr,19,P_SENS_FULL,0);
 
