@@ -7,6 +7,15 @@ PC posílá povely k jízdě přímo (požadovaná vzdálenost), nebo povel k ot
   * PC by v paketu mohl posílat celé sekvence povelů
   * otočení o libovolný úhel
 
+=== Volná jízda ===
+
+Tento typ paketu slouží zejména pro ovládání robotu joystickem a tedy pro libovolný (volný) pohyb.
+
+||PC_FREE_RIDE||speedl||speedr||
+
+  * speedl ... požadovaná rychlost pro levé motory (s2)
+  * speedr ... požadovaná rychlost pro pravé motory (s2)
+
 === Jízda rovně ===
 
 PC pošle modulu MainMod paket typu PC_MOVE_STRAIGHT, požadovanou vzdálenost v mm a požadovanou rychlost (opět v mm/s).
@@ -72,4 +81,3 @@ Pozn: v bytu tact odpovídá nejnižší bit levému přednímu senzoru (spína�
   * sharp, tact ... viz předchozí popis
 
 Pozn: během měření, které trvá cca 1,5 vteřiny, elektronika nereaguje na další povely. Plné měření se provede jen pokud robot stojí (jinak by data byla k ničemu).
-
