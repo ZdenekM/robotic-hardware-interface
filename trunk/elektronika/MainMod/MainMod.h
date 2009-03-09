@@ -9,11 +9,17 @@ enum {COMMSTATE} tpcdata;
 // stavy menu
 typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_SENS,M_JOYSTICK} tmenu_states;
 
+// zdroje povelù pro podøízené moduly - zdroj øízení
+typedef enum {C_AUTO,C_JOY,C_PC} tcontrol;
+
 // stav modulu - menu, tlaèítka, èas atd.
 typedef struct {
 
 	// aktuální stav menu
 	volatile tmenu_states menu_state;
+
+	// urèuje zdroj povelù pro podøízené moduly
+	volatile tcontrol control;
 
 	// poèítadlo pro krátké zapnutí podsvìtlení po stisku tlaèítka
 	volatile uint16_t backlight;
@@ -77,6 +83,9 @@ typedef struct {
 
 	// prom. pro uložení rychlého scanování (za jízdy)
 	volatile uint16_t us_fast;
+
+	// taktilní senzory
+	volatile uint8_t tact;
 
 
 } tsens;
