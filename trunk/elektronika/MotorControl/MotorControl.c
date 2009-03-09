@@ -337,6 +337,9 @@ uint16_t motor_reg(volatile tmotor *m) {
 				// ulozeni aktualni rychlosti
 				m->last_speed = m->act_speed;
 
+				// výpoèet zátìže - prùmìr
+				m->load = (m->load + (m->act/25))/2;
+
 				return (uint16_t)m->act;
 
 
@@ -548,15 +551,9 @@ void makeMotorInfo() {
 	data[9] = (int32_t)motor1.distance>>16;
 	data[10] = (int32_t)motor1.distance>>24; }
 
-
-	static uint8_t pl1=0;
-	uint8_t l1;
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {l1 = motor1.act/25;}
-
 	// výkon pøedního motoru (pro ICR1==2500) - DP
-	data[11] =  (l1 + pl1)/2;
+	data[11] =  motor1.load;
 
-	pl1 = l1;
 
 	// ********************************************
 	// aktuální rychlost zadního motoru
@@ -580,14 +577,8 @@ void makeMotorInfo() {
 	data[19] = (int32_t)motor2.distance>>16;
 	data[20] = (int32_t)motor2.distance>>24; }
 
-	static uint8_t pl2=0;
-	uint8_t l2;
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {l2 = motor2.act/25;}
-
 	// výkon zadního motoru
-	data[21] = (l2 + pl2)/2;
-
-	pl2 = l2;
+	data[21] = motor2.load;
 
 	makePacket(&comm_state.op,data,22,P_MOTOR_INFO,0);
 
@@ -629,7 +620,7 @@ void motor_current() {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	motor1.current = (ADCW/6);
+	motor1.current = (motor1.current + (ADCW/6)) / 2;
 
 	ADMUX++;
 
@@ -639,7 +630,7 @@ void motor_current() {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	motor2.current = (ADCW/6);
+	motor2.current = (motor2.current + (ADCW/6)) / 2;
 
 	ADMUX--;
 
@@ -661,7 +652,6 @@ int main(void) {
 		// mìøení proudu motory
 		motor_current();
 
-
 		// pøepnutí na pøíjem
 		C_CLEARBIT(RS485_SEND);
 
@@ -675,7 +665,8 @@ int main(void) {
 		// pokud byl pøijat paket -> rozhodnutí podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
-			//C_FLIPBIT(LED);
+			// indikace pøíjmu paketu
+			C_FLIPBIT(LED);
 
 			// vynulování poèítadla pro timeout komunikace -> zastavení motorù
 			comm_to = 0;
@@ -716,8 +707,6 @@ int main(void) {
 
 			// požadavek na odeslání informací z motorù
 			case P_MOTOR_INFO: {
-
-				C_FLIPBIT(LED);
 
 				// vytvoøení paketu
 				makeMotorInfo();
