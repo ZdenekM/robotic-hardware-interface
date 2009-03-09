@@ -24,6 +24,9 @@ typedef struct {
 	// údaje z kompasu
 	volatile uint16_t comp;
 
+	// taktilní senzory
+	volatile uint8_t tact;
+
 
 } tmod_state;
 
