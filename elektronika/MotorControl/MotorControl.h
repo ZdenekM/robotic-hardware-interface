@@ -65,6 +65,9 @@ typedef struct {
 	// teplota motoru
 	volatile uint8_t temp;
 
+	// zátìž (v %) - prùmìr
+	volatile uint8_t load;
+
 	// ukazatele na funkce ovladajici smer otaceni atd.
 	void (*forwd)(void);
 	void (*backwd)(void);
