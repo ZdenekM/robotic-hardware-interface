@@ -160,36 +160,6 @@ inline void set_adc(void) {
 
 }
 
-// TODO: zvážit lepší zpùsob filtrování
-// volá se z main
-#define MOV 10
-uint16_t moving_average_x(uint16_t value)
-{
-       static uint16_t buffer[MOV], i=0;
-       static uint16_t acc=0;
-
-
-       acc = acc - buffer[i] + value;
-       buffer[i] = value;
-       if (++i >= MOV) i = 0;
-
-       return acc/MOV;     // nebo acc/N podle potøeby
-}
-
-uint16_t moving_average_y(uint16_t value)
-{
-       static uint16_t buffer[MOV], i=0;
-       static uint16_t acc=0;
-
-       acc = acc - buffer[i] + value;
-       buffer[i] = value;
-       if (++i >= MOV) i = 0;
-
-       return acc/MOV;     // nebo acc/N podle potøeby
-}
-
-
-
 
 
 // volá se z main
@@ -716,16 +686,12 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 
 }
 
-enum {JOY_Y=6,JOY_X=7};
 // spustí AD pøevod pro urèení vychýlení joysticku
-uint16_t joystick_xy(uint8_t dir) {
-
-	static uint16_t lx=0,ly=0;
-	uint16_t val;
+void update_joystick(volatile tmod_state *m) {
 
 	// nastavení kanálu
 	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
-	ADMUX |= dir&0x3F; // nastaví kanál
+	ADMUX |= 6&0x3F; // osa Y
 
 	// spustí pøevod
 	SETBIT(ADCSRA,ADSC);
@@ -733,25 +699,21 @@ uint16_t joystick_xy(uint8_t dir) {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	if (dir==JOY_X) {
+	m->joy_y = (m->joy_y + ADCW) / 2; // filtr
 
-		// dolní propust
-		val = ADCW/2 + lx/2;
-		lx = ADCW;
+	// nastavení kanálu
+	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
+	ADMUX |= 7&0x3F; // osa X
 
-	} else {
+	// spustí pøevod
+	SETBIT(ADCSRA,ADSC);
 
-		// dolní propust
-		val = ADCW/2 + ly/2;
-		ly = ADCW;
+	// èeká na dokonèení pøevodu
+	while (CHECKBIT(ADCSRA,ADSC ));
 
-	}
+	m->joy_x = (m->joy_x + ADCW) / 2; // filtr
 
-	return val;
 
-	// TODO: zkusit najít efektivnìjší filtrování
-	//if (dir==JOY_X) return moving_average_x(1023-ADCW);
-	//else return moving_average_y(ADCW);
 
 }
 
@@ -788,6 +750,7 @@ void sensInfo() {
 
 }
 
+// obsluha LCD
 void manageLcd() {
 
 	// obsluha lcd
@@ -959,7 +922,8 @@ void getFastSensorState() {
 	   sens.sharp[3] = comm_state.ip.data[8];
 	   sens.sharp[3] |= comm_state.ip.data[9]<<8;
 
-	   // TODO: taktilní senzory
+	   // taktilní senzory
+	   sens.tact = comm_state.ip.data[10];
 
 
 	   };
@@ -969,7 +933,7 @@ void getFastSensorState() {
 
 }
 
-// naète z modulu SensMod
+// provede plné skenování a naète data ze SensMod
 void getFullSensorState() {
 
 	// ètení stavu levých motorù
@@ -1027,7 +991,8 @@ void getFullSensorState() {
 	   sens.sharp[3] = comm_state.ip.data[16];
 	   sens.sharp[3] |= comm_state.ip.data[17]<<8;
 
-	   // TODO: taktilní senzory
+	   // taktilní senzory
+	   sens.tact = comm_state.ip.data[18];
 
 
 	   };
@@ -1068,6 +1033,9 @@ int main(void)
 
 	pccomm_state.receive_state = PR_WAITING;
 
+	// nastavení zdroje øízení na PC
+	mod_state.control = C_PC;
+
     while (1) {
 
     	// pøepínání režimu lcd ---------------------------------------------------------------------------
@@ -1082,6 +1050,7 @@ int main(void)
     	    }
 
 
+    	// obsluha LCD
     	if (C_CHECKBIT(MLCD)) {
 
     		C_CLEARBIT(MLCD);
@@ -1090,63 +1059,47 @@ int main(void)
 
     	}
 
-    	// odeslání dat do PC ---------------------------------------------------------------------------
-    	if (C_CHECKBIT(MRS232)) {
 
-    	    		C_CLEARBIT(MRS232);
+    	// obsluha periferií a podøízených modulù ---------------------------------------------------------------------------
 
-    	    		// odeslání statistiky komunikace s moduly do PC
-    	    		//sendCommStat(&comm_state,&pccomm_state);
-
-
-
-    	    	}
-
-
-
-
-    	// obsluha joysticku ---------------------------------------------------------------------------
-    	// TODO: zapínat joystick flagem -> stisknutí obou tlaèítek zároveò
-
-			uint16_t x,y;
-
-			x = joystick_xy(JOY_X);
-			y = joystick_xy(JOY_Y);
-
-			mod_state.joy_x = x;
-			mod_state.joy_y = y;
-
-
-    	// TODO: nastavení rychlosti pouze pøi aktivaci joysticku, nebo pøi pøíjmu dat z PC
-
-    	// pokus - nastavení rychlosti podle joysticku
-
-
-    	int16_t sp = 0;
-
-    	sp = (int16_t)(mod_state.joy_y-511)/2;
-
-    	// práh
-    	if (sp > -5 && sp < 5) sp = 0;
-
-    	setMotorSpeed(10,sp);
-    	setMotorSpeed(11,sp);
-
-
-    	// obsluha komunikace s moduly ---------------------------------------------------------------------------
-
-    	// TODO: napsat funkci na obsluhu pøíjmu z modulù -> pøi timeoutu, nebo bad crc zkusí aut. poslat znovu
-
+    	// TODO: obsluha tlaèítek
+    	update_joystick(&mod_state);
 
 		// ètení stavu levých motorù
 		getMotorInfo(10,&m_lf,&m_lr);
-
 
     	// ètení stavu pravých motorù
 		getMotorInfo(11,&m_rf,&m_rr);
 
 		// naètení dat ze senzorù
 		getFastSensorState();
+
+		// TODO: zastavení pøi zjištìné blízké pøekážce
+
+    	// zdroj øízení nastaven na joystick
+    	if (mod_state.control == C_JOY) {
+
+    		// TODO: dodìlat zatáèení
+
+			int16_t sp = 0;
+
+			sp = (int16_t)(mod_state.joy_y-511)/2;
+
+			// práh
+			if (sp > -5 && sp < 5) sp = 0;
+
+			setMotorSpeed(10,sp);
+			setMotorSpeed(11,sp);
+
+    	}
+
+    	// autonomní operace
+    	if (mod_state.control == C_AUTO ) {
+
+
+    		// TODO: náhodná projížïka
+
+    	}
 
 
 
@@ -1160,7 +1113,7 @@ int main(void)
     		//echo - poslat zpìt stejný paket
     		case P_ECHO: {
 
-    			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
+    			// èekání na pøípadné dokonèení odeslání pøedchozího paketu
     			while(pccomm_state.send_state != PS_READY);
 
     			// vytvoøení ECHO paketu
@@ -1172,11 +1125,38 @@ int main(void)
 
     		} break;
 
+    		// volná jízda - ovládání joystickem
+    		case PC_FREE_RIDE: {
+
+    			uint16_t spl, spr;
+
+    			if (mod_state.control == C_PC ) {
+
+    			// rychlost pro levé motory
+    			spl = pccomm_state.ip.data[0];
+    			spl |= pccomm_state.ip.data[1]<<8;
+
+    			// rychlost pro pravé motory
+    			spr = pccomm_state.ip.data[2];
+    			spr |= pccomm_state.ip.data[3]<<8;
+
+    			setMotorSpeed(10,spl);
+    			setMotorSpeed(11,spr);
+
+    			}
+
+    		}
+
 
     		// jízda rovnì
     		case PC_MOVE_STRAIGHT: {
 
     			// TODO: naprogramovat
+    			if (mod_state.control == C_PC ) {
+
+
+
+    			}
 
 
     		} break;
@@ -1185,6 +1165,11 @@ int main(void)
     		case PC_MOVE_ROUND: {
 
     		    // TODO: naprogramovat
+    			if (mod_state.control == C_PC ) {
+
+
+
+    			}
 
 
     		} break;
@@ -1269,8 +1254,8 @@ int main(void)
     			arr[8] = sens.sharp[3];
     			arr[9] = sens.sharp[3]>>8;
 
-    			// TODO: taktilní senzory
-    			arr[10] = 0;
+    			// taktilní senzory
+    			arr[10] = sens.tact;
 
     			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
     			while(pccomm_state.send_state != PS_READY);
@@ -1286,9 +1271,10 @@ int main(void)
     		// plné mìøení - pouze když se stojí
     		case P_SENS_FULL: {
 
-    			if (m_lf.act_speed == 0 && m_rf.act_speed == 0) {
+    			// provede se pouze když robot stojí a zdroj øízení je nastavený na PC
+    			if (m_lf.act_speed == 0 && m_rf.act_speed == 0 && mod_state.control == C_PC) {
 
-
+    				// provést plné skenování
     				getFullSensorState();
 
     				uint8_t arr[19];
@@ -1330,8 +1316,8 @@ int main(void)
     				arr[16] = sens.sharp[3];
     				arr[17] = sens.sharp[3]>>8;
 
-    				// TODO: taktilní senzory
-    				arr[18] = 0;
+    				// taktilní senzory
+    				arr[18] = sens.tact;
 
     				// èekání na pøípadné dokonèení odeslání pøedchozho paketu
     				while(pccomm_state.send_state != PS_READY);
@@ -1341,7 +1327,6 @@ int main(void)
 
     				// zahájení pøenosu
     				sendFirstByte(&UDR0,&pccomm_state);
-
 
     			}
 
