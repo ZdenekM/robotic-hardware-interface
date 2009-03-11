@@ -5,7 +5,7 @@ Vývoj bude rozdělen do několika etap - verzí. Každá verze bude mít stanov
 
 == Verze 0.1 ==
 
-Nultá verze bude používat dva moduly MotorControl a modul MainMod.
+Nultá verze bude používat dva moduly MotorControl a modul MainMod. Testování na stole.
 
   * funkční protokol pro komunikaci mezi moduly (KomunikacniProtokol)
   * posílání stavových a diagnostických informací z použitých modulů do PC
@@ -16,10 +16,16 @@ Nultá verze bude používat dva moduly MotorControl a modul MainMod.
 
 == Verze 0.2 ==
 
-Přidání modulu pro obsluhu senzorů - SensMod.
+Přidání modulu pro obsluhu senzorů - SensMod. Testování na stole.
 
-  * odesílání informací ze senzorů do PC
+  * odesílání informací ze senzorů a pohonů do PC
   * zastavení před detekovanou překážkou
   * otočení o zadaný úhel (pomocí kompasu)
   * nastavení konstant PID regulátoru z PC
+  * ujetí zadané vzdálenosti (pomocí dalšího PID regulátoru)
+
+== Verze 0.3 ==
+
+Umístění všech senzorů a modulů na podvozek. Praktické testy.
+
   * ...
