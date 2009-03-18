@@ -196,6 +196,7 @@ void comm_state_init(volatile tcomm_state *c) {
 		c->packets_received = 0;
 		c->packets_timeouted = 0;
 		c->frame_error = 0;
+		c->sync_error = 0;
 
 
 	}
@@ -209,8 +210,6 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 	static uint8_t index = 0;
 
 	c->receive_timeout = 0;
-
-	//if (c!=NULL) {
 
 	switch (c->receive_state) {
 
@@ -298,7 +297,7 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 
 	case PR_PACKET_RECEIVED: {
 
-		// nedìlá nic - byty se neberou v úvahu, dokud není nìkde zpracovaný aktuální paket
+		// nedìlá nic - pøíchozí byty se neberou v úvahu, dokud není nìkde zpracovaný aktuální paket
 
 	} break;
 
@@ -312,7 +311,6 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 
 	} // switch
 
-	//}
 
 }
 
@@ -324,7 +322,6 @@ uint8_t checkPacket(volatile tcomm_state *c) {
 
 	if (crc == c->ip.crc) {
 
-		c->receive_state = PR_PACKET_RECEIVED;
 		c->packets_received++;
 		return 1;
 
@@ -332,7 +329,6 @@ uint8_t checkPacket(volatile tcomm_state *c) {
 
 		// chyba CRC :-(
 		c->packets_bad_received++;
-		c->receive_state = PR_BAD_CRC;
 		return 0;
 
 	}
