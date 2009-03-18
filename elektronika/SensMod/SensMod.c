@@ -158,8 +158,8 @@ ISR(TIMER1_CAPT_vect){
 		static uint16_t pICR1;
 
 		// uložení výsledku - v mm
-		mod_state.us_fast = ((ICR1 + pICR1)/2)/12;
-		mod_state.us_comp = ICR1/12;
+		mod_state.us_fast = ((ICR1 + pICR1)/2)/12-10;
+		mod_state.us_comp = ICR1/12-10;
 
 		pICR1 = ICR1;
 
@@ -201,7 +201,7 @@ ISR(USART_RXC_vect) {
 
 	// konec pøíjmu všeho
 	if (comm_state.receive_state==PR_PACKET_RECEIVED || comm_state.receive_state==PR_READY ||
-			comm_state.receive_state==PR_TIMEOUT || comm_state.receive_state==PR_BAD_CRC) SETBIT(UCSRA,MPCM);
+			comm_state.receive_state==PR_TIMEOUT) SETBIT(UCSRA,MPCM);
 
 }
 
@@ -338,7 +338,9 @@ void makeFullScan() {
 // spoèítá vzdálenost pøekážky z ADC
 uint16_t sharpDist(uint16_t adc) {
 
-	uint16_t pom = (125000/adc)-47;
+	// TODO: nová kalibrace
+	// -25 -> korekce kvùli umístìní na podvozku
+	uint16_t pom = (125000/adc)-47-25;
 
 	// nula indikuje chybový stav - pøekroèení rozsahu
 	if (pom < 900) return pom;
