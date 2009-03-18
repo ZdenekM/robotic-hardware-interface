@@ -226,11 +226,11 @@ static inline void ioinit (void) {
 	// 100 Hz - CT1 - PWM pro motory, regulace
 	// 50 Hz -> 2500
 	// 100 Hz -> 1250
-	#define PWM_TOP 2500
-	ICR1 = PWM_TOP; //  PWM period - TOP
+	//#define PWM_TOP 2500
+	ICR1 = 2500; //  PWM period - TOP
 
-	TCCR1A = (1<<WGM11) | (1<<WGM10) | (1<<COM1A1) | (0<<COM1A0) | (1<<COM1B1) | (0<<COM1B0); // phase correct, 10-bit
-	TCCR1B = (0<<CS12) | (1<<CS11) | (1<<CS10) | (0<<WGM13) | (0<<WGM12); // 64x presc.
+	TCCR1A = (1<<WGM11) | (0<<WGM10) | (1<<COM1A1) | (0<<COM1A0) | (1<<COM1B1) | (0<<COM1B0); // phase correct, 10-bit
+	TCCR1B = (0<<CS12) | (1<<CS11) | (1<<CS10) | (1<<WGM13) | (0<<WGM12); // 64x presc.
 
 	OCR1A = 0;
 	OCR1B = 0;
@@ -260,11 +260,6 @@ static inline void ioinit (void) {
 	motor1.backwd = &motor1_backwd;
 	motor1.stop = &motor1_stop;
 	motor1.free = &motor1_free;
-
-	// 100 Hz -> OCR2=78, N=1024, CTC mode -> pøerušení pro univerzální operace
-	//TCCR2 = (1<<WGM21)|(0<<WGM20)|(0<<COM21)|(0<<COM20)|(1<<CS22)|(1<<CS21)|(0<<CS20);
-	//OCR2 = 78;
-	//ASSR = (0<<AS2);
 
 	TIMSK = (1<<TOIE1)|(1<<OCIE2);
 
@@ -330,7 +325,7 @@ uint16_t motor_reg(volatile tmotor *m) {
 
 				// omezeni max. vel. akcniho zas.
 				// výpoèet sumy (suma = suma + odchylka)
-				if (m->act>=PWM_TOP) m->act = PWM_TOP;
+				if (m->act>2500) m->act = 2500;
 				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade všechny meze
 
 
@@ -505,7 +500,7 @@ ISR(USART_RXC_vect) {
 
 	// konec pøíjmu všeho
 	if (comm_state.receive_state==PR_PACKET_RECEIVED || comm_state.receive_state==PR_READY ||
-			comm_state.receive_state==PR_TIMEOUT || comm_state.receive_state==PR_BAD_CRC) SETBIT(UCSRA,MPCM);
+			comm_state.receive_state==PR_TIMEOUT) SETBIT(UCSRA,MPCM);
 
 }
 
@@ -645,12 +640,11 @@ int main(void) {
 	motor1.state = MOT_RUNNING;
 	motor2.state = MOT_RUNNING;
 
-
 	while(1) {
 
 
 		// mìøení proudu motory
-		motor_current();
+		//motor_current();
 
 		// pøepnutí na pøíjem
 		C_CLEARBIT(RS485_SEND);
