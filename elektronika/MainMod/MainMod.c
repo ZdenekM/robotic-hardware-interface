@@ -3,10 +3,6 @@
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
 
-// TODO obsluha komunikace s pc
-// TODO joystick - obsluha tlaèítek
-
-
 #define F_CPU 16000000UL
 
 #include <stdlib.h>
@@ -390,9 +386,20 @@ void updateTime()
 // vypíše èas na lcd - pravý horní roh
 void writeTime() {
 
-	lcd_gotoxy(20-8,0);
-	char buff[9];
-	snprintf(buff,9,"%2u:%2u:%2u",mod_state.hrs,mod_state.min,mod_state.sec);
+	char ctrl=' ';
+
+	switch(mod_state.control) {
+
+	case C_AUTO: ctrl = 'A'; break;
+	case C_JOY: ctrl = 'J'; break;
+	case C_PC: ctrl = 'P'; break;
+
+
+	}
+
+	lcd_gotoxy(20-9,0);
+	char buff[10];
+	snprintf(buff,10,"%c%2u:%2u:%2u",ctrl,mod_state.hrs,mod_state.min,mod_state.sec);
 	lcd_puts(buff);
 
 }
@@ -404,12 +411,12 @@ void commStat(volatile tcomm_state *p) {
 
 	// odeslaných paketù
 	lcd_gotoxy(0,1);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("SE:%7u"),(unsigned int)p->packets_sended);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("SE:%7u"),p->packets_sended);}
 	lcd_puts(abuff);
 
 	// poèet pøijatých paketù
 	lcd_gotoxy(0,2);
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("RE:%7u"),(unsigned int)p->packets_received);}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("RE:%7u"),p->packets_received);}
 	lcd_puts(abuff);
 
 	// poèet chyb rámce
@@ -471,6 +478,7 @@ void standBy() {
 ISR(USART0_RX_vect) {
 
 	receivePacket(UDR0,&pccomm_state);
+
 	if (CHECKBIT(UCSR0A,FE0)) pccomm_state.frame_error++;
 
 }
@@ -545,7 +553,7 @@ void motStat(volatile tmotor *m) {
 
 }
 
-
+// pøerušení - 50 Hz
 ISR(TIMER0_COMP_vect) {
 
 
@@ -566,10 +574,13 @@ ISR(TIMER0_COMP_vect) {
 	// poèítadlo timeoutu pro pøíjem po RS232
 	receiveTimeout(&pccomm_state);
 
-	// obnovení lcd
+	// 1 Hz
 	if (++lcdc==50) {
 
 		lcdc=0;
+
+		// zvýšení poèítadla pro timeout komunikace s PC
+		//if (mod_state.pc_comm_to<PcCommTo) mod_state.pc_comm_to++;
 
 		// nastavení pøíznakù
 		C_SETBIT(MLCD);
@@ -841,7 +852,6 @@ void manageLcd() {
 
 	    } break;
 
-	    // TODO: tlaèítka
 	    // zobrazení stavu joysticku
 	    case M_JOYSTICK: {
 
@@ -1002,7 +1012,42 @@ void getFullSensorState() {
 
 }
 
-// nastavení rychlosti motorù
+enum {O_FRONT, O_REAR};
+// zjišuje, jestli není nìjaká pøekážka pøíliš blízko
+// v pøípadì, že ano, vrací 1
+uint8_t checkNearObstacle(uint8_t where) {
+
+	// definování bezpeèné vzdálenosti (Sharpy nezmìøí míò, že 50)
+	#define DIS 100
+
+	switch (where) {
+
+	case O_FRONT: {
+
+		// test pøedních Sharpù (0 indikuje pøekážku mimo rozsah). ultrazvuku
+		if ((sens.sharp[0]<=DIS && sens.sharp[0]!=0) || (sens.sharp[1]<=DIS && sens.sharp[1]!=0) || (sens.us_fast<=DIS && sens.us_fast!=0)) return 1;
+		else return 0;
+
+
+	} break;
+
+	case O_REAR: {
+
+		// kontrola zadních Sharpù
+		if ((sens.sharp[2]<=DIS && sens.sharp[2]!=0) || (sens.sharp[3]<=DIS && sens.sharp[3]!=0)) return 1;
+		else return 0;
+
+	} break;
+
+
+
+	}
+
+	return 1;
+
+}
+
+// nastavení požadované rychlosti motorù
 void setMotorSpeed(uint8_t addr, int16_t speed) {
 
 	uint8_t sarr[2];
@@ -1031,11 +1076,10 @@ int main(void)
 
 	mod_state.menu_state = M_STANDBY;
 
-	pccomm_state.receive_state = PR_WAITING;
-
 	// nastavení zdroje øízení na PC
 	mod_state.control = C_PC;
 
+	// nekoneèná smyèka
     while (1) {
 
     	// pøepínání režimu lcd ---------------------------------------------------------------------------
@@ -1048,6 +1092,29 @@ int main(void)
     	    }
 
     	    }
+
+    	if (CHECKBIT(mod_state.buttons,ABUTT2)) {
+    	    lcd_clrscr();
+
+    	    ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    	    if (mod_state.menu_state > M_STANDBY) mod_state.menu_state--;
+    	    else mod_state.menu_state = M_JOYSTICK;
+
+    	    CLEARBIT(mod_state.buttons,ABUTT2);
+    	    }
+
+    	}
+
+    	// TODO: nastavení zdroje øízení C_AUTO, C_JOY, C_PC
+
+    	if (CHECKBIT(mod_state.buttons,ABUTT3)) {
+
+    		if (++mod_state.control>C_PC) mod_state.control = C_AUTO;
+
+    	    CLEARBIT(mod_state.buttons,ABUTT3);
+
+    	}
+
 
 
     	// obsluha LCD
@@ -1062,7 +1129,6 @@ int main(void)
 
     	// obsluha periferií a podøízených modulù ---------------------------------------------------------------------------
 
-    	// TODO: obsluha tlaèítek
     	update_joystick(&mod_state);
 
 		// ètení stavu levých motorù
@@ -1074,39 +1140,99 @@ int main(void)
 		// naètení dat ze senzorù
 		getFastSensorState();
 
-		// TODO: zastavení pøi zjištìné blízké pøekážce
 
-    	// zdroj øízení nastaven na joystick
-    	if (mod_state.control == C_JOY) {
+		switch(mod_state.control) {
 
-    		// TODO: dodìlat zatáèení
+		// zdroj øízení nastaven na PC
+		case C_PC: {
 
-			int16_t sp = 0;
+			// zastavení pøi timeoutu komunikace s PC - 5s
+			/*if (mod_state.pc_comm_to >= PcCommTo) {
+
+				// pož. rychlost není nula - zastavit
+				if (m_lf.req_speed!=0 || m_rf.req_speed!=0) {
+
+					setMotorSpeed(10,0);
+					setMotorSpeed(11,0);
+
+				}
+
+			}*/
+
+
+		} break;
+
+		// zdroj øízení nastaven na joystick
+		case C_JOY: {
+
+			// TODO: dodìlat zatáèení
+
+			int16_t sp = 0, ot = 0;
 
 			sp = (int16_t)(mod_state.joy_y-511)/2;
 
-			// práh
+			ot = (int16_t)((1022-mod_state.joy_x)-511)/2;
+
+			// práh - pøíliš nízké hodnoty se neuvažují
 			if (sp > -5 && sp < 5) sp = 0;
+			if (ot > -5 && ot < 5) ot = 0;
+
+			// jedeme rovnì
+			if ((ot>-200) && (ot<200)) {
+
+			// kontrola pøekážek vpøedu
+			if (sp>0 && checkNearObstacle(O_FRONT)) sp = 0;
+
+			// kontrola pøekážek vzadu
+			if (sp<0 && checkNearObstacle(O_REAR)) sp = 0;
 
 			setMotorSpeed(10,sp);
 			setMotorSpeed(11,sp);
 
-    	}
+			// zatáèení doleva
+			} else if (ot<=-200) {
 
-    	// autonomní operace
-    	if (mod_state.control == C_AUTO ) {
+				setMotorSpeed(10,-sp);
+				setMotorSpeed(11,sp);
+
+			// zatáèení doprava
+			} else if (ot>=200) {
+
+				setMotorSpeed(10,sp);
+				setMotorSpeed(11,-sp);
+
+			}
 
 
-    		// TODO: náhodná projížïka
+		} break;
 
-    	}
+		// autonomní operace
+		case C_AUTO: {
+
+			// TODO: náhodná projížïka
+
+		} break;
+
+
+
+
+		} //switch
 
 
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
 
+    	// TODO: timeout pro komunikaci s PC -> zastavení, když dlouho nic nepøijde
+
+		pccomm_state.receive_state = PR_WAITING;
+
+		while (pccomm_state.receive_state!=PR_PACKET_RECEIVED && pccomm_state.receive_state!=PR_TIMEOUT && pccomm_state.receive_state!=PR_READY);
+
     	// crc souhlasí -> úspìšné pøijetí paketu
-    	if (pccomm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&pccomm_state)) {
+    	if ((pccomm_state.receive_state==PR_PACKET_RECEIVED) && checkPacket(&pccomm_state)) {
+
+    		// vynulování poèítadla timeoutu kom. s PC
+    		mod_state.pc_comm_to = 0;
 
     		switch (pccomm_state.ip.packet_type) {
 
@@ -1132,20 +1258,35 @@ int main(void)
 
     			if (mod_state.control == C_PC ) {
 
-    			// rychlost pro levé motory
-    			spl = pccomm_state.ip.data[0];
-    			spl |= pccomm_state.ip.data[1]<<8;
+					// rychlost pro levé motory
+					spl = pccomm_state.ip.data[0];
+					spl |= pccomm_state.ip.data[1]<<8;
 
-    			// rychlost pro pravé motory
-    			spr = pccomm_state.ip.data[2];
-    			spr |= pccomm_state.ip.data[3]<<8;
+					// rychlost pro pravé motory
+					spr = pccomm_state.ip.data[2];
+					spr |= pccomm_state.ip.data[3]<<8;
 
-    			setMotorSpeed(10,spl);
-    			setMotorSpeed(11,spr);
+					// kontrola pøekážek vpøedu
+					if (spl>0 && spr>0 && checkNearObstacle(O_FRONT)) {
+
+						spl = 0;
+						spr = 0;
+					}
+
+					// kontrola pøekážek vzadu
+					if (spl<0 && spr<0 && checkNearObstacle(O_REAR)) {
+
+						spl = 0;
+						spr = 0;
+
+					}
+
+					setMotorSpeed(10,spl);
+					setMotorSpeed(11,spr);
 
     			}
 
-    		}
+    		} break;
 
 
     		// jízda rovnì
@@ -1153,6 +1294,8 @@ int main(void)
 
     			// TODO: naprogramovat
     			if (mod_state.control == C_PC ) {
+
+
 
 
 
@@ -1212,13 +1355,14 @@ int main(void)
 				arr[14] = distr>>16;
 				arr[15] = distr>>24;
 
-				// èekání na pøípadné dokonèení odeslání pøedchozího paketu
-				while(pccomm_state.send_state != PS_READY);
 
 				makePacket(&pccomm_state.op,arr,16,P_MOTOR_INFO,0);
 
 				// zahájení pøenosu
 				sendFirstByte(&UDR0,&pccomm_state);
+
+				// èekání na pøípadné dokonèení odeslání pøedchozího paketu
+				while(pccomm_state.send_state != PS_READY);
 
 
     		} break;
@@ -1257,8 +1401,6 @@ int main(void)
     			// taktilní senzory
     			arr[10] = sens.tact;
 
-    			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
-    			while(pccomm_state.send_state != PS_READY);
 
     			// vytvoøení paketu
     			makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
@@ -1266,13 +1408,16 @@ int main(void)
     			// zahájení pøenosu
     			sendFirstByte(&UDR0,&pccomm_state);
 
+    			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
+    			while(pccomm_state.send_state != PS_READY);
+
     		} break;
 
     		// plné mìøení - pouze když se stojí
     		case P_SENS_FULL: {
 
     			// provede se pouze když robot stojí a zdroj øízení je nastavený na PC
-    			if (m_lf.act_speed == 0 && m_rf.act_speed == 0 && mod_state.control == C_PC) {
+    			if ((m_lf.act_speed == 0) && (m_rf.act_speed == 0) && (mod_state.control == C_PC)) {
 
     				// provést plné skenování
     				getFullSensorState();
@@ -1342,11 +1487,11 @@ int main(void)
     	} // if
 
 
-    	if (pccomm_state.receive_state == PR_TIMEOUT || pccomm_state.receive_state == PR_READY) pccomm_state.receive_state = PR_WAITING;
+    	if ((pccomm_state.receive_state == PR_TIMEOUT) || (pccomm_state.receive_state == PR_READY)) pccomm_state.receive_state = PR_WAITING;
 
 
 
-    	_delay_ms(100);
+    	//_delay_ms(100);
 
     } // while
 
