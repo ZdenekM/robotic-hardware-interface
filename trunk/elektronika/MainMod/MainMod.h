@@ -28,6 +28,10 @@ typedef struct {
 	volatile uint8_t hrs, min, sec;
 	volatile uint16_t msec;
 
+	#define PcCommTo 10
+	// poèítadlo pro timeout komunikace s PC
+	volatile uint8_t pc_comm_to;
+
 	// stav joysticku
 	volatile uint16_t joy_x, joy_y;
 
@@ -90,21 +94,74 @@ typedef struct {
 
 } tsens;
 
+// struktura pro regulátor zajišující ujetí poadované vzdálenosti
+typedef struct {
+
+
+
+} tdist_reg;
+
+
+// ********** INICIALIZACE ***********************************************
+
+// inicializace procesoru
+extern inline void ioinit(void);
 
 extern inline void set_uarts();
 
 extern inline void set_adc(void);
 
-extern uint16_t moving_average_x(uint16_t value);
+// provìøí komunikaci s modulem zadané adresy
+// vrací úspìšnost v %
+extern uint8_t sendEcho(uint8_t addr);
 
-extern uint16_t moving_average_y(uint16_t value);
+// inicializace modulù, volá fci echo pro kadı modul
+// vısledky zobrazuje na LCD
+extern void initModules();
 
-extern uint16_t joystick_xy(uint8_t dir);
 
-extern inline void ioinit(void);
+// ******** MOTORY *******************************************************
 
+// inicializace struktury pro data z motorù
+extern void motor_init(volatile tmotor *m);
+
+// na LCD zobrazí info z motoru
+extern void motStat(volatile tmotor *m);
+
+// nastavení poadované rychlosti motorù
+extern void setMotorSpeed(uint8_t addr, int16_t speed);
+
+// naète z modulu info o motorech a vyplní ho do struktur tmotor
+extern void getMotorInfo(uint8_t addr, volatile tmotor *front, volatile tmotor *rear);
+
+// dekóduje pøijaté info z modulu MotorControl
+extern void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr);
+
+
+// ******* SENZORY *******************************************************
+
+// zobrazí informace ze senzorù na LCD
+extern void sensInfo();
+
+// naète z modulu SensMod
+extern void getFastSensorState();
+
+// provede plné skenování a naète data ze SensMod
+// plné sk. trvá cca 1,5s
+extern void getFullSensorState();
+
+
+
+// ******* OSTATNI *******************************************************
+
+// spustí AD pøevod pro urèení vychılení joysticku
+extern void update_joystick(volatile tmod_state *m);
+
+// obsluha tlaèítek - ošetøení zákmitù
+// volá se periodicky - z pøerušení
 extern void checkButtons ();
 
+// obsluha poèítání èasu - voláno periodicky z pøerušení
 extern void updateTime();
 
 extern char *getTimeString();
@@ -121,15 +178,11 @@ extern void joy();
 // stand. reim displeje
 extern void standBy();
 
-// odeslání paketu - extra funkce pro kadı modul
+// obsluha LCD
+extern void manageLcd();
+
+// obsluha odeslání paketu
 extern void sendPacketE();
-
-// provìøí komunikaci s modulem zadané adresy
-// vrací úspìšnost v %
-extern uint8_t sendEcho(uint8_t addr);
-
-// inicializace modulù - echo
-extern void initModules();
 
 // odeslání statistiky komunikace s moduly do PC
 extern void sendCommStat();
