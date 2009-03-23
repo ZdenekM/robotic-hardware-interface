@@ -7,7 +7,7 @@
 enum {COMMSTATE} tpcdata;
 
 // stavy menu
-typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_SENS,M_JOYSTICK} tmenu_states;
+typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_PID,M_SENS,M_SENS_FULL,M_JOYSTICK} tmenu_states;
 
 // zdroje povelù pro podøízené moduly - zdroj øízení
 typedef enum {C_AUTO,C_JOY,C_PC} tcontrol;
@@ -59,9 +59,6 @@ typedef struct {
 	// ujetá vzdálenost
 	volatile int32_t distance;
 
-	// parametry regulatoru, * 10
-	volatile uint8_t P, I, D;
-
 	// stav motoru
 	volatile tmotor_state state;
 
@@ -75,6 +72,9 @@ typedef struct {
 	volatile uint8_t load;
 
 } tmotor;
+
+// parametry regulatoru, * 10
+volatile uint8_t mP, mI, mD;
 
 // stav senzorù
 typedef struct {
