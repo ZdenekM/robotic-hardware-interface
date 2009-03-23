@@ -83,7 +83,7 @@ void makePacket(volatile tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_
 
 		// kopírování dat
 		if (len < BUFF_LEN && len > 0 && data !=NULL)
-			ATOMIC_BLOCK(ATOMIC_FORCEON) {memcpy(p->data,data,len);}
+			memcpy(p->data,data,len);
 
 
 
