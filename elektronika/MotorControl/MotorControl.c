@@ -6,6 +6,8 @@
 // TODO: mìøení proudu
 // TODO: mìøení teploty motoru
 // TODO: zastavení pøi nadmìrném proudu motorem
+// TODO: otestovat chování regulátoru s filtrování aktuální rychlosti
+// TODO: výraznì zrychlit rampu pøi rozjezdu/zastavení
 
 #define F_CPU 16000000UL  // 16 MHz
 
@@ -17,6 +19,7 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <string.h>
+#include <avr/eeprom.h>
 #include <avr/sfr_defs.h>
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
@@ -97,6 +100,9 @@ volatile static tmotor motor2;
 // poèítadlo pro timeout komunikace -> zastavení
 volatile static uint8_t comm_to = 0;
 
+// parametry PID uložené v EEPROM
+uint8_t EEMEM eP=30,eI=8,eD=4;
+
 
 // inicializace struktury motor
 static inline void motor_init(volatile tmotor *m) {
@@ -111,9 +117,9 @@ static inline void motor_init(volatile tmotor *m) {
 	m->sum = 0;
 	m->act = 0;
 
-	m->P = 30;
-	m->I = 8;
-	m->D = 4;
+	m->P = eeprom_read_byte(&eP);
+	m->I = eeprom_read_byte(&eI);
+	m->D = eeprom_read_byte(&eD);
 
 	m->forwd = NULL;
 	m->backwd = NULL;
@@ -280,13 +286,13 @@ static inline void ioinit (void) {
 // PID regulátor
 uint16_t motor_reg(volatile tmotor *m) {
 
-	// výpoèet aktuální rychlosti 50/33 = 1.5
-	m->act_speed = m->enc + m->enc/2;
+	// výpoèet aktuální rychlosti 50/33 = 1.5, filtrování aktuální rychlosti
+	m->act_speed = (m->act_speed + (m->enc + (m->enc/2)))/2;
 
 	m->penc += m->enc;
 
 	// urèení 1s -> výpoèet ujeté vzd;
-	if (++m->enc_count>50) {
+	if (++m->enc_count==50) {
 
 		m->enc_count = 0;
 		m->distance += m->penc/33;
@@ -297,8 +303,12 @@ uint16_t motor_reg(volatile tmotor *m) {
 	// vynulování poèítadla impulzù
 	m->enc = 0;
 
-	// rampa pro žádanou rychlost
-	if (m->req_speed > m->areq_speed) m->areq_speed++;
+	// rampa pro žádanou rychlost -> nejdøíve se pøidává/ubírá po deseti, pak po jedné
+	#define ACC 5 // zrychlení z 0 na 250 za cca 1s
+	if (m->req_speed > (m->areq_speed+ACC)) m->areq_speed+=ACC;
+	else if (m->req_speed > m->areq_speed) m->areq_speed++;
+
+	if (m->req_speed < (m->areq_speed-ACC)) m->areq_speed-=ACC;
 	else if (m->req_speed < m->areq_speed) m->areq_speed--;
 
 
@@ -332,7 +342,7 @@ uint16_t motor_reg(volatile tmotor *m) {
 				// ulozeni aktualni rychlosti
 				m->last_speed = m->act_speed;
 
-				// výpoèet zátìže - prùmìr
+				// výpoèet zátìže -> prùmìrování
 				m->load = (m->load + (m->act/25))/2;
 
 				return (uint16_t)m->act;
@@ -709,6 +719,46 @@ int main(void) {
 				sendPacketE();
 
 			} break;
+
+
+			// nastavení konstant PID regulátoru
+			case P_MOTOR_SETPID: {
+
+				ATOMIC_BLOCK(ATOMIC_FORCEON) {
+				motor1.P = comm_state.ip.data[0];
+				motor2.P = comm_state.ip.data[0];
+
+				motor1.I = comm_state.ip.data[1];
+				motor2.I = comm_state.ip.data[1];
+
+				motor1.D = comm_state.ip.data[2];
+				motor2.D = comm_state.ip.data[2];
+				}
+
+				// zápis do EEPROM
+				eeprom_write_byte(&eP,motor1.P);
+				eeprom_write_byte(&eI,motor1.I);
+				eeprom_write_byte(&eD,motor1.D);
+
+
+			} break;
+
+			// odeslání parametrù regulátoru
+			case P_MOTOR_GETPID: {
+
+				uint8_t arr[3];
+
+				arr[0] = motor1.P;
+				arr[1] = motor1.I;
+				arr[2] = motor1.D;
+
+				makePacket(&comm_state.op,arr,3,P_MOTOR_GETPID,0);
+
+				// odeslání paketu
+				sendPacketE();
+
+
+			}
 
 			} // switch
 
