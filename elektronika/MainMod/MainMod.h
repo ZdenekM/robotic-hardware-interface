@@ -19,7 +19,7 @@ typedef struct {
 	volatile tmenu_states menu_state;
 
 	// urèuje zdroj povelù pro podøízené moduly
-	volatile tcontrol control;
+	tcontrol control;
 
 	// poèítadlo pro krátké zapnutí podsvìtlení po stisku tlaèítka
 	volatile uint16_t backlight;
@@ -33,7 +33,7 @@ typedef struct {
 	volatile uint8_t pc_comm_to;
 
 	// stav joysticku
-	volatile uint16_t joy_x, joy_y;
+	uint16_t joy_x, joy_y;
 
 	// stav tlaèítek - po pøeètení vynulovat
 	volatile uint8_t buttons;
@@ -51,45 +51,45 @@ typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_O
 typedef struct {
 
 	// žádaná rychlost v cm/s
-	volatile int16_t req_speed;
+	int16_t req_speed;
 
 	// aktuální skuteèná rychlost
-	volatile int16_t act_speed;
+	int16_t act_speed;
 
 	// ujetá vzdálenost
-	volatile int32_t distance;
+	int32_t distance;
 
 	// stav motoru
-	volatile tmotor_state state;
+	tmotor_state state;
 
 	// proud motorem
-	volatile uint8_t current;
+	uint8_t current;
 
 	// teplota motoru
-	volatile uint8_t temp;
+	uint8_t temp;
 
 	// výkon motoru
-	volatile uint8_t load;
+	uint8_t load;
 
 } tmotor;
 
 // parametry regulatoru, * 10
-volatile uint8_t mP, mI, mD;
+uint8_t mP, mI, mD;
 
 // stav senzorù
 typedef struct {
 
 	// pole pro uložení zmìøených vzdáleností ze Sharpù
-	volatile uint16_t sharp[4];
+	uint16_t sharp[4];
 
 	// pole pro uložení full scan dat z ultrazvuku (0, 45, 90, 135, 180)
-	volatile uint16_t us_full[5];
+	uint16_t us_full[5];
 
 	// prom. pro uložení rychlého scanování (za jízdy)
-	volatile uint16_t us_fast;
+	uint16_t us_fast;
 
 	// taktilní senzory
-	volatile uint8_t tact;
+	uint8_t tact;
 
 
 } tsens;
@@ -123,19 +123,19 @@ extern void initModules();
 // ******** MOTORY *******************************************************
 
 // inicializace struktury pro data z motorù
-extern void motor_init(volatile tmotor *m);
+extern void motor_init(tmotor *m);
 
 // na LCD zobrazí info z motoru
-extern void motStat(volatile tmotor *m);
+extern void motStat(tmotor *m);
 
 // nastavení požadované rychlosti motorù
 extern void setMotorSpeed(uint8_t addr, int16_t speed);
 
 // naète z modulu info o motorech a vyplní ho do struktur tmotor
-extern void getMotorInfo(uint8_t addr, volatile tmotor *front, volatile tmotor *rear);
+extern void getMotorInfo(uint8_t addr, tmotor *front, tmotor *rear);
 
 // dekóduje pøijaté info z modulu MotorControl
-extern void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr);
+extern void decodeMotorInfo(tmotor *mf, tmotor *mr);
 
 
 // ******* SENZORY *******************************************************
