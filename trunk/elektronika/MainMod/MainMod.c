@@ -75,14 +75,14 @@ volatile tcomm_state pccomm_state;
 // promìnné pro motory
 // lf = left front, lr = left rear
 // rf = right front, rr = right rear
-volatile tmotor m_lf,m_lr,m_rf,m_rr;
+tmotor m_lf,m_lr,m_rf,m_rr;
 
 
 // flagy pro obsluhu perif.
 volatile uint8_t flags = 0;
 
 // stav senzorù
-volatile tsens sens;
+tsens sens;
 
 
 #define MLCD flags, 0
@@ -130,7 +130,7 @@ inline void set_uarts() {
 }
 
 // inicializace struktur
-void motor_init(volatile tmotor *m) {
+void motor_init(tmotor *m) {
 
 	m->act_speed = 0;
 	m->current = 0;
@@ -513,7 +513,7 @@ ISR(USART1_TX_vect) {
 
 // volá se z main
 // na LCD zobrazí info z motoru
-void motStat(volatile tmotor *m) {
+void motStat(tmotor *m) {
 
 	char abuff[11];
 
@@ -633,17 +633,17 @@ void sendCommStat() {
 
 // volá se z main
 // dekóduje pøijaté info z modulu MotorControl
-void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
+void decodeMotorInfo(tmotor *mf, tmotor *mr) {
 
 		// údaje pro pøední motor ----------------------------------
 
 		// poadovaná rychlost
 		mf->req_speed = comm_state.ip.data[0];
-		mf->req_speed |= ((int16_t)comm_state.ip.data[1])<<8;
+		mf->req_speed |= comm_state.ip.data[1]<<8;
 
 		// aktuální rychlost
 		mf->act_speed = comm_state.ip.data[2];
-		mf->act_speed |= (int16_t)comm_state.ip.data[3]<<8;
+		mf->act_speed |= comm_state.ip.data[3]<<8;
 
 		// stav motoru
 		mf->state = comm_state.ip.data[4];
@@ -656,9 +656,9 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 
 		// ujetá vzdálenost
 		mf->distance = comm_state.ip.data[7];
-		mf->distance  |= (int32_t)comm_state.ip.data[8]<<8;
-		mf->distance  |= (int32_t)comm_state.ip.data[9]<<16;
-		mf->distance  |= (int32_t)comm_state.ip.data[10]<<24;
+		mf->distance  |= comm_state.ip.data[8]<<8;
+		mf->distance  |= comm_state.ip.data[9]<<16;
+		mf->distance  |= comm_state.ip.data[10]<<24;
 
 		// vıkon motoru
 		mf->load = comm_state.ip.data[11];
@@ -668,11 +668,11 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 
 		// poadovaná rychlost
 		mr->req_speed = comm_state.ip.data[0];
-		mr->req_speed |= (int16_t)comm_state.ip.data[1]<<8;
+		mr->req_speed |= comm_state.ip.data[1]<<8;
 
 		// aktuální rychlost
 		mr->act_speed = comm_state.ip.data[12];
-		mr->act_speed |= (int16_t)comm_state.ip.data[13]<<8;
+		mr->act_speed |= comm_state.ip.data[13]<<8;
 
 		// stav motoru
 		mr->state = comm_state.ip.data[14];
@@ -685,9 +685,9 @@ void decodeMotorInfo(volatile tmotor *mf, volatile tmotor *mr) {
 
 		// ujetá vzdálenost
 		mr->distance = comm_state.ip.data[17];
-		mr->distance  |= (int32_t)comm_state.ip.data[18]<<8;
-		mr->distance  |= (int32_t)comm_state.ip.data[19]<<16;
-		mr->distance  |= (int32_t)comm_state.ip.data[20]<<24;
+		mr->distance  |= comm_state.ip.data[18]<<8;
+		mr->distance  |= comm_state.ip.data[19]<<16;
+		mr->distance  |= comm_state.ip.data[20]<<24;
 
 		// vıkon motoru
 		mr->load = comm_state.ip.data[21];
@@ -894,7 +894,7 @@ void manageLcd() {
 	    	lcd_puts_P("PIDconst");
 	    	motPID();
 
-	    }
+	    } break;
 
 	    case M_SENS: {
 
@@ -930,7 +930,7 @@ void manageLcd() {
 }
 
 // naète z modulu info o motorech a vyplní ho do struktur tmotor
-void getMotorInfo(uint8_t addr, volatile tmotor *front, volatile tmotor *rear) {
+void getMotorInfo(uint8_t addr, tmotor *front, tmotor *rear) {
 
 	// ètení stavu levıch motorù
 	makePacket(&comm_state.op,NULL,0,P_MOTOR_INFO,addr);
@@ -1074,40 +1074,6 @@ void getFullSensorState() {
 
 }
 
-enum {O_FRONT, O_REAR};
-// zjišuje, jestli není nìjaká pøekáka pøíliš blízko
-// v pøípadì, e ano, vrací 1
-uint8_t checkNearObstacle(uint8_t where) {
-
-	// definování bezpeèné vzdálenosti (Sharpy nezmìøí míò, e 50)
-	#define DIS 100
-
-	switch (where) {
-
-	case O_FRONT: {
-
-		// test pøedních Sharpù (0 indikuje pøekáku mimo rozsah). ultrazvuku
-		if ((sens.sharp[0]<=DIS && sens.sharp[0]!=0) || (sens.sharp[1]<=DIS && sens.sharp[1]!=0) || (sens.us_fast<=DIS && sens.us_fast!=0)) return 1;
-		else return 0;
-
-
-	} break;
-
-	case O_REAR: {
-
-		// kontrola zadních Sharpù
-		if ((sens.sharp[2]<=DIS && sens.sharp[2]!=0) || (sens.sharp[3]<=DIS && sens.sharp[3]!=0)) return 1;
-		else return 0;
-
-	} break;
-
-
-
-	}
-
-	return 1;
-
-}
 
 // nastavení poadované rychlosti motorù
 void setMotorSpeed(uint8_t addr, int16_t speed) {
@@ -1120,6 +1086,83 @@ void setMotorSpeed(uint8_t addr, int16_t speed) {
 	makePacket(&comm_state.op,sarr,2,P_MOTOR_COMM,addr);
 
 	sendPacketE();
+
+
+}
+
+// nastavení rychlosti motorù -> v závislosti na vzdálenosti pøekáky
+void setMotorsSpeed(int16_t left, int16_t right) {
+
+	// TODO: zapojit do rozhodování i ultrazvuk
+
+	// jedeme dopøedu
+	if (left > 0 && right > 0) {
+
+		// v úvahu se bere menší vzdálenost
+		if ((sens.sharp[0]<sens.sharp[1]) && sens.sharp[0]!=0) {
+
+			// levı pøední Sharp
+			if ((sens.sharp[0]!=0) && (sens.sharp[0]<350)) {
+
+				if (left > (sens.sharp[0]-100)) left = sens.sharp[0]-100;
+				else left = 0;
+
+				if (right > (sens.sharp[0]-100)) right = sens.sharp[0]-100;
+				else right = 0;
+
+			}
+
+		} else {
+
+		// pravı pøední Sharp
+		if ((sens.sharp[1]!=0) && (sens.sharp[1]<350)) {
+
+			if (left > (sens.sharp[1]-100)) left = sens.sharp[1]-100;
+			else left = 0;
+
+			if (right > (sens.sharp[1]-100)) right = sens.sharp[1]-100;
+			else right = 0;
+
+				}
+		}
+
+	} // if dopøedu
+
+	// jedeme dozadu
+	if (left < 0 && right < 0) {
+
+		// v úvahu se bere menší vzdálenost
+		if ((sens.sharp[2]<sens.sharp[3]) && sens.sharp[2]!=0) {
+
+			// levı zadní Sharp
+			if ((sens.sharp[2]!=0) && (sens.sharp[2]<350)) {
+
+				if (abs(left) > (sens.sharp[2]-100)) left = -(sens.sharp[2]-100);
+				else left = 0;
+
+				if (abs(right) > (sens.sharp[2]-100)) right = -(sens.sharp[2]-100);
+				else right = 0;
+
+			}
+
+		} else {
+
+			// pravı zadní Sharp
+			if ((sens.sharp[3]!=0) && (sens.sharp[3]<350)) {
+
+				if (abs(left) > (sens.sharp[3]-100)) left = -(sens.sharp[3]-100);
+				else left = 0;
+
+				if (abs(right) > (sens.sharp[3]-100)) right = -(sens.sharp[3]-100);
+				else right = 0;
+
+					}
+		}
+
+	} // if dozadu
+
+	setMotorSpeed(10,left);
+	setMotorSpeed(11,right);
 
 
 }
@@ -1215,8 +1258,6 @@ int main(void)
 
     	}
 
-    	// TODO: nastavení zdroje øízení C_AUTO, C_JOY, C_PC
-
     	if (CHECKBIT(mod_state.buttons,ABUTT3)) {
 
     		if (++mod_state.control>C_PC) mod_state.control = C_AUTO;
@@ -1290,26 +1331,18 @@ int main(void)
 			// jedeme rovnì
 			if ((ot>-200) && (ot<200)) {
 
-			// kontrola pøekáek vpøedu
-			if (sp>0 && checkNearObstacle(O_FRONT)) sp = 0;
 
-			// kontrola pøekáek vzadu
-			if (sp<0 && checkNearObstacle(O_REAR)) sp = 0;
-
-			setMotorSpeed(10,sp);
-			setMotorSpeed(11,sp);
+			setMotorsSpeed(sp,sp);
 
 			// zatáèení doleva
 			} else if (ot<=-200) {
 
-				setMotorSpeed(10,-sp);
-				setMotorSpeed(11,sp);
+				setMotorsSpeed(-sp,sp);
 
 			// zatáèení doprava
 			} else if (ot>=200) {
 
-				setMotorSpeed(10,sp);
-				setMotorSpeed(11,-sp);
+				setMotorsSpeed(sp,-sp);
 
 			}
 
@@ -1332,7 +1365,6 @@ int main(void)
 
     	// obsluha komunikace s PC ---------------------------------------------------------------------------
 
-    	// TODO: timeout pro komunikaci s PC -> zastavení, kdy dlouho nic nepøijde
 
 		pccomm_state.receive_state = PR_WAITING;
 
@@ -1349,14 +1381,14 @@ int main(void)
     		//echo - poslat zpìt stejnı paket
     		case P_ECHO: {
 
-    			// èekání na pøípadné dokonèení odeslání pøedchozího paketu
-    			while(pccomm_state.send_state != PS_READY);
-
     			// vytvoøení ECHO paketu
     			makePacket(&pccomm_state.op,pccomm_state.ip.data,pccomm_state.ip.len,P_ECHO,0);
 
     			// zahájení pøenosu
     			sendFirstByte(&UDR0,&pccomm_state);
+
+    			// èekání na pøípadné dokonèení odeslání pøedchozího paketu
+    			while(pccomm_state.send_state != PS_READY);
 
 
     		} break;
@@ -1364,7 +1396,7 @@ int main(void)
     		// volná jízda - ovládání joystickem
     		case PC_FREE_RIDE: {
 
-    			uint16_t spl, spr;
+    			int16_t spl, spr;
 
     			if (mod_state.control == C_PC ) {
 
@@ -1376,23 +1408,8 @@ int main(void)
 					spr = pccomm_state.ip.data[2];
 					spr |= pccomm_state.ip.data[3]<<8;
 
-					// kontrola pøekáek vpøedu
-					if (spl>0 && spr>0 && checkNearObstacle(O_FRONT)) {
+					setMotorsSpeed(spl,spr);
 
-						spl = 0;
-						spr = 0;
-					}
-
-					// kontrola pøekáek vzadu
-					if (spl<0 && spr<0 && checkNearObstacle(O_REAR)) {
-
-						spl = 0;
-						spr = 0;
-
-					}
-
-					setMotorSpeed(10,spl);
-					setMotorSpeed(11,spr);
 
     			}
 
@@ -1632,7 +1649,7 @@ int main(void)
     	} // if
 
 
-    	if ((pccomm_state.receive_state == PR_TIMEOUT) || (pccomm_state.receive_state == PR_READY)) pccomm_state.receive_state = PR_WAITING;
+    	//if ((pccomm_state.receive_state == PR_TIMEOUT) || (pccomm_state.receive_state == PR_READY)) pccomm_state.receive_state = PR_WAITING;
 
 
 
