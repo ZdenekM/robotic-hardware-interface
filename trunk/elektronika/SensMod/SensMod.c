@@ -54,10 +54,10 @@
 
 // GLOBÁLNÍ PROMÌNNÉ
 // stav komunikace
-volatile static tcomm_state comm_state;
+static tcomm_state comm_state;
 
 // stav senzorù
-volatile static tmod_state mod_state;
+static tmod_state mod_state;
 
 
 void state_init(tmod_state *m) {
