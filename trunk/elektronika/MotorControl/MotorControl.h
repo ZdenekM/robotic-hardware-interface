@@ -24,49 +24,49 @@ typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_O
 typedef struct {
 
 	// akèní zásah (hodnota OCR1x)
-	volatile int16_t act;
+	int16_t act;
 
 	// poèet tikù enkodéru od minule
-	volatile int16_t enc;
+	int16_t enc;
 
 	// pomocné poèítadlo impulzù pro výpoèet ujeté vzd.
-	volatile int32_t penc;
+	int32_t penc;
 
 	// pomocné poèítadlo pro urèení 1s
-	volatile uint8_t enc_count;
+	uint8_t enc_count;
 
 	// žádaná rychlost
-	volatile int16_t req_speed;
+	int16_t req_speed;
 
 	// žádaná rychlost - s rampou
-	volatile int16_t areq_speed;
+	int16_t areq_speed;
 
 	// aktuální skuteèná rychlost
-	volatile int16_t act_speed;
+	int16_t act_speed;
 
 	// ujetá vzdálenost (v mm)
-	volatile int32_t distance;
+	int32_t distance;
 
 	// minulá skuteèná rychlost
-	volatile int16_t last_speed;
+	int16_t last_speed;
 
 	// suma odchylky
-	volatile int32_t sum;
+	int32_t sum;
 
 	// parametry regulatoru
-	volatile uint8_t P, I, D;
+	uint8_t P, I, D;
 
 	// stav motoru
 	volatile tmotor_state state;
 
 	// proud motorem
-	volatile uint8_t current;
+	uint8_t current;
 
 	// teplota motoru
-	volatile uint8_t temp;
+	uint8_t temp;
 
 	// zátìž (v %) - prùmìr
-	volatile uint8_t load;
+	uint8_t load;
 
 	// ukazatele na funkce ovladajici smer otaceni atd.
 	void (*forwd)(void);
@@ -77,7 +77,7 @@ typedef struct {
 } tmotor;
 
 // inicializace struktury typu tmotor
-static inline void motor_init(volatile tmotor *m);
+static inline void motor_init(tmotor *m);
 
 // motor 2 dopøedu
 extern void motor2_forwd(void);
@@ -96,7 +96,7 @@ static inline void ioinit (void);
 
 
 // funkce implementující PID regulaci
-extern uint16_t motor_reg(volatile tmotor *m);
+extern uint16_t motor_reg(tmotor *m);
 
 // ètení enkodérù
 extern void read_enc(void);

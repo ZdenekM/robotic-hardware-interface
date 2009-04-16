@@ -2,12 +2,8 @@
 // autor: Zdenìk Materna, zdenek.materna@gmail.com
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
-// TODO: naèítání konstant regulátoru z EEPROM, nastavení z MainMod
 // TODO: mìøení proudu
 // TODO: mìøení teploty motoru
-// TODO: zastavení pøi nadmìrném proudu motorem
-// TODO: otestovat chování regulátoru s filtrování aktuální rychlosti
-// TODO: výraznì zrychlit rampu pøi rozjezdu/zastavení
 
 #define F_CPU 16000000UL  // 16 MHz
 
@@ -57,8 +53,8 @@
 
 #define INPUT1 PORTD, 3
 #define INPUT2 PORTD, 4
-#define INPUT3 PORTD, 6
-#define INPUT4 PORTD, 5
+#define INPUT3 PORTD, 5
+#define INPUT4 PORTD, 6
 
 
 #define EN1A PINC, 2
@@ -75,7 +71,7 @@
 
 // TODO: uložení adresy do EEPROM
 // adresa na RS485
-#define ADDR 11
+#define ADDR 10
 
 
 volatile static uint8_t ena_st=0;
@@ -92,20 +88,20 @@ volatile static uint8_t ena_st=0;
 
 // GLOBÁLNÍ PROMÌNNÉ
 // stav komunikace
-volatile static tcomm_state comm_state;
+static tcomm_state comm_state;
 
-volatile static tmotor motor1;
-volatile static tmotor motor2;
+static tmotor motor1;
+static tmotor motor2;
 
 // poèítadlo pro timeout komunikace -> zastavení
-volatile static uint8_t comm_to = 0;
+static uint8_t comm_to = 0;
 
 // parametry PID uložené v EEPROM
 uint8_t EEMEM eP=30,eI=8,eD=4;
 
 
 // inicializace struktury motor
-static inline void motor_init(volatile tmotor *m) {
+static inline void motor_init(tmotor *m) {
 
 	m->enc = 0;
 	m->req_speed = 0;
@@ -131,7 +127,7 @@ static inline void motor_init(volatile tmotor *m) {
 }
 
 // motor 2 dopøedu
-void motor2_forwd(void) {
+void motor1_forwd(void) {
 
 	C_SETBIT(INPUT3);
 	C_CLEARBIT(INPUT4);
@@ -139,7 +135,7 @@ void motor2_forwd(void) {
 }
 
 // motor 2 dozadu
-void motor2_backwd(void) {
+void motor1_backwd(void) {
 
 	C_SETBIT(INPUT4);
 	C_CLEARBIT(INPUT3);
@@ -147,7 +143,7 @@ void motor2_backwd(void) {
 }
 
 // motor 2 stop
-void motor2_stop(void) {
+void motor1_stop(void) {
 
 	C_SETBIT(INPUT3);
 	C_SETBIT(INPUT4);
@@ -155,7 +151,7 @@ void motor2_stop(void) {
 }
 
 // motor 2 volno
-void motor2_free(void) {
+void motor1_free(void) {
 
 	C_CLEARBIT(INPUT3);
 	C_CLEARBIT(INPUT4);
@@ -163,7 +159,7 @@ void motor2_free(void) {
 }
 
 // motor 1 dopøedu
-void motor1_forwd(void) {
+void motor2_forwd(void) {
 
 	C_SETBIT(INPUT1);
 	C_CLEARBIT(INPUT2);
@@ -171,7 +167,7 @@ void motor1_forwd(void) {
 }
 
 // motor 1 dozadu
-void motor1_backwd(void) {
+void motor2_backwd(void) {
 
 	C_SETBIT(INPUT2);
 	C_CLEARBIT(INPUT1);
@@ -179,7 +175,7 @@ void motor1_backwd(void) {
 }
 
 // motor 1 stop
-void motor1_stop(void) {
+void motor2_stop(void) {
 
 	C_SETBIT(INPUT1);
 	C_SETBIT(INPUT2);
@@ -187,7 +183,7 @@ void motor1_stop(void) {
 }
 
 // motor 1 volno
-void motor1_free(void) {
+void motor2_free(void) {
 
 	C_CLEARBIT(INPUT1);
 	C_CLEARBIT(INPUT2);
@@ -284,10 +280,12 @@ static inline void ioinit (void) {
 
 // volá se z pøerušení
 // PID regulátor
-uint16_t motor_reg(volatile tmotor *m) {
+uint16_t motor_reg(tmotor *m) {
 
-	// výpoèet aktuální rychlosti 50/33 = 1.5, filtrování aktuální rychlosti
-	m->act_speed = (m->act_speed + (m->enc + (m->enc/2)))/2;
+	// výpoèet aktuální rychlosti 50/33 = 1.5
+	//m->act_speed = m->enc + (m->enc/2);
+	// TODO: otestovat filtrování
+	m->act_speed = ((m->enc + (m->enc/2)) + m->last_speed)/2;
 
 	m->penc += m->enc;
 
