@@ -16,13 +16,13 @@ typedef enum {C_AUTO,C_JOY,C_PC} tcontrol;
 typedef struct {
 
 	// aktuální stav menu
-	volatile tmenu_states menu_state;
+	tmenu_states menu_state;
 
 	// urèuje zdroj povelù pro podøízené moduly
 	tcontrol control;
 
 	// poèítadlo pro krátké zapnutí podsvìtlení po stisku tlaèítka
-	volatile uint16_t backlight;
+	uint16_t backlight;
 
 	// realny cas (nebo uptime?)
 	volatile uint8_t hrs, min, sec;
@@ -155,7 +155,7 @@ extern void getFullSensorState();
 // ******* OSTATNI *******************************************************
 
 // spustí AD pøevod pro urèení vychýlení joysticku
-extern void update_joystick(volatile tmod_state *m);
+extern void update_joystick(tmod_state *m);
 
 // obsluha tlaèítek - ošetøení zákmitù
 // volá se periodicky - z pøerušení
