@@ -64,13 +64,13 @@
 
 // *** GLOBALNI PROMENNE **************************************************
 // stavové promìnné modulu
-volatile tmod_state mod_state;
+static tmod_state mod_state;
 
 // stav komunikace - rs485
-volatile tcomm_state comm_state;
+static tcomm_state comm_state;
 
 // stav komunikace - rs232
-volatile tcomm_state pccomm_state;
+static tcomm_state pccomm_state;
 
 // promìnné pro motory
 // lf = left front, lr = left rear
@@ -82,7 +82,7 @@ tmotor m_lf,m_lr,m_rf,m_rr;
 volatile uint8_t flags = 0;
 
 // stav senzorù
-tsens sens;
+static tsens sens;
 
 
 #define MLCD flags, 0
@@ -119,7 +119,7 @@ inline void set_uarts() {
 	//UBRR1L = 68; // 14400
 	//UBRR1L = 25; // 38400
 	//UBRR1L = 12; // 76800
-	UBRR1L = 12;
+	UBRR1L = 12; // 250000
 	UBRR1H = 0;
 
 	UCSR1A = (0<<U2X1)|(0<<MPCM1);
@@ -402,7 +402,7 @@ void writeTime() {
 }
 
 // zobrazí na lcd statistiky komunikace
-void commStat(volatile tcomm_state *p) {
+void commStat(tcomm_state *p) {
 
 	char abuff[11];
 
@@ -695,7 +695,7 @@ void decodeMotorInfo(tmotor *mf, tmotor *mr) {
 }
 
 // spustí AD pøevod pro urèení vychýlení joysticku
-void update_joystick(volatile tmod_state *m) {
+void update_joystick(tmod_state *m) {
 
 	// nastavení kanálu
 	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
@@ -1229,6 +1229,8 @@ int main(void)
 	// nastavení zdroje øízení na PC
 	mod_state.control = C_PC;
 
+	//pccomm_state.receive_state = PR_WAITING;
+
 	// zjištìní PID konstant nastavených v EEPROM
 	getMotorPID(10);
 
@@ -1322,27 +1324,48 @@ int main(void)
 
 			sp = (int16_t)(mod_state.joy_y-511)/2;
 
-			ot = (int16_t)((1022-mod_state.joy_x)-511)/2;
-
-			// práh - pøíliš nízké hodnoty se neuvažují
-			if (sp > -5 && sp < 5) sp = 0;
-			if (ot > -5 && ot < 5) ot = 0;
-
-			// jedeme rovnì
-			if ((ot>-200) && (ot<200)) {
+			ot = (int16_t)(mod_state.joy_x-511)/2; // 255 vlevo, -255 vpravo
 
 
-			setMotorsSpeed(sp,sp);
+			// jedeme dopøedu
+			if (sp > 10) {
 
-			// zatáèení doleva
-			} else if (ot<=-200) {
+				// zatáèení doprava
+				if (ot<-10) setMotorsSpeed(sp,sp+(ot/2));
 
-				setMotorsSpeed(-sp,sp);
+				// zatáèení doleva
+				else if (ot > 10) setMotorsSpeed(sp-(ot/2),sp);
 
-			// zatáèení doprava
-			} else if (ot>=200) {
+				// jedeme rovnì
+				else setMotorsSpeed(sp,sp);
 
-				setMotorsSpeed(sp,-sp);
+			// jedeme dozadu
+			} else if (sp < -10) {
+
+				// zatáèení doprava
+				if (ot<-10) setMotorsSpeed(sp,sp-(ot/2));
+
+				// zatáèení doleva
+				else if (ot > 10) setMotorsSpeed(sp+(ot/2),sp);
+
+				// jedeme rovnì
+				else setMotorsSpeed(sp,sp);
+
+
+			// otáèení na místì - doprava
+			} else if (ot<-10){
+
+				setMotorsSpeed(ot,-ot);
+
+			// otáèení na místì - doleva
+			} else if (ot>10) {
+
+				setMotorsSpeed(ot,-ot);
+
+			// zastavení*/
+			} else {
+
+				setMotorsSpeed(0,0);
 
 			}
 
@@ -1644,7 +1667,7 @@ int main(void)
 
     		} // switch
 
-    		pccomm_state.receive_state = PR_WAITING;
+    		//pccomm_state.receive_state = PR_WAITING;
 
     	} // if
 
