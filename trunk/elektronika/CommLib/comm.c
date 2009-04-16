@@ -51,7 +51,7 @@ uint16_t crc16_update(uint16_t crc, uint8_t a)
     }
 
 
-uint16_t makeCRC(volatile uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
+uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
 {
     uint8_t i;
     uint16_t check;
@@ -73,7 +73,7 @@ uint16_t makeCRC(volatile uint8_t *input, uint8_t len, uint8_t type, uint8_t add
 
 
 // volá se z main
-void makePacket(volatile tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_type, uint8_t addr) {
+void makePacket(tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_type, uint8_t addr) {
 
 		p->addr = addr;
 		p->len = len;
@@ -91,7 +91,7 @@ void makePacket(volatile tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_
 
 
 // zahájení pøenosu - odeslání prvního bytu
-void sendFirstByte(volatile uint8_t *tUDR, volatile tcomm_state *c) {
+void sendFirstByte(uint8_t *tUDR, tcomm_state *c) {
 
 	c->send_state = PS_SYNC1;
 	*tUDR = SYNC1;
@@ -101,7 +101,7 @@ void sendFirstByte(volatile uint8_t *tUDR, volatile tcomm_state *c) {
 
 // funkce volaná z pøerušení TX_Complete
 // PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY
-void sendPacket(volatile uint8_t *tUDR, volatile tcomm_state *c) {
+void sendPacket(uint8_t *tUDR, tcomm_state *c) {
 
 	static uint8_t index = 0;
 
@@ -184,7 +184,7 @@ void sendPacket(volatile uint8_t *tUDR, volatile tcomm_state *c) {
 
 // volá se pøed povolením pøerušení
 // inicializace struktury typu tcomm_state
-void comm_state_init(volatile tcomm_state *c) {
+void comm_state_init(tcomm_state *c) {
 
 	if (c!=NULL) {
 
@@ -205,7 +205,7 @@ void comm_state_init(volatile tcomm_state *c) {
 
 
 // PR_SYNC1, PR_SYNC2, PR_ADDR, PR_LEN, PR_TYPE, PR_DATA, PR_CRC1, PR_CRC2, PR_PACKET_RECEIVED, PR_READY
-void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
+void receivePacket(uint8_t tUDR, tcomm_state *c) {
 
 	static uint8_t index = 0;
 
@@ -316,7 +316,7 @@ void receivePacket(uint8_t tUDR, volatile tcomm_state *c) {
 
 // volá se z main
 // zkontroluje CRC paketu
-uint8_t checkPacket(volatile tcomm_state *c) {
+uint8_t checkPacket(tcomm_state *c) {
 
 	uint16_t crc = makeCRC(c->ip.data,c->ip.len,c->ip.packet_type,c->ip.addr);
 
@@ -336,7 +336,7 @@ uint8_t checkPacket(volatile tcomm_state *c) {
 
 }
 
-void receiveTimeout(volatile tcomm_state *c) {
+void receiveTimeout(tcomm_state *c) {
 
 	if (c->receive_state!=PR_PACKET_RECEIVED && c->receive_state!=PR_READY) {
 
