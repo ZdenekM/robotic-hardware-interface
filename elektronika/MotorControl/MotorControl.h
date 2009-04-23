@@ -24,7 +24,7 @@ typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_O
 typedef struct {
 
 	// akèní zásah (hodnota OCR1x)
-	int16_t act;
+	int32_t act;
 
 	// poèet tikù enkodéru od minule
 	int16_t enc;

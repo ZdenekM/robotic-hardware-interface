@@ -97,7 +97,7 @@ static tmotor motor2;
 static uint8_t comm_to = 0;
 
 // parametry PID uložené v EEPROM
-uint8_t EEMEM eP=30,eI=8,eD=4;
+uint8_t EEMEM eP=105,eI=15,eD=15;
 
 
 // inicializace struktury motor
@@ -215,7 +215,7 @@ static inline void ioinit (void) {
 	UBRRH = 0;
 
 	UCSRA = (0<<U2X)|(1<<MPCM);
-	UCSRB = (1<<UCSZ2)|(1<<TXCIE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
+	UCSRB = (1<<UCSZ2)|(0<<UDRE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
 	UCSRC = (1<<URSEL)|(1<<USBS)|(0<<UMSEL)|(0<<UPM1)|(0<<UPM0)|(1<<UCSZ1)|(1<<UCSZ0);
 
 	// ct2, 40kHz - ètení enkodérù, CTC mode
@@ -229,10 +229,12 @@ static inline void ioinit (void) {
 	// 50 Hz -> 2500
 	// 100 Hz -> 1250
 	//#define PWM_TOP 2500
-	ICR1 = 2500; //  PWM period - TOP
+	//ICR1 = 2500; //  PWM period - TOP
+
+	ICR1 = 8000; // 1 kHz
 
 	TCCR1A = (1<<WGM11) | (0<<WGM10) | (1<<COM1A1) | (0<<COM1A0) | (1<<COM1B1) | (0<<COM1B0); // phase correct, 10-bit
-	TCCR1B = (0<<CS12) | (1<<CS11) | (1<<CS10) | (1<<WGM13) | (0<<WGM12); // 64x presc.
+	TCCR1B = (0<<CS12) | (0<<CS11) | (1<<CS10) | (1<<WGM13) | (0<<WGM12); // no presc
 
 	OCR1A = 0;
 	OCR1B = 0;
@@ -283,13 +285,12 @@ static inline void ioinit (void) {
 uint16_t motor_reg(tmotor *m) {
 
 	// výpoèet aktuální rychlosti 50/33 = 1.5
-	//m->act_speed = m->enc + (m->enc/2);
-	// TODO: otestovat filtrování
-	m->act_speed = ((m->enc + (m->enc/2)) + m->last_speed)/2;
+	m->act_speed = m->enc + (m->enc/2);
 
+	// aktualizace pomocné promìnné pro urèení ujeté vzdálenosti
 	m->penc += m->enc;
 
-	// urèení 1s -> výpoèet ujeté vzd;
+	// urèení 1s -> výpoèet ujeté vzdálenosti z vìtšího množství impulzù
 	if (++m->enc_count==50) {
 
 		m->enc_count = 0;
@@ -333,7 +334,7 @@ uint16_t motor_reg(tmotor *m) {
 
 				// omezeni max. vel. akcniho zas.
 				// výpoèet sumy (suma = suma + odchylka)
-				if (m->act>2500) m->act = 2500;
+				if (m->act>8000) m->act = 8000;
 				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade všechny meze
 
 
@@ -341,7 +342,7 @@ uint16_t motor_reg(tmotor *m) {
 				m->last_speed = m->act_speed;
 
 				// výpoèet zátìže -> prùmìrování
-				m->load = (m->load + (m->act/25))/2;
+				m->load = m->act/80;
 
 				return (uint16_t)m->act;
 
@@ -383,24 +384,33 @@ uint16_t motor_reg(tmotor *m) {
 
 }
 
-// 50 Hz -> regulace
+// 1 kHz
 ISR(TIMER1_OVF_vect) {
 
-	// volani regulátorù
-	OCR1B = motor_reg(&motor2);
-	OCR1A = motor_reg(&motor1);
+	static uint8_t p=0;
 
-	// poèítadlo timeoutu pro pøíjem po RS485
-	receiveTimeout(&comm_state);
+	// 50 Hz
+	if (++p==20) {
+
+		p=0;
+
+		// volani regulátorù
+		OCR1B = motor_reg(&motor2);
+		OCR1A = motor_reg(&motor1);
+
+		// poèítadlo timeoutu pro pøíjem po RS485
+		receiveTimeout(&comm_state);
 
 
-	// zastavení v pøípadì výpadku komunikace na 1s
-	if (comm_to==50) {
+		// zastavení v pøípadì výpadku komunikace na 1s
+		if (comm_to==50) {
 
-		motor1.req_speed = 0;
-		motor2.req_speed = 0;
+			motor1.req_speed = 0;
+			motor2.req_speed = 0;
 
-	} else comm_to++;
+		} else comm_to++;
+
+	}
 
 }
 
@@ -514,9 +524,11 @@ ISR(USART_RXC_vect) {
 
 
 // USART - Tx Complete
-ISR(USART_TXC_vect) {
+ISR(USART_UDRE_vect) {
 
 	sendPacket(&UDR,&comm_state);
+
+	if (comm_state.send_state==PS_READY) CLEARBIT(UCSRB,UDRIE);
 
 }
 
@@ -599,8 +611,17 @@ void sendPacketE() {
 	// odeslání prvního bytu
 	sendFirstByte(&UDR,&comm_state);
 
+	// povolení pøerušení UDRIE
+	SETBIT(UCSRB,UDRIE);
+
 	// èekání na odeslání paketu
 	while(comm_state.send_state != PS_READY);
+
+	// èekání na odeslání posledního bytu
+	while (!(UCSRA & (1<<TXC)));
+
+	// vynulování TXC - nastavením na jednièku
+	SETBIT(UCSRA,TXC);
 
 	// pøepnutí na pøíjem
 	C_CLEARBIT(RS485_SEND);
