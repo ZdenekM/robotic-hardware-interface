@@ -91,6 +91,7 @@ typedef struct {
 	// taktilní senzory
 	uint8_t tact;
 
+	uint16_t comp;
 
 } tsens;
 
