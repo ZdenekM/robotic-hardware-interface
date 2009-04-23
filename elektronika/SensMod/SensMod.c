@@ -79,6 +79,48 @@ void state_init(tmod_state *m) {
 
 }
 
+char i2c_read(char address, char reg)
+{
+char read_data = 0;
+
+   TWCR = 0xA4;                                                  // send a start bit on i2c bus
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWDR = address;                                               // load address of i2c device
+   TWCR = 0x84;                                                  // transmit
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWDR = reg;                                                   // send register number to read from
+   TWCR = 0x84;                                                  // transmit
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+
+   TWCR = 0xA4;                                                  // send repeated start bit
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWDR = address+1;                                             // transmit address of i2c device with readbit set
+   TWCR = 0xC4;                                                  // clear transmit interupt flag
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWCR = 0x84;                                                  // transmit, nack (last byte request)
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   read_data = TWDR;                                             // and grab the target data
+   TWCR = 0x94;                                                  // send a stop bit on i2c bus
+   return read_data;
+
+}
+
+void i2c_transmit(char address, char reg, char data)
+{
+   TWCR = 0xA4;                                                  // send a start bit on i2c bus
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWDR = address;                                               // load address of i2c device
+   TWCR = 0x84;                                                  // transmit
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWDR = reg;
+   TWCR = 0x84;                                                  // transmit
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWDR = data;
+   TWCR = 0x84;                                                  // transmit
+   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+   TWCR = 0x94;                                                  // stop bit
+}
+
 
 // inicializace io
 static inline void ioinit (void) {
@@ -107,7 +149,7 @@ static inline void ioinit (void) {
 	UBRRH = 0;
 
 	UCSRA = (0<<U2X)|(1<<MPCM);
-	UCSRB = (1<<UCSZ2)|(1<<TXCIE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
+	UCSRB = (1<<UCSZ2)|(1<<UDRE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
 	UCSRC = (1<<URSEL)|(1<<USBS)|(0<<UMSEL)|(0<<UPM1)|(0<<UPM0)|(1<<UCSZ1)|(1<<UCSZ0);
 
 	// ct0 - pro obecné použití
@@ -121,6 +163,9 @@ static inline void ioinit (void) {
 
 	// nastavení pøerušení od èasovaèù
 	TIMSK = (1<<TICIE1)|(1<<TOIE1)|(1<<TOIE0);
+
+	// nastavení I2C
+	TWBR = 32; // 100khz i2c bus speed
 
 	// inicializace struktury
 	comm_state_init(&comm_state);
@@ -206,10 +251,12 @@ ISR(USART_RXC_vect) {
 }
 
 
-// USART - Tx Complete
-ISR(USART_TXC_vect) {
+// USART - UDR Empty
+ISR(USART_UDRE_vect) {
 
 	sendPacket(&UDR,&comm_state);
+
+	if (comm_state.send_state==PS_READY) CLEARBIT(UCSRB,UDRIE);
 
 }
 
@@ -225,8 +272,17 @@ void sendPacketE() {
 	// odeslání prvního bytu
 	sendFirstByte(&UDR,&comm_state);
 
+	// povolení pøerušení UDRIE
+	SETBIT(UCSRB,UDRIE);
+
 	// èekání na odeslání paketu
 	while(comm_state.send_state != PS_READY);
+
+	// èekání na odeslání posledního bytu
+	while (!(UCSRA & (1<<TXC)));
+
+	// vynulování TXC - nastavením na jednièku
+	SETBIT(UCSRA,TXC);
 
 	// pøepnutí na pøíjem
 	C_CLEARBIT(RS485_SEND);
@@ -374,7 +430,16 @@ void getAnalogData() {
 
 }
 
+// pøeètení úhlu z kompasu
+void getAngle(tmod_state *m) {
 
+	uint16_t angle=0;
+
+	angle = i2c_read(0xC0,2) <<8; // read cmps03 angle, high byte
+	angle += i2c_read(0xC0,3);
+
+	m->comp = (m->comp + angle)/2;
+}
 
 
 
@@ -392,6 +457,8 @@ int main(void) {
 
 		// obsluha Sharpù
 		getAnalogData();
+
+		getAngle(&mod_state);
 
 		comm_state.receive_state = PR_WAITING;
 
@@ -421,7 +488,7 @@ int main(void) {
 			// rychlé mìøení - jízda rovnì
 			case P_SENS_FAST: {
 
-				uint8_t arr[11];
+				uint8_t arr[13];
 
 				// ultrazvuk - rychlé mìøení
 				ATOMIC_BLOCK(ATOMIC_FORCEON) {
@@ -429,29 +496,29 @@ int main(void) {
 				arr[1] = mod_state.us_fast>>8; }
 
 				// sharp 1 (levý pøední)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
 				arr[2] = mod_state.sharp[0];
-				arr[3] = mod_state.sharp[0]>>8; }
+				arr[3] = mod_state.sharp[0]>>8;
 
 				// sharp 2 (pravý pøední)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
 				arr[4] = mod_state.sharp[1];
-				arr[5] = mod_state.sharp[1]>>8; }
+				arr[5] = mod_state.sharp[1]>>8;
 
 				// sharp 3 (levý zadní)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
 				arr[6] = mod_state.sharp[2];
-				arr[7] = mod_state.sharp[2]>>8; }
+				arr[7] = mod_state.sharp[2]>>8;
 
 				// sharp 4 (pravý zadní)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
 				arr[8] = mod_state.sharp[3];
-				arr[9] = mod_state.sharp[3]>>8; }
+				arr[9] = mod_state.sharp[3]>>8;
 
 				// taktilní senzory
 				arr[10] = mod_state.tact;
 
-				makePacket(&comm_state.op,arr,11,P_SENS_FAST,0);
+				// kompas
+				arr[11] = mod_state.comp;
+				arr[12] = mod_state.comp>>8;
+
+				makePacket(&comm_state.op,arr,13,P_SENS_FAST,0);
 
 				sendPacketE();
 
