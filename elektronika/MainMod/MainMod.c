@@ -2,6 +2,11 @@
 // autor: Zdenìk Materna, zdenek.materna@gmail.com
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
+// TODO: ujetí zadané vzdálenosti
+// TODO: plné skenování okolí
+// TODO: náhodná projížïka
+// TODO: zastavení pøi výpadku SensMod
+// TODO: poladit komunikaci s PC - neèekat ve smyèce
 
 #define F_CPU 16000000UL
 
@@ -87,6 +92,7 @@ static tsens sens;
 
 #define MLCD flags, 0
 #define MRS232 flags, 1
+#define MODULES flags, 2
 
 
 // nastavení obou UARTù
@@ -111,7 +117,7 @@ inline void set_uarts() {
 	UBRR0H = 0;
 
 	UCSR0A = (0<<U2X0)|(0<<MPCM0);
-	UCSR0B = (0<<UCSZ02)|(1<<TXCIE0)|(1<<TXEN0)|(1<<RXEN0)|(1<<RXCIE0);
+	UCSR0B = (0<<UCSZ02)|(0<<UDRIE0)|(1<<TXEN0)|(1<<RXEN0)|(1<<RXCIE0);
 	UCSR0C = (0<<USBS0)|(0<<UMSEL0)|(0<<UPM01)|(0<<UPM00)|(1<<UCSZ01)|(1<<UCSZ00);
 
 	// RS485, 9n2
@@ -123,7 +129,7 @@ inline void set_uarts() {
 	UBRR1H = 0;
 
 	UCSR1A = (0<<U2X1)|(0<<MPCM1);
-	UCSR1B = (1<<UCSZ12)|(1<<TXCIE1)|(1<<TXEN1)|(1<<RXEN1)|(1<<RXCIE1);
+	UCSR1B = (1<<UCSZ12)|(0<<UDRIE1)|(1<<TXEN1)|(1<<RXEN1)|(1<<RXCIE1);
 	UCSR1C = (1<<USBS1)|(0<<UMSEL1)|(0<<UPM11)|(0<<UPM10)|(1<<UCSZ11)|(1<<UCSZ10);
 
 
@@ -171,8 +177,17 @@ void sendPacketE() {
 	// poslání prvního bytu - ostatní se vysílají automaticky
 	sendFirstByte(&UDR1,&comm_state);
 
+	// povolení pøerušení UDRIE
+	SETBIT(UCSR1B,UDRIE1);
+
 	// èekání na odeslání paketu
 	while(comm_state.send_state != PS_READY);
+
+	// èekání na odeslání posledního bytu
+	while (!(UCSR1A & (1<<TXC1)));
+
+	// vynulování TXC1 - nastavením na jednièku
+	SETBIT(UCSR1A,TXC1);
 
 	// pøepnutí na pøíjem
 	C_CLEARBIT(RS485_SEND);
@@ -474,39 +489,41 @@ void standBy() {
 // USART0 - komunikace s PC
 ISR(USART0_RX_vect) {
 
-	receivePacket(UDR0,&pccomm_state);
-
 	if (CHECKBIT(UCSR0A,FE0)) pccomm_state.frame_error++;
+	receivePacket(UDR0,&pccomm_state);
 
 }
 
-// USART0 - Tx Complete
-ISR(USART0_TX_vect) {
+// USART0 - UDR Empty
+ISR(USART0_UDRE_vect) {
 
 	sendPacket(&UDR0,&pccomm_state);
+
+	if (pccomm_state.send_state==PS_READY) CLEARBIT(UCSR0B,UDRIE0);
 
 }
 
 // USART1 - Rx Complete
 ISR(USART1_RX_vect) {
 
-	receivePacket(UDR1,&comm_state);
 	if (CHECKBIT(UCSR1A,FE1)) comm_state.frame_error++;
-
-
+	receivePacket(UDR1,&comm_state);
 
 }
 
 
-// USART1 - Tx Complete
-ISR(USART1_TX_vect) {
+// USART1 - UDR Empty
+ISR(USART1_UDRE_vect) {
 
-	// po odvysílání adresy zrušit nastavený 9. bit
-	if (comm_state.send_state>=PS_ADDR) CLEARBIT(UCSR1B,TXB81);
-	else SETBIT(UCSR1B,TXB81);
+		//C_FLIPBIT(LCD_BL);
 
-	sendPacket(&UDR1,&comm_state);
+		// po odvysílání adresy zrušit nastavený 9. bit
+		if (comm_state.send_state>=PS_ADDR) CLEARBIT(UCSR1B,TXB81);
+		else SETBIT(UCSR1B,TXB81);
 
+		sendPacket(&UDR1,&comm_state);
+
+		if (comm_state.send_state==PS_READY) CLEARBIT(UCSR1B,UDRIE1);
 
 
 }
@@ -559,6 +576,8 @@ ISR(TIMER0_COMP_vect) {
 
 	//static uint8_t lcdbl=0;
 
+	C_SETBIT(MODULES);
+
 	// aktualizace vnitrniho casu
 	updateTime();
 
@@ -577,7 +596,7 @@ ISR(TIMER0_COMP_vect) {
 		lcdc=0;
 
 		// zvýšení poèítadla pro timeout komunikace s PC
-		//if (mod_state.pc_comm_to<PcCommTo) mod_state.pc_comm_to++;
+		if (mod_state.pc_comm_to<PcCommTo) mod_state.pc_comm_to++;
 
 		// nastavení pøíznakù
 		C_SETBIT(MLCD);
@@ -754,6 +773,9 @@ void sensInfo() {
 	sprintf_P(abuff,PSTR("S4:%7u"),sens.sharp[3]);
 	lcd_puts(abuff);
 
+	lcd_gotoxy(10,3);
+	sprintf_P(abuff,PSTR("CO:%7u"),sens.comp);
+	lcd_puts(abuff);
 
 
 }
@@ -997,6 +1019,9 @@ void getFastSensorState() {
 	   // taktilní senzory
 	   sens.tact = comm_state.ip.data[10];
 
+	   sens.comp = comm_state.ip.data[11];
+	   sens.comp |= comm_state.ip.data[12]<<8;
+
 
 	   };
 
@@ -1093,76 +1118,52 @@ void setMotorSpeed(uint8_t addr, int16_t speed) {
 // nastavení rychlosti motorù -> v závislosti na vzdálenosti pøekážky
 void setMotorsSpeed(int16_t left, int16_t right) {
 
-	// TODO: zapojit do rozhodování i ultrazvuk
+	// omezení rozsahu
+	if (left>250) left=250;
+	if (left<-250) left=-250;
+
+	if (right>250) right=250;
+	if (right<-250) right=-250;
+
 
 	// jedeme dopøedu
-	if (left > 0 && right > 0) {
+	if ((left > 0) && (right > 0)) {
 
-		// v úvahu se bere menší vzdálenost
-		if ((sens.sharp[0]<sens.sharp[1]) && sens.sharp[0]!=0) {
+		int16_t lowest= sens.us_fast;
 
-			// levý pøední Sharp
-			if ((sens.sharp[0]!=0) && (sens.sharp[0]<350)) {
+		if (sens.sharp[0]!=0 && sens.sharp[0]<lowest) lowest = sens.sharp[0];
+		if (sens.sharp[1]!=0 && sens.sharp[1]<lowest) lowest = sens.sharp[1];
 
-				if (left > (sens.sharp[0]-100)) left = sens.sharp[0]-100;
-				else left = 0;
+		// nebezpeèná vzdálenost - nutno omezit rychlost
+		if (lowest<350) {
 
-				if (right > (sens.sharp[0]-100)) right = sens.sharp[0]-100;
-				else right = 0;
+			if (left>(lowest-100)) left = lowest-100;
+			if (right>(lowest-100)) right = lowest-100;
 
-			}
-
-		} else {
-
-		// pravý pøední Sharp
-		if ((sens.sharp[1]!=0) && (sens.sharp[1]<350)) {
-
-			if (left > (sens.sharp[1]-100)) left = sens.sharp[1]-100;
-			else left = 0;
-
-			if (right > (sens.sharp[1]-100)) right = sens.sharp[1]-100;
-			else right = 0;
-
-				}
 		}
-
-	} // if dopøedu
 
 	// jedeme dozadu
-	if (left < 0 && right < 0) {
+	} else if (left<0 && right < 0) {
 
-		// v úvahu se bere menší vzdálenost
-		if ((sens.sharp[2]<sens.sharp[3]) && sens.sharp[2]!=0) {
+		int16_t lowest= 350;
 
-			// levý zadní Sharp
-			if ((sens.sharp[2]!=0) && (sens.sharp[2]<350)) {
+		if (sens.sharp[2]!=0 && sens.sharp[2]<lowest) lowest = sens.sharp[2];
+		if (sens.sharp[3]!=0 && sens.sharp[3]<lowest) lowest = sens.sharp[3];
 
-				if (abs(left) > (sens.sharp[2]-100)) left = -(sens.sharp[2]-100);
-				else left = 0;
+		// nebezpeèná vzdálenost - nutno omezit rychlost
+		if (lowest<350) {
 
-				if (abs(right) > (sens.sharp[2]-100)) right = -(sens.sharp[2]-100);
-				else right = 0;
+			if (abs(left)>(lowest-100)) left = -(lowest-100);
+			if (abs(right)>(lowest-100)) right = -(lowest-100);
 
-			}
+				}
 
-		} else {
+	} // else -> kontrola pøi otáèení??
 
-			// pravý zadní Sharp
-			if ((sens.sharp[3]!=0) && (sens.sharp[3]<350)) {
 
-				if (abs(left) > (sens.sharp[3]-100)) left = -(sens.sharp[3]-100);
-				else left = 0;
-
-				if (abs(right) > (sens.sharp[3]-100)) right = -(sens.sharp[3]-100);
-				else right = 0;
-
-					}
-		}
-
-	} // if dozadu
-
-	setMotorSpeed(10,left);
-	setMotorSpeed(11,right);
+	// zmìna rychlosti - posílá se pouze pokus se liší nová a pùvodní hodnota
+	if (m_lf.req_speed!=left) setMotorSpeed(10,left);
+	if (m_rf.req_speed!=right)	setMotorSpeed(11,right);
 
 
 }
@@ -1209,6 +1210,18 @@ void setMotorPID(uint8_t addr) {
 
 	sendPacketE();
 
+
+}
+
+void sendPCPacketE() {
+
+	// èekání na dokonèení odeslání paketu
+	while(pccomm_state.send_state != PS_READY);
+
+	// zahájení pøenosu
+	sendFirstByte(&UDR0,&pccomm_state);
+
+	SETBIT(UCSR0B,UDRIE0);
 
 }
 
@@ -1282,17 +1295,22 @@ int main(void)
 
     	// obsluha periferií a podøízených modulù ---------------------------------------------------------------------------
 
-    	update_joystick(&mod_state);
+    	if (C_CHECKBIT(MODULES)) {
 
-		// ètení stavu levých motorù
-		getMotorInfo(10,&m_lf,&m_lr);
+    		C_CLEARBIT(MODULES);
 
-    	// ètení stavu pravých motorù
-		getMotorInfo(11,&m_rf,&m_rr);
+			update_joystick(&mod_state);
 
-		// naètení dat ze senzorù
-		getFastSensorState();
+			// ètení stavu levých motorù
+			getMotorInfo(10,&m_lf,&m_lr);
 
+			// ètení stavu pravých motorù
+			getMotorInfo(11,&m_rf,&m_rr);
+
+			// naètení dat ze senzorù
+			getFastSensorState();
+
+    	}
 
 		switch(mod_state.control) {
 
@@ -1300,25 +1318,15 @@ int main(void)
 		case C_PC: {
 
 			// zastavení pøi timeoutu komunikace s PC - 5s
-			/*if (mod_state.pc_comm_to >= PcCommTo) {
-
+			if (mod_state.pc_comm_to >= PcCommTo)
 				// pož. rychlost není nula - zastavit
-				if (m_lf.req_speed!=0 || m_rf.req_speed!=0) {
-
-					setMotorSpeed(10,0);
-					setMotorSpeed(11,0);
-
-				}
-
-			}*/
+				setMotorsSpeed(0,0);
 
 
 		} break;
 
 		// zdroj øízení nastaven na joystick
 		case C_JOY: {
-
-			// TODO: dodìlat zatáèení
 
 			int16_t sp = 0, ot = 0;
 
@@ -1355,12 +1363,12 @@ int main(void)
 			// otáèení na místì - doprava
 			} else if (ot<-10){
 
-				setMotorsSpeed(ot,-ot);
+				setMotorsSpeed(-ot,ot);
 
 			// otáèení na místì - doleva
 			} else if (ot>10) {
 
-				setMotorsSpeed(ot,-ot);
+				setMotorsSpeed(-ot,ot);
 
 			// zastavení*/
 			} else {
@@ -1407,11 +1415,8 @@ int main(void)
     			// vytvoøení ECHO paketu
     			makePacket(&pccomm_state.op,pccomm_state.ip.data,pccomm_state.ip.len,P_ECHO,0);
 
-    			// zahájení pøenosu
-    			sendFirstByte(&UDR0,&pccomm_state);
-
-    			// èekání na pøípadné dokonèení odeslání pøedchozího paketu
-    			while(pccomm_state.send_state != PS_READY);
+    			// obsluha odeslání paketu
+    			sendPCPacketE();
 
 
     		} break;
@@ -1462,11 +1467,8 @@ int main(void)
 
     		    makePacket(&pccomm_state.op,arr,3,P_MOTOR_GETPID,0);
 
-    		    // zahájení pøenosu
-    		   sendFirstByte(&UDR0,&pccomm_state);
-
-    		   // èekání na pøípadné dokonèení odeslání pøedchozího paketu
-    		   while(pccomm_state.send_state != PS_READY);
+    		    // obsluha odeslání paketu
+    		    sendPCPacketE();
 
 
     		} break;
@@ -1543,11 +1545,8 @@ int main(void)
 
 				makePacket(&pccomm_state.op,arr,16,P_MOTOR_INFO,0);
 
-				// zahájení pøenosu
-				sendFirstByte(&UDR0,&pccomm_state);
-
-				// èekání na pøípadné dokonèení odeslání pøedchozího paketu
-				while(pccomm_state.send_state != PS_READY);
+				// obsluha odeslání paketu
+				sendPCPacketE();
 
 
     		} break;
@@ -1590,11 +1589,8 @@ int main(void)
     			// vytvoøení paketu
     			makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
 
-    			// zahájení pøenosu
-    			sendFirstByte(&UDR0,&pccomm_state);
-
-    			// èekání na pøípadné dokonèení odeslání pøedchozho paketu
-    			while(pccomm_state.send_state != PS_READY);
+    			// obsluha odeslání paketu
+    			sendPCPacketE();
 
     		} break;
 
@@ -1649,14 +1645,8 @@ int main(void)
     				// taktilní senzory
     				arr[18] = sens.tact;
 
-    				// èekání na pøípadné dokonèení odeslání pøedchozho paketu
-    				while(pccomm_state.send_state != PS_READY);
-
-    				// vytvoøení paketu
-    				makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
-
-    				// zahájení pøenosu
-    				sendFirstByte(&UDR0,&pccomm_state);
+    				// obsluha odeslání paketu
+    				sendPCPacketE();
 
     			}
 
