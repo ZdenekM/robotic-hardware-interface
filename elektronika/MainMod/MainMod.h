@@ -1,6 +1,44 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#ifndef _AVR035_H_
+#define _AVR035_H_
+
+// from AVR035: Efficient C Coding for AVR
+
+#define SETBIT(ADDRESS,BIT) (ADDRESS |= (1<<BIT))
+#define CLEARBIT(ADDRESS,BIT) (ADDRESS &= ~(1<<BIT))
+#define FLIPBIT(ADDRESS,BIT) (ADDRESS ^= (1<<BIT))
+#define CHECKBIT(ADDRESS,BIT) (ADDRESS & (1<<BIT))
+
+#define SETBITMASK(x,y) (x |= (y))
+#define CLEARBITMASK(x,y) (x &= (~y))
+#define FLIPBITMASK(x,y) (x ^= (y))
+#define CHECKBITMASK(x,y) (x & (y))
+
+#define VARFROMCOMB(x, y) x
+#define BITFROMCOMB(x, y) y
+
+#define C_SETBIT(comb) SETBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
+#define C_CLEARBIT(comb) CLEARBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
+#define C_FLIPBIT(comb) FLIPBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
+#define C_CHECKBIT(comb) CHECKBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
+
+#endif
+
+#define LCD_BL  PORTG, 1
+#define BUTT4 PIND, 5
+#define BUTT3 PIND, 6
+#define BUTT2 PIND, 7
+#define BUTT1 PING, 0
+
+// povolení vysílání na rs485
+#define RS485_SEND PORTD, 4
+
+// pøíjem / vysílání
+#define RS485_OUT (C_SETBIT(RS485_SEND))
+#define RS485_IN (C_CLEARBIT(RS485_SEND))
+
 #include "../CommLib/comm.h"
 
 // data odesílaná do PC
@@ -45,36 +83,6 @@ typedef struct {
 
 } tmod_state;
 
-typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_OVERTEMP} tmotor_state;
-
-// zjednodušená struktura pro ukládání stavu motorù
-typedef struct {
-
-	// žádaná rychlost v cm/s
-	int16_t req_speed;
-
-	// aktuální skuteèná rychlost
-	int16_t act_speed;
-
-	// ujetá vzdálenost
-	int32_t distance;
-
-	// stav motoru
-	tmotor_state state;
-
-	// proud motorem
-	uint8_t current;
-
-	// teplota motoru
-	uint8_t temp;
-
-	// výkon motoru
-	uint8_t load;
-
-} tmotor;
-
-// parametry regulatoru, * 10
-uint8_t mP, mI, mD;
 
 // stav senzorù
 typedef struct {
@@ -95,98 +103,66 @@ typedef struct {
 
 } tsens;
 
+typedef enum {R_READY,R_RUNNING} treg;
+
 // struktura pro regulátor zajišující ujetí požadované vzdálenosti
 typedef struct {
 
+	// suma regulátoru
+	int32_t lsum,rsum;
 
+	// parametry regulatoru
+	uint16_t P, I, D;
+
+	// poslední ujetá vzdálenost
+	int32_t llast_dist,rlast_dist;
+
+	// poèáteèní vzd.
+	int16_t lstart_dist,rstart_dist;
+
+	// kolik se má ujet
+	int16_t req_dist;
+
+	uint8_t state;
 
 } tdist_reg;
 
+// struktura pro regulátor zajišující otoèení o zadaný úhel
+typedef struct {
+
+	// suma regulátoru
+	int32_t sum;
+
+	// parametry regulatoru
+	uint16_t P, I, D;
+
+	// poslední hodnota
+	int32_t last_angle;
+
+	// poèáteèní azimut
+	int16_t start_angle;
+
+	// požadovaný azimut
+	int16_t req_angle;
+
+	// stav
+	uint8_t state;
+
+} tangle_reg;
 
 // ********** INICIALIZACE ***********************************************
 
 // inicializace procesoru
-extern inline void ioinit(void);
-
-extern inline void set_uarts();
-
-extern inline void set_adc(void);
-
-// provìøí komunikaci s modulem zadané adresy
-// vrací úspìšnost v %
-extern uint8_t sendEcho(uint8_t addr);
-
-// inicializace modulù, volá fci echo pro každý modul
-// výsledky zobrazuje na LCD
-extern void initModules();
-
-
-// ******** MOTORY *******************************************************
-
-// inicializace struktury pro data z motorù
-extern void motor_init(tmotor *m);
-
-// na LCD zobrazí info z motoru
-extern void motStat(tmotor *m);
-
-// nastavení požadované rychlosti motorù
-extern void setMotorSpeed(uint8_t addr, int16_t speed);
-
-// naète z modulu info o motorech a vyplní ho do struktur tmotor
-extern void getMotorInfo(uint8_t addr, tmotor *front, tmotor *rear);
-
-// dekóduje pøijaté info z modulu MotorControl
-extern void decodeMotorInfo(tmotor *mf, tmotor *mr);
-
-
-// ******* SENZORY *******************************************************
-
-// zobrazí informace ze senzorù na LCD
-extern void sensInfo();
-
-// naète z modulu SensMod
-extern void getFastSensorState();
-
-// provede plné skenování a naète data ze SensMod
-// plné sk. trvá cca 1,5s
-extern void getFullSensorState();
+void ioinit(void);
 
 
 
 // ******* OSTATNI *******************************************************
 
-// spustí AD pøevod pro urèení vychýlení joysticku
-extern void update_joystick(tmod_state *m);
-
-// obsluha tlaèítek - ošetøení zákmitù
-// volá se periodicky - z pøerušení
-extern void checkButtons ();
-
-// obsluha poèítání èasu - voláno periodicky z pøerušení
-extern void updateTime();
-
-extern char *getTimeString();
-
-// vypíše èas na lcd - pravý horní roh
-extern void writeTime();
-
-// zobrazí na lcd statistiky komunikace
-extern void commStat();
-
-// zobrazí na LCD stav joysticku
-extern void joy();
-
-// stand. režim displeje
-extern void standBy();
 
 // obsluha LCD
 extern void manageLcd();
 
-// obsluha odeslání paketu
-extern void sendPacketE();
-
-// odeslání statistiky komunikace s moduly do PC
-extern void sendCommStat();
 
 
 
