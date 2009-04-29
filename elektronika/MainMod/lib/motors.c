@@ -1,35 +1,26 @@
-#define F_CPU 16000000UL
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include <string.h>
-#include <inttypes.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <avr/sfr_defs.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
-#include <util/atomic.h>
-#include <avr/wdt.h>
 
 #include "motors.h"
 
+extern tmod_state mod_state;
+extern tcomm_state comm_state;
+extern tcomm_state pccomm_state;
+extern tdist_reg dist_reg;
+extern tangle_reg angle_reg;
+extern tmotors motors;
+extern tsens sens;
 
 // inicializace struktur
-void motor_init(tmotors *m) {
+void motor_init() {
 
 	for (uint8_t i=0;i<4;i++) {
 
-		m->m[i].act_speed = 0;
-		m->m[i].current = 0;
-		m->m[i].distance = 0;
-		m->m[i].req_speed = 0;
-		m->m[i].state = 0;
-		m->m[i].temp = 0;
-		m->m[i].load = 0;
+		motors.m[i].act_speed = 0;
+		motors.m[i].current = 0;
+		motors.m[i].distance = 0;
+		motors.m[i].req_speed = 0;
+		motors.m[i].state = 0;
+		motors.m[i].temp = 0;
+		motors.m[i].load = 0;
 
 
 	}
@@ -79,133 +70,133 @@ void motStat(tmotor *m) {
 
 // volá se z main
 // dekóduje pøijaté info z modulu MotorControl
-void decodeMotorInfo(tcomm_state *c, tmotor *mf, tmotor *mr) {
+void decodeMotorInfo(tmotor *mf, tmotor *mr) {
 
 		// údaje pro pøední motor ----------------------------------
 
 		// požadovaná rychlost
-		mf->req_speed = c->ip.data[0];
-		mf->req_speed |= c->ip.data[1]<<8;
+		mf->req_speed = comm_state.ip.data[0];
+		mf->req_speed |= comm_state.ip.data[1]<<8;
 
 		// aktuální rychlost
-		mf->act_speed = c->ip.data[2];
-		mf->act_speed |= c->ip.data[3]<<8;
+		mf->act_speed = comm_state.ip.data[2];
+		mf->act_speed |= comm_state.ip.data[3]<<8;
 
 		// stav motoru
-		mf->state = c->ip.data[4];
+		mf->state = comm_state.ip.data[4];
 
 		// proud motoru
-		mf->current = c->ip.data[5];
+		mf->current = comm_state.ip.data[5];
 
 		// teplota motoru
-		mf->temp = c->ip.data[6];
+		mf->temp = comm_state.ip.data[6];
 
 		// ujetá vzdálenost
-		mf->distance = c->ip.data[7];
-		mf->distance  |= c->ip.data[8]<<8;
-		mf->distance  |= c->ip.data[9]<<16;
-		mf->distance  |= c->ip.data[10]<<24;
+		mf->distance = comm_state.ip.data[7];
+		mf->distance  |= comm_state.ip.data[8]<<8;
+		mf->distance  |= comm_state.ip.data[9]<<16;
+		mf->distance  |= comm_state.ip.data[10]<<24;
 
 		// výkon motoru
-		mf->load = c->ip.data[11];
+		mf->load = comm_state.ip.data[11];
 
 
 		// údaje pro zadní motor -------------------------------------------------
 
 		// požadovaná rychlost
-		mr->req_speed = c->ip.data[0];
-		mr->req_speed |= c->ip.data[1]<<8;
+		mr->req_speed = comm_state.ip.data[0];
+		mr->req_speed |= comm_state.ip.data[1]<<8;
 
 		// aktuální rychlost
-		mr->act_speed = c->ip.data[12];
-		mr->act_speed |= c->ip.data[13]<<8;
+		mr->act_speed = comm_state.ip.data[12];
+		mr->act_speed |= comm_state.ip.data[13]<<8;
 
 		// stav motoru
-		mr->state = c->ip.data[14];
+		mr->state = comm_state.ip.data[14];
 
 		// proud motoru
-		mr->current = c->ip.data[15];
+		mr->current = comm_state.ip.data[15];
 
 		// teplota motoru
-		mr->temp = c->ip.data[16];
+		mr->temp = comm_state.ip.data[16];
 
 		// ujetá vzdálenost
-		mr->distance = c->ip.data[17];
-		mr->distance  |= c->ip.data[18]<<8;
-		mr->distance  |= c->ip.data[19]<<16;
-		mr->distance  |= c->ip.data[20]<<24;
+		mr->distance = comm_state.ip.data[17];
+		mr->distance  |= comm_state.ip.data[18]<<8;
+		mr->distance  |= comm_state.ip.data[19]<<16;
+		mr->distance  |= comm_state.ip.data[20]<<24;
 
 		// výkon motoru
-		mr->load = c->ip.data[21];
+		mr->load = comm_state.ip.data[21];
 
 }
 
 
 // zobrazení PID konstant na lcd
-void motPID(tmotors *m) {
+void motPID() {
 
 	char abuff[11];
 
 	lcd_gotoxy(0,1);
-	sprintf_P(abuff,PSTR("P:%7u"),m->P);
+	sprintf_P(abuff,PSTR("P:%7u"),motors.P);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,2);
-	sprintf_P(abuff,PSTR("I:%7u"),m->I);
+	sprintf_P(abuff,PSTR("I:%7u"),motors.I);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,3);
-	sprintf_P(abuff,PSTR("D:%7u"),m->D);
+	sprintf_P(abuff,PSTR("D:%7u"),motors.D);
 	lcd_puts(abuff);
 
 }
 
 
 // naète z modulu info o motorech a vyplní ho do struktur tmotor
-void getMotorInfo(tcomm_state *c, uint8_t addr, tmotor *front, tmotor *rear) {
+void getMotorInfo(uint8_t addr, tmotor *front, tmotor *rear) {
 
 	// ètení stavu levých motorù
-	makePacket(&c->op,NULL,0,P_MOTOR_INFO,addr);
+	makePacket(&comm_state.op,NULL,0,P_MOTOR_INFO,addr);
 
-	sendPacketE(&c);
+	sendPacketE();
 
 	C_CLEARBIT(RS485_SEND);
 
 	// èekání na odpovìï
-	c->receive_state = PR_WAITING;
-	while(c->receive_state != PR_PACKET_RECEIVED && c->receive_state!=PR_TIMEOUT && c->receive_state!=PR_READY);
+	comm_state.receive_state = PR_WAITING;
+	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
 	// crc souhlasí -> úspìšné pøijetí paketu
-	if (c->receive_state==PR_PACKET_RECEIVED && checkPacket(&c)) {
+	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
 	   // dekódování pøijatých dat
-	   decodeMotorInfo(&c,front,rear);
+	   decodeMotorInfo(front,rear);
 
 	   };
 
-	 c->receive_state = PR_READY;
+	 comm_state.receive_state = PR_READY;
 
 
 }
 
 
 // nastavení požadované rychlosti motorù
-void setMotorSpeed(tcomm_state *c, uint8_t addr, int16_t speed) {
+void setMotorSpeed(uint8_t addr, int16_t speed) {
 
 	uint8_t sarr[2];
 
 	sarr[0] = speed;
 	sarr[1] = speed>>8;
 
-	makePacket(&c->op,sarr,2,P_MOTOR_COMM,addr);
+	makePacket(&comm_state.op,sarr,2,P_MOTOR_COMM,addr);
 
-	sendPacketE(&c);
+	sendPacketE();
 
 
 }
 
 // nastavení rychlosti motorù -> v závislosti na vzdálenosti pøekážky
-void setMotorsSpeed(tcomm_state *c, tsens *s, tmotors *m, int16_t left, int16_t right) {
+void setMotorsSpeed(int16_t left, int16_t right) {
 
 	// omezení rozsahu
 	if (left>250) left=250;
@@ -220,9 +211,9 @@ void setMotorsSpeed(tcomm_state *c, tsens *s, tmotors *m, int16_t left, int16_t 
 
 		int16_t lowest = 500;
 
-		if (s->us_fast!=0 && s->us_fast<lowest) lowest = s->us_fast;
-		if (s->sharp[0]!=0 && s->sharp[0]<lowest) lowest = s->sharp[0];
-		if (s->sharp[1]!=0 && s->sharp[1]<lowest) lowest = s->sharp[1];
+		if (sens.us_fast!=0 && sens.us_fast<lowest) lowest = sens.us_fast;
+		if (sens.sharp[0]!=0 && sens.sharp[0]<lowest) lowest = sens.sharp[0];
+		if (sens.sharp[1]!=0 && sens.sharp[1]<lowest) lowest = sens.sharp[1];
 
 		// nebezpeèná vzdálenost - nutno omezit rychlost
 		if (lowest<350) {
@@ -237,8 +228,8 @@ void setMotorsSpeed(tcomm_state *c, tsens *s, tmotors *m, int16_t left, int16_t 
 
 		int16_t lowest= 350;
 
-		if (s->sharp[2]!=0 && s->sharp[2]<lowest) lowest = s->sharp[2];
-		if (s->sharp[3]!=0 && s->sharp[3]<lowest) lowest = s->sharp[3];
+		if (sens.sharp[2]!=0 && sens.sharp[2]<lowest) lowest = sens.sharp[2];
+		if (sens.sharp[3]!=0 && sens.sharp[3]<lowest) lowest = sens.sharp[3];
 
 		// nebezpeèná vzdálenost - nutno omezit rychlost
 		if (lowest<350) {
@@ -252,53 +243,53 @@ void setMotorsSpeed(tcomm_state *c, tsens *s, tmotors *m, int16_t left, int16_t 
 
 
 	// zmìna rychlosti - posílá se pouze pokus se liší nová a pùvodní hodnota
-	if (m->m[FRONT_LEFT].req_speed!=left) setMotorSpeed(&c,10,left);
-	if (m->m[FRONT_RIGHT].req_speed!=right)	setMotorSpeed(&c,11,right);
+	if (motors.m[FRONT_LEFT].req_speed!=left) setMotorSpeed(10,left);
+	if (motors.m[FRONT_RIGHT].req_speed!=right)	setMotorSpeed(11,right);
 
 
 }
 
 // zjištìní PID konstant
-void getMotorPID(tcomm_state *c, tmotors *m, uint8_t addr) {
+void getMotorPID(uint8_t addr) {
 
 
 	// ètení stavu levých motorù
-	makePacket(&c->op,NULL,0,P_MOTOR_GETPID,addr);
+	makePacket(&comm_state.op,NULL,0,P_MOTOR_GETPID,addr);
 
-	sendPacketE(&c);
+	sendPacketE();
 
 	C_CLEARBIT(RS485_SEND);
 
 	// èekání na odpovìï
-	c->receive_state = PR_WAITING;
-	while(c->receive_state != PR_PACKET_RECEIVED && c->receive_state!=PR_TIMEOUT && c->receive_state!=PR_READY);
+	comm_state.receive_state = PR_WAITING;
+	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
 	// crc souhlasí -> úspìšné pøijetí paketu
-	if (c->receive_state==PR_PACKET_RECEIVED && checkPacket(&c)) {
+	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
-		m->P = c->ip.data[0];
-		m->I = c->ip.data[1];
-		m->D = c->ip.data[2];
+		motors.P = comm_state.ip.data[0];
+		motors.I = comm_state.ip.data[1];
+		motors.D = comm_state.ip.data[2];
 
 	}
 
-	c->receive_state = PR_READY;
+	comm_state.receive_state = PR_READY;
 
 
 }
 
 // nastavení PID parametrù
-void setMotorPID(tcomm_state *c, tmotors *m, uint8_t addr) {
+void setMotorPID(uint8_t addr) {
 
 	uint8_t sarr[3];
 
-	sarr[0] = m->P;
-	sarr[1] = m->I;
-	sarr[2] = m->D;
+	sarr[0] = motors.P;
+	sarr[1] = motors.I;
+	sarr[2] = motors.D;
 
-	makePacket(&c->op,sarr,3,P_MOTOR_SETPID,addr);
+	makePacket(&comm_state.op,sarr,3,P_MOTOR_SETPID,addr);
 
-	sendPacketE(&c);
+	sendPacketE();
 
 
 }

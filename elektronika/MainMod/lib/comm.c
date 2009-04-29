@@ -1,26 +1,13 @@
-#define F_CPU 16000000UL
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include <string.h>
-#include <inttypes.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <avr/sfr_defs.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
-#include <util/atomic.h>
-#include <avr/wdt.h>
 
 #include "comm.h"
+
+extern tcomm_state comm_state;
+extern tcomm_state pccomm_state;
 
 
 // volá se z main
 // odeslání paketu - extra funkce pro každý modul
-void sendPacketE(tcomm_state *c) {
+void sendPacketE() {
 
 	// zakázání pøíjmu
 	CLEARBIT(UCSR1B,RXEN1);
@@ -32,13 +19,17 @@ void sendPacketE(tcomm_state *c) {
 	SETBIT(UCSR1B,TXB81);
 
 	// poslání prvního bytu - ostatní se vysílají automaticky
-	sendFirstByte(&UDR1,&c);
+	sendFirstByte(&UDR1,&comm_state);
 
 	// povolení pøerušení UDRIE
 	SETBIT(UCSR1B,UDRIE1);
 
+	//if (c->op.len == 30) C_FLIPBIT(LCD_BL);
+
 	// èekání na odeslání paketu
-	while(c->send_state != PS_READY);
+	while(comm_state.send_state != PS_READY);
+
+	//C_FLIPBIT(LCD_BL);
 
 	// èekání na odeslání posledního bytu
 	while (!(UCSR1A & (1<<TXC1)));
@@ -56,7 +47,7 @@ void sendPacketE(tcomm_state *c) {
 
 // provìøí komunikaci s modulem zadané adresy
 // vrací úspìšnost v %
-uint8_t sendEcho(tcomm_state *c, uint8_t addr) {
+uint8_t sendEcho(uint8_t addr) {
 
 	uint8_t data[30], i=0,sent=0,rec=0;
 
@@ -65,20 +56,20 @@ uint8_t sendEcho(tcomm_state *c, uint8_t addr) {
 	for(sent=1; sent<=10;sent++) {
 
 		// vytvoøení paketu
-		makePacket(&c->op,data,30,P_ECHO,addr);
+		makePacket(&comm_state.op,data,30,P_ECHO,addr);
 
 		// odeslání paketu
-		sendPacketE(&c);
+		sendPacketE();
 
 		C_CLEARBIT(RS485_SEND);
 		// èekání na odpovìï
-		c->receive_state = PR_WAITING;
-		while(c->receive_state != PR_PACKET_RECEIVED && c->receive_state!=PR_TIMEOUT);
+		comm_state.receive_state = PR_WAITING;
+		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT);
 
 		// crc souhlasí -> úspìšné pøijetí paketu
-		if (c->receive_state==PR_PACKET_RECEIVED && checkPacket(&c)) rec++;
+		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) rec++;
 
-		c->receive_state = PR_READY;
+		comm_state.receive_state = PR_READY;
 
 	}
 
@@ -88,7 +79,7 @@ uint8_t sendEcho(tcomm_state *c, uint8_t addr) {
 }
 
 // inicializace modulù - echo
-void initModules(tcomm_state *c) {
+void initModules() {
 
 	lcd_gotoxy(0,0);
 	lcd_puts_P("Testing modules...");
@@ -97,7 +88,7 @@ void initModules(tcomm_state *c) {
 	uint8_t state;
 
 	// MotorControl - left
-	state = sendEcho(&c,10);
+	state = sendEcho(10);
 
 	lcd_gotoxy(0,1);
 	snprintf_P(buff,15,PSTR("MCL (10) %3u\%"),state);
@@ -106,7 +97,7 @@ void initModules(tcomm_state *c) {
 	_delay_ms(1);
 
 	// MotorControl - right
-	state = sendEcho(&c,11);
+	state = sendEcho(11);
 
 	lcd_gotoxy(0,2);
 	snprintf_P(buff,15,PSTR("MCR (11) %3u\%"),state);
@@ -115,7 +106,7 @@ void initModules(tcomm_state *c) {
 	_delay_ms(1);
 
 	// SensMod
-	state = sendEcho(&c,21);
+	state = sendEcho(21);
 
 	lcd_gotoxy(0,3);
 	snprintf_P(buff,15,PSTR("SEM (21) %3u\%"),state);
@@ -170,9 +161,9 @@ void commStat(tcomm_state *p) {
 
 // volá se z main
 // odeslání statistiky komunikace s moduly do PC
-void sendCommStat(tcomm_state *c, tcomm_state *pc) {
+void sendCommStat() {
 
-	uint8_t data[15]; // 1 byte typ, 14 bytù data
+	/*uint8_t data[15]; // 1 byte typ, 14 bytù data
 	data[0] = COMMSTATE;
 
 	uint8_t index = 1;
@@ -180,41 +171,41 @@ void sendCommStat(tcomm_state *c, tcomm_state *pc) {
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	for (i=0;i<4;i++)
-		data[index++]=(uint8_t)(c->packets_sended>>(i*8)); }
+		data[index++]=(uint8_t)(comm_state.packets_sended>>(i*8)); }
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	for (i=0;i<4;i++)
-		data[index++]=(uint8_t)(c->packets_received>>(i*8)); }
+		data[index++]=(uint8_t)(comm_state.packets_received>>(i*8)); }
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	for (i=0;i<2;i++)
-		data[index++]=(uint8_t)(c->packets_bad_received>>(i*8)); }
+		data[index++]=(uint8_t)(comm_state.packets_bad_received>>(i*8)); }
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	for (i=0;i<2;i++)
-		data[index++]=(uint8_t)(c->packets_timeouted>>(i*8)); }
+		data[index++]=(uint8_t)(comm_state.packets_timeouted>>(i*8)); }
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	for (i=0;i<2;i++)
-		data[index++]=(uint8_t)(c->frame_error>>(i*8)); }
+		data[index++]=(uint8_t)(comm_state.frame_error>>(i*8)); }
 
-	makePacket(&pc->op,data,15,P_COMM_INFO,0);
+	makePacket(&pccomm_state.op,data,15,P_COMM_INFO,0);
 
-	sendFirstByte(&UDR0,&pc);
+	sendFirstByte(&UDR0,&pccomm_state);
 
 	// èekání na odeslání paketu
-	while(pc->send_state != PS_READY);
-
+	while(pccomm_state.send_state != PS_READY);
+	*/
 
 }
 
-void sendPCPacketE(tcomm_state *pc) {
+void sendPCPacketE() {
 
 	// èekání na dokonèení odeslání paketu
-	while(pc->send_state != PS_READY);
+	while(pccomm_state.send_state != PS_READY);
 
 	// zahájení pøenosu
-	sendFirstByte(&UDR0,&pc);
+	sendFirstByte(&UDR0,&pccomm_state);
 
 	SETBIT(UCSR0B,UDRIE0);
 

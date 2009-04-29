@@ -3,10 +3,22 @@
 #ifndef MOTORS_H_
 #define MOTORS_H_
 
-#include "../MainMod.h"
-#include "lcd.h"
-#include "comm.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include <util/delay.h>
+#include <string.h>
+#include <inttypes.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <avr/sfr_defs.h>
+#include <avr/pgmspace.h>
+#include <avr/eeprom.h>
+#include <util/atomic.h>
+#include <avr/wdt.h>
 
+#include "../MainMod.h"
 
 typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_OVERTEMP} tmotor_state;
 
@@ -47,26 +59,25 @@ typedef struct {
 
 } tmotors;
 
-
 // ******** MOTORY *******************************************************
 
-void motor_init(tmotors *m);
+void motor_init();
 
 void motStat(tmotor *m);
 
-void decodeMotorInfo(tcomm_state *c, tmotor *mf, tmotor *mr);
+void decodeMotorInfo(tmotor *mf, tmotor *mr);
 
 void motPID();
 
-void getMotorInfo(tcomm_state *c, uint8_t addr, tmotor *front, tmotor *rear);
+void getMotorInfo(uint8_t addr, tmotor *front, tmotor *rear);
 
-void setMotorSpeed(tcomm_state *c, uint8_t addr, int16_t speed);
+void setMotorSpeed(uint8_t addr, int16_t speed);
 
-void setMotorsSpeed(tcomm_state *c, tsens *s, tmotors *m, int16_t left, int16_t right);
+void setMotorsSpeed(int16_t left, int16_t right);
 
-void getMotorPID(tcomm_state *c, tmotors *m, uint8_t addr);
+void getMotorPID(uint8_t addr);
 
-void setMotorPID(tcomm_state *c, tmotors *m, uint8_t addr);
+void setMotorPID(uint8_t addr);
 
 
 

@@ -1,22 +1,22 @@
-
-
 #ifndef MCOMM_H_
 #define MCOMM_H_
 
+
 #include "../MainMod.h"
-#include "lcd.h"
+#include "../../CommLib/comm.h"
 
-void sendPacketE(tcomm_state *c);
 
-uint8_t sendEcho(tcomm_state *c, uint8_t addr);
+void sendPacketE();
 
-void initModules(tcomm_state *c);
+uint8_t sendEcho(uint8_t addr);
+
+void initModules();
 
 void commStat(tcomm_state *p);
 
-void sendCommStat(tcomm_state *c, tcomm_state *pc);
+void sendCommStat();
 
-void sendPCPacketE(tcomm_state *pc);
+void sendPCPacketE();
 
 
 #endif /* MCOMM_H_ */

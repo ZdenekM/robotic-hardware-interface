@@ -8,172 +8,36 @@
 // TODO: zastavení pøi výpadku SensMod
 // TODO: poladit komunikaci s PC - neèekat ve smyèce
 
-#define F_CPU 16000000UL
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include <string.h>
-#include <inttypes.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <avr/sfr_defs.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
-#include <util/atomic.h>
-#include <avr/wdt.h>
-
-#include "lib/lcd.h"
-#include "lib/motors.h"
-#include "lib/comm.h"
-#include "lib/modr.h"
-#include "lib/sens.h"
 #include "MainMod.h"
-#include "../CommLib/comm.h"
-
-
-
 
 // *** GLOBALNI PROMENNE **************************************************
 // stavové promìnné modulu
-static tmod_state mod_state;
+tmod_state mod_state;
 
 // stav komunikace - rs485
-static tcomm_state comm_state;
+tcomm_state comm_state;
 
 // stav komunikace - rs232
-static tcomm_state pccomm_state;
+tcomm_state pccomm_state;
 
 // strukt. pro regulátor ujeté vzdálenosti
-static tdist_reg dist_reg;
+tdist_reg dist_reg;
 
 // reg. pro otáèení
-static tangle_reg angle_reg;
+tangle_reg angle_reg;
 
 // struktura pro stav motorù
-static tmotors motors;
-
-
-
+tmotors motors;
 
 // flagy pro obsluhu perif.
 volatile uint8_t flags = 0;
 
 // stav senzorù
-static tsens sens;
+tsens sens;
 
 // èasové flagy
 #define F_1HZ flags, 0
 #define F_50HZ flags, 1
-
-
-
-
-
-
-// inicializace regulátoru ujeté vzd.
-void initDistReg(tdist_reg *d) {
-
-	d->llast_dist = 0;
-	d->lstart_dist = 0;
-	d->lsum = 0;
-	d->req_dist = 0;
-	d->rlast_dist = 0;
-	d->rstart_dist = 0;
-	d->rsum = 0;
-	d->state = R_READY;
-	d->P = 60;
-	d->I = 0;
-	d->D = 0;
-
-}
-
-void initAngleReg(tangle_reg *a) {
-
-	a->P = 30;
-	a->I = 0;
-	a->D = 0;
-	a->last_angle = 0;
-	a->req_angle = 0;
-	a->start_angle = 0;
-	a->state = R_READY;
-	a->sum = 0;
-
-
-}
-
-void ioinit(void) {
-
-	DDRA = (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3)|(1<<DDA4)|(1<<DDA5)|(1<<DDA6);
-	PORTA = (1<<PORTA0)|(1<<PORTA1)|(1<<PORTA2)|(1<<PORTA3)|(1<<PORTA4)|(1<<PORTA5)|(1<<PORTA6);
-
-	DDRG = (0<<DDG0)|(1<<DDG1);
-	PORTG = (1<<PORTG0)|(1<<PORTG1);
-
-	// PE1 = TXD0
-	DDRE = (1<<DDE1);
-	PORTE = (1<<PORTE1);
-
-	// PORTD5-7 tlaèítka, aktivované pullupy, PD3 = TXD1, PD4 = RE/DE
-	DDRD = (0<<DDD5)|(0<<DDD6)|(0<<DDD7)|(1<<DDD3)|(1<<DDD4);
-	PORTD = (1<<PORTD5)|(1<<PORTD6)|(1<<PORTD7)|(1<<PORTD3)|(1<<PORTD4);
-
-	C_CLEARBIT(LCD_BL);
-
-	lcd_init(LCD_DISP_ON);
-	lcd_home();
-
-	// CT0 - asynch. -> lcd menu, tlacitka, hodiny, regulace podsvetleni lcd
-		// 10 Hz - N=32, OCR=50
-		// 100 Hz - N=1, OCR=163
-
-		// asynchronní taktování
-		ASSR = (1<<AS0);
-
-		// 100 Hz
-		OCR0 = 163;
-		TCCR0 = (0<<CS02)|(0<<CS01)|(1<<CS00);
-
-		// OCIE0: Timer/Counter0 Output Compare Match Interrupt Enable
-		TIMSK = (1<<OCIE0);
-
-	// nastavení obou UARTù
-	set_uarts();
-
-	// nastavení ADC
-	set_adc();
-
-	// inicializace struktury comm_state
-	comm_state_init(&comm_state);
-	comm_state_init(&pccomm_state);
-
-	// inic. struktur motorù
-	motor_init(&motors);
-
-	// inicializace regulátoru ujeté vzd.
-	initDistReg(&dist_reg);
-
-	initAngleReg(&angle_reg);
-
-	lcd_puts_P("Starting-up...");
-
-	if (CHECKBIT(MCUCSR,WDRF)) CLEARBIT(MCUCSR,WDRF);
-	else _delay_ms(2100);
-
-	lcd_clrscr();
-
-	// povolení pøíjmu
-	C_CLEARBIT(RS485_SEND);
-
-	// nastavení watchdogu -> 1s
-	WDTCR = (1<<WDE)|(1<<WDP2)|(1<<WDP1)|(0<<WDP0);
-
-	sei();
-
-}
-
 
 
 
@@ -205,8 +69,6 @@ ISR(USART1_RX_vect) {
 
 // USART1 - UDR Empty
 ISR(USART1_UDRE_vect) {
-
-		//C_FLIPBIT(LCD_BL);
 
 		// po odvysílání adresy zrušit nastavený 9. bit
 		if (comm_state.send_state>=PS_ADDR) CLEARBIT(UCSR1B,TXB81);
@@ -264,132 +126,6 @@ ISR(TIMER0_COMP_vect) {
 }
 
 
-// obsluha LCD
-void manageLcd() {
-
-	// obsluha lcd
-	switch (mod_state.menu_state) {
-
-	   case M_INIT: {
-
-
-	   } break;
-
-	   // základní obrazovka
-	   case M_STANDBY: {
-
-		   writeTime(&mod_state);
-	    	standBy();
-
-	    } break;
-
-	    // statistiky komunikace s moduly
-	    case M_COMMSTAT: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("CommStat");
-	    	commStat(&comm_state);
-
-	    } break;
-
-	    // stat. komunikace s PC
-	    case M_PCCOMMSTAT: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("PCCommStat");
-	    	commStat(&pccomm_state);
-
-	    } break;
-
-	    // levý pøední motor
-	    case M_MLF: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("MLeftFront");
-	    	motStat(&motors.m[FRONT_LEFT]);
-
-	    } break;
-
-	    // levý zadní motor
-	    case M_MLR: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("MLeftRear");
-	    	motStat(&motors.m[REAR_LEFT]);
-
-
-	    } break;
-
-
-	    // pravý pøední motor
-	    case M_MRF: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("MRightFront");
-	    	motStat(&motors.m[FRONT_RIGHT]);
-
-	    } break;
-
-	    // pravý zadní motor
-	    case M_MRR: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("MRightRear");
-	    	motStat(&motors.m[REAR_RIGHT]);
-
-
-	    } break;
-
-	    case M_PID: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("PIDconst");
-	    	motPID();
-
-	    } break;
-
-	    case M_SENS: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("Sensors");
-	    	sensInfo(&sens);
-
-	    } break;
-
-	    case M_SENS_FULL: {
-
-	    	writeTime(&mod_state);
-	    	lcd_gotoxy(0,0);
-	    	lcd_puts_P("FSensors");
-	    	sensFullInfo(&sens);
-
-	    	    } break;
-
-	    // zobrazení stavu joysticku
-	    case M_JOYSTICK: {
-
-	    	writeTime(&mod_state);
-	    	joy(&mod_state);
-
-	    } break;
-
-
-	    		} // switch
-
-
-
-}
-
-
-
 
 
 int main(void)
@@ -400,9 +136,6 @@ int main(void)
 	// inicializuje MainMod
 	ioinit();
 
-	// zjistí dostupnost dalších modulù
-	initModules(&comm_state);
-
 	mod_state.menu_state = M_STANDBY;
 
 	// nastavení zdroje øízení na PC
@@ -411,7 +144,7 @@ int main(void)
 	//pccomm_state.receive_state = PR_WAITING;
 
 	// zjištìní PID konstant nastavených v EEPROM
-	getMotorPID(&comm_state,&motors,10);
+	getMotorPID(10);
 
 
 	// nekoneèná smyèka
@@ -475,22 +208,22 @@ int main(void)
 
     		C_CLEARBIT(F_50HZ);
 
-			update_joystick(&mod_state);
+			update_joystick();
 
 			// ètení stavu levých motorù
-			getMotorInfo(&comm_state,10,&motors.m[FRONT_LEFT],&motors.m[REAR_LEFT]);
+			getMotorInfo(10,&motors.m[FRONT_LEFT],&motors.m[REAR_LEFT]);
 
 			// ètení stavu pravých motorù
-			getMotorInfo(&comm_state,11,&motors.m[FRONT_RIGHT],&motors.m[REAR_RIGHT]);
+			getMotorInfo(11,&motors.m[FRONT_RIGHT],&motors.m[REAR_RIGHT]);
 
 			// naètení dat ze senzorù
-			getFastSensorState(&comm_state,&sens);
+			getFastSensorState();
 
 			// regulátor pro ujetou vzdálenost
-			distReg(&comm_state,&dist_reg,&sens,&motors);
+			distReg();
 
 			// regulátor otoèení
-			angleReg(&comm_state,&angle_reg,&sens,&motors);
+			angleReg();
 
 
 
@@ -502,7 +235,7 @@ int main(void)
 			// zastavení pøi timeoutu komunikace s PC - 5s
 			if (mod_state.pc_comm_to >= PcCommTo)
 				// pož. rychlost není nula - zastavit
-				setMotorsSpeed(&comm_state,&sens,&motors,0,0);
+				setMotorsSpeed(0,0);
 
 
 		} break;
@@ -510,54 +243,7 @@ int main(void)
 		// zdroj øízení nastaven na joystick
 		case C_JOY: {
 
-			int16_t sp = 0, ot = 0;
-
-			sp = (int16_t)(mod_state.joy_y-511)/2;
-
-			ot = (int16_t)(mod_state.joy_x-511)/2; // 255 vlevo, -255 vpravo
-
-
-			// jedeme dopøedu
-			if (sp > 10) {
-
-				// zatáèení doprava
-				if (ot<-10) setMotorsSpeed(&comm_state,&sens,&motors,sp,sp+(ot/2));
-
-				// zatáèení doleva
-				else if (ot > 10) setMotorsSpeed(&comm_state,&sens,&motors,sp-(ot/2),sp);
-
-				// jedeme rovnì
-				else setMotorsSpeed(&comm_state,&sens,&motors,sp,sp);
-
-			// jedeme dozadu
-			} else if (sp < -10) {
-
-				// zatáèení doprava
-				if (ot<-10) setMotorsSpeed(&comm_state,&sens,&motors,sp,sp-(ot/2));
-
-				// zatáèení doleva
-				else if (ot > 10) setMotorsSpeed(&comm_state,&sens,&motors,sp+(ot/2),sp);
-
-				// jedeme rovnì
-				else setMotorsSpeed(&comm_state,&sens,&motors,sp,sp);
-
-
-			// otáèení na místì - doprava
-			} else if (ot<-10){
-
-				setMotorsSpeed(&comm_state,&sens,&motors,-ot,ot);
-
-			// otáèení na místì - doleva
-			} else if (ot>10) {
-
-				setMotorsSpeed(&comm_state,&sens,&motors,-ot,ot);
-
-			// zastavení*/
-			} else {
-
-				setMotorsSpeed(&comm_state,&sens,&motors,0,0);
-
-			}
+			joyRide();
 
 
 		} break;
@@ -584,7 +270,7 @@ int main(void)
 
 				flag = 1;
 
-				setAngleReg(&comm_state,&angle_reg,&sens,&motors,90);
+				setAngleReg(90);
 
 
 
@@ -644,7 +330,7 @@ int main(void)
 					spr = pccomm_state.ip.data[2];
 					spr |= pccomm_state.ip.data[3]<<8;
 
-					setMotorsSpeed(&comm_state,&sens,&motors,spl,spr);
+					setMotorsSpeed(spl,spr);
 
 
     			}
@@ -658,8 +344,8 @@ int main(void)
     			motors.I = pccomm_state.ip.data[1];
     			motors.D = pccomm_state.ip.data[2];
 
-    			setMotorPID(&comm_state,&motors,10);
-    			setMotorPID(&comm_state,&motors,11);
+    			setMotorPID(10);
+    			setMotorPID(11);
 
 
     		} break;
@@ -754,7 +440,7 @@ int main(void)
 				makePacket(&pccomm_state.op,arr,16,P_MOTOR_INFO,0);
 
 				// obsluha odeslání paketu
-				sendPCPacketE(&pccomm_state);
+				sendPCPacketE();
 
 
     		} break;
@@ -798,7 +484,7 @@ int main(void)
     			makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
 
     			// obsluha odeslání paketu
-    			sendPCPacketE(&pccomm_state);
+    			sendPCPacketE();
 
     		} break;
 
@@ -809,7 +495,7 @@ int main(void)
     			if ((motors.m[FRONT_LEFT].act_speed == 0) && (motors.m[FRONT_RIGHT].act_speed == 0) && (mod_state.control == C_PC)) {
 
     				// provést plné skenování
-    				getFullSensorState(&comm_state,&sens);
+    				getFullSensorState();
 
     				uint8_t arr[19];
 
@@ -854,7 +540,7 @@ int main(void)
     				arr[18] = sens.tact;
 
     				// obsluha odeslání paketu
-    				sendPCPacketE(&pccomm_state);
+    				sendPCPacketE();
 
     			}
 
