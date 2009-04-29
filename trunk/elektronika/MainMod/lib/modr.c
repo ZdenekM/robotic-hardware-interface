@@ -1,148 +1,97 @@
-#define F_CPU 16000000UL
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include <string.h>
-#include <inttypes.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <avr/sfr_defs.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
-#include <util/atomic.h>
-#include <avr/wdt.h>
 
 #include "modr.h"
 
-// volá se z pøerušení
-// ètení a zpracování stavu tlaèítek
-void checkButtons (tmod_state *m) {
-
-// udava kolikrat po sobe musi byt tlacitko sepnute
-#define BUTT_DEBOUNCE 5
-
-	// pomocné promìnné pro ošetøení zákmitù tlaèítek bez èekání
-	static uint8_t pbutt1=0, pbutt2=0, pbutt3=0, pbutt4=0;
-
-	if (!C_CHECKBIT(BUTT1) && ++pbutt1==BUTT_DEBOUNCE) {
-		//pbutt1 = 0;
-		SETBIT(m->buttons,ABUTT1);
-	}
-	if (C_CHECKBIT(BUTT1)) pbutt1=0;
+extern tmod_state mod_state;
+extern tcomm_state comm_state;
+extern tcomm_state pccomm_state;
+extern tdist_reg dist_reg;
+extern tangle_reg angle_reg;
+extern tmotors motors;
+extern tsens sens;
 
 
-	if (!C_CHECKBIT(BUTT2) && ++pbutt2==BUTT_DEBOUNCE) {
-		//pbutt2 = 0;
-		SETBIT(m->buttons,ABUTT2);
-	}
-	if (C_CHECKBIT(BUTT2)) pbutt2=0;
+// inicializace regulátoru ujeté vzd.
+void initDistReg() {
 
-	if (!C_CHECKBIT(BUTT3) && ++pbutt3==BUTT_DEBOUNCE) {
-		//pbutt3 = 0;
-		SETBIT(m->buttons,ABUTT3);
-	}
-	if (C_CHECKBIT(BUTT3)) pbutt3=0;
-
-	if (!C_CHECKBIT(BUTT4) && ++pbutt4==BUTT_DEBOUNCE) {
-		//pbutt4 = 0;
-		SETBIT(m->buttons,ABUTT4);
-	}
-	if (C_CHECKBIT(BUTT4)) pbutt4=0;
+	dist_reg.llast_dist = 0;
+	dist_reg.lstart_dist = 0;
+	dist_reg.lsum = 0;
+	dist_reg.req_dist = 0;
+	dist_reg.rlast_dist = 0;
+	dist_reg.rstart_dist = 0;
+	dist_reg.rsum = 0;
+	dist_reg.state = R_READY;
+	dist_reg.P = 60;
+	dist_reg.I = 0;
+	dist_reg.D = 0;
 
 }
 
-// volá se z pøerušení
-// poèítadlo pro èas
-void updateTime(tmod_state *m)
-{
+void initAngleReg() {
 
-
-	if (m->msec+=10, m->msec==1000) {
-		m->msec = 0;
-		if (++m->sec==60) {
-			m->sec=0;
-			if (++m->min==60) {
-				m->min = 0;
-				if (++m->hrs==24) m->hrs=0;
-			}
-		}
-	}
+	angle_reg.P = 30;
+	angle_reg.I = 0;
+	angle_reg.D = 0;
+	angle_reg.last_angle = 0;
+	angle_reg.req_angle = 0;
+	angle_reg.start_angle = 0;
+	angle_reg.state = R_READY;
+	angle_reg.sum = 0;
 
 
 }
 
-// volá se z main
-// vypíše èas na lcd - pravý horní roh
-void writeTime(tmod_state *m) {
+// inicializace
+void ioinit() {
 
-	char ctrl=' ';
+	DDRA = (1<<DDA0)|(1<<DDA1)|(1<<DDA2)|(1<<DDA3)|(1<<DDA4)|(1<<DDA5)|(1<<DDA6);
+	PORTA = (1<<PORTA0)|(1<<PORTA1)|(1<<PORTA2)|(1<<PORTA3)|(1<<PORTA4)|(1<<PORTA5)|(1<<PORTA6);
 
-	switch(m->control) {
+	DDRG = (0<<DDG0)|(1<<DDG1);
+	PORTG = (1<<PORTG0)|(1<<PORTG1);
 
-	case C_AUTO: ctrl = 'A'; break;
-	case C_JOY: ctrl = 'J'; break;
-	case C_PC: ctrl = 'P'; break;
+	// PE1 = TXD0
+	DDRE = (1<<DDE1);
+	PORTE = (1<<PORTE1);
 
+	// PORTD5-7 tlaèítka, aktivované pullupy, PD3 = TXD1, PD4 = RE/DE
+	DDRD = (0<<DDD5)|(0<<DDD6)|(0<<DDD7)|(1<<DDD3)|(1<<DDD4);
+	PORTD = (1<<PORTD5)|(1<<PORTD6)|(1<<PORTD7)|(1<<PORTD3)|(1<<PORTD4);
 
-	}
+	C_CLEARBIT(LCD_BL);
 
-	lcd_gotoxy(20-9,0);
-	char buff[10];
-	snprintf(buff,10,"%c%2u:%2u:%2u",ctrl,m->hrs,m->min,m->sec);
-	lcd_puts(buff);
+	lcd_init(LCD_DISP_ON);
+	lcd_home();
 
-}
+	// CT0 - asynch. -> lcd menu, tlacitka, hodiny, regulace podsvetleni lcd
+		// 10 Hz - N=32, OCR=50
+		// 100 Hz - N=1, OCR=163
 
-// volá se z main
-// zobrazí na LCD stav joysticku
-void joy(tmod_state *m) {
+		// asynchronní taktování
+		ASSR = (1<<AS0);
 
-	char abuff[11];
+		// 100 Hz
+		OCR0 = 163;
+		TCCR0 = (0<<CS02)|(0<<CS01)|(1<<CS00);
 
-	lcd_gotoxy(0,0);
-	lcd_puts_P("Joystick");
+		// OCIE0: Timer/Counter0 Output Compare Match Interrupt Enable
+		TIMSK = (1<<OCIE0);
 
-	// osa x
-	lcd_gotoxy(0,1);
-	sprintf_P(abuff,PSTR("JX:%7d"),m->joy_x);
-	lcd_puts(abuff);
+	// nastavení obou UARTù
+		// nastaveni uart1 - komunikace s moduly
 
-	// osa y
-	lcd_gotoxy(0,2);
-	sprintf_P(abuff,PSTR("JY:%7d"),m->joy_y);
-	lcd_puts(abuff);
-
-
-}
-
-// stand. režim displeje
-void standBy() {
-
-	lcd_gotoxy(0,0);
-	lcd_puts_P("Standby");
-
-
-}
-
-// nastavení obou UARTù
-void set_uarts() {
-
-	// nastaveni uart1 - komunikace s moduly
-
-	// UCSZxx = 111 -> 9bit
-	// UCSZxx = 011 -> 8bit
-	// RXCIEn: RX Complete Interrupt Enable
-	// TXCIEn: TX Complete Interrupt Enable
-	// RXENn: Receiver Enable
-	// TXENn: Transmitter Enable
-	// UCSZn1:0: Character Size
-	// usbs - poèet stop bitù
-	// UMSELn - async / sync
-	// UPMn1:0 parita
-	// TXB81 - 9. bit
+			// UCSZxx = 111 -> 9bit
+			// UCSZxx = 011 -> 8bit
+			// RXCIEn: RX Complete Interrupt Enable
+			// TXCIEn: TX Complete Interrupt Enable
+			// RXENn: Receiver Enable
+			// TXENn: Transmitter Enable
+			// UCSZn1:0: Character Size
+			// usbs - poèet stop bitù
+			// UMSELn - async / sync
+			// UPMn1:0 parita
+			// TXB81 - 9. bit
 
 	// RS232, 38400, 8n1
 	UBRR0L = 25;
@@ -164,24 +113,183 @@ void set_uarts() {
 	UCSR1B = (1<<UCSZ12)|(0<<UDRIE1)|(1<<TXEN1)|(1<<RXEN1)|(1<<RXCIE1);
 	UCSR1C = (1<<USBS1)|(0<<UMSEL1)|(0<<UPM11)|(0<<UPM10)|(1<<UCSZ11)|(1<<UCSZ10);
 
-
-}
-
-
-
-void set_adc(void) {
-
+	// nastavení ADC
 	// reference = AVCC
 	ADMUX = (0<<REFS1)|(1<<REFS0)|(1<<MUX2)|(1<<MUX1);
 
 	// povolení ADC
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 
+	// inicializace struktury comm_state
+	comm_state_init(&comm_state);
+	comm_state_init(&pccomm_state);
+
+	// inic. struktur motorù
+	motor_init(&motors);
+
+	// inicializace regulátoru ujeté vzd.
+	initDistReg();
+
+	initAngleReg();
+
+
+	if (CHECKBIT(MCUCSR,WDRF)) CLEARBIT(MCUCSR,WDRF);
+	else {
+
+		lcd_puts_P("Starting-up...");
+
+		_delay_ms(2100);
+
+		// zjistí dostupnost dalších modulù
+		//initModules(&comm_state);
+
+
+	}
+
+	lcd_clrscr();
+
+	// povolení pøíjmu
+	C_CLEARBIT(RS485_SEND);
+
+	// nastavení watchdogu -> 2s
+	//WDTCR = (1<<WDE)|(1<<WDP2)|(1<<WDP1)|(1<<WDP0);
+
+	wdt_reset();
+
+	sei();
+
+}
+
+
+// volá se z pøerušení
+// ètení a zpracování stavu tlaèítek
+void checkButtons () {
+
+// udava kolikrat po sobe musi byt tlacitko sepnute
+#define BUTT_DEBOUNCE 5
+
+	// pomocné promìnné pro ošetøení zákmitù tlaèítek bez èekání
+	static uint8_t pbutt1=0, pbutt2=0, pbutt3=0, pbutt4=0;
+
+	if (!C_CHECKBIT(BUTT1) && ++pbutt1==BUTT_DEBOUNCE) {
+		//pbutt1 = 0;
+		SETBIT(mod_state.buttons,ABUTT1);
+	}
+	if (C_CHECKBIT(BUTT1)) pbutt1=0;
+
+
+	if (!C_CHECKBIT(BUTT2) && ++pbutt2==BUTT_DEBOUNCE) {
+		//pbutt2 = 0;
+		SETBIT(mod_state.buttons,ABUTT2);
+	}
+	if (C_CHECKBIT(BUTT2)) pbutt2=0;
+
+	if (!C_CHECKBIT(BUTT3) && ++pbutt3==BUTT_DEBOUNCE) {
+		//pbutt3 = 0;
+		SETBIT(mod_state.buttons,ABUTT3);
+	}
+	if (C_CHECKBIT(BUTT3)) pbutt3=0;
+
+	if (!C_CHECKBIT(BUTT4) && ++pbutt4==BUTT_DEBOUNCE) {
+		//pbutt4 = 0;
+		SETBIT(mod_state.buttons,ABUTT4);
+	}
+	if (C_CHECKBIT(BUTT4)) pbutt4=0;
+
+}
+
+// volá se z pøerušení
+// poèítadlo pro èas
+void updateTime()
+{
+
+
+	if (mod_state.msec+=10, mod_state.msec==1000) {
+		mod_state.msec = 0;
+		if (++mod_state.sec==60) {
+			mod_state.sec=0;
+			if (++mod_state.min==60) {
+				mod_state.min = 0;
+				if (++mod_state.hrs==24) mod_state.hrs=0;
+			}
+		}
+	}
+
+
+}
+
+// volá se z main
+// vypíše èas na lcd - pravý horní roh
+void writeTime() {
+
+	char ctrl=' ';
+
+	switch(mod_state.control) {
+
+	case C_AUTO: ctrl = 'A'; break;
+	case C_JOY: ctrl = 'J'; break;
+	case C_PC: ctrl = 'P'; break;
+
+
+	}
+
+	lcd_gotoxy(20-9,0);
+	char buff[10];
+	snprintf(buff,10,"%c%2u:%2u:%2u",ctrl,mod_state.hrs,mod_state.min,mod_state.sec);
+	lcd_puts(buff);
+
+}
+
+// volá se z main
+// zobrazí na LCD stav joysticku
+void joy() {
+
+	char abuff[11];
+
+	lcd_gotoxy(0,0);
+	lcd_puts_P("Joystick");
+
+	// osa x
+	lcd_gotoxy(0,1);
+	sprintf_P(abuff,PSTR("JX:%7d"),mod_state.joy_x);
+	lcd_puts(abuff);
+
+	// osa y
+	lcd_gotoxy(0,2);
+	sprintf_P(abuff,PSTR("JY:%7d"),mod_state.joy_y);
+	lcd_puts(abuff);
+
+
+}
+
+// stand. režim displeje
+void standBy() {
+
+	lcd_gotoxy(0,0);
+	lcd_puts_P("Standby");
+
+
+}
+
+// nastavení obou UARTù
+void set_uarts() {
+
+
+
+
+}
+
+
+
+void set_adc() {
+
+
+
 
 }
 
 // spustí AD pøevod pro urèení vychýlení joysticku
-void update_joystick(tmod_state *m) {
+void update_joystick() {
 
 	// nastavení kanálu
 	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
@@ -193,7 +301,7 @@ void update_joystick(tmod_state *m) {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	m->joy_y = (m->joy_y + ADCW) / 2; // filtr
+	mod_state.joy_y = (mod_state.joy_y + ADCW) / 2; // filtr
 
 	// nastavení kanálu
 	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
@@ -205,42 +313,42 @@ void update_joystick(tmod_state *m) {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	m->joy_x = (m->joy_x + ADCW) / 2; // filtr
+	mod_state.joy_x = (mod_state.joy_x + ADCW) / 2; // filtr
 
 
 
 }
 
 // regulátor pro ujetí zadané vzdálenosti
-void distReg(tcomm_state *c, tdist_reg *d, tsens *s, tmotors *m) {
+void distReg() {
 
-	if (d->req_dist!=0 && d->state==R_RUNNING) {
+	if (dist_reg.req_dist!=0 && dist_reg.state==R_RUNNING) {
 
 		int32_t le,re,lspeed,rspeed;
 
-		int32_t lact_dist = (m->m[FRONT_LEFT].distance + m->m[REAR_LEFT].distance)/2;
-		int32_t ract_dist = (m->m[FRONT_RIGHT].distance + m->m[REAR_RIGHT].distance)/2;
+		int32_t lact_dist = (motors.m[FRONT_LEFT].distance + motors.m[REAR_LEFT].distance)/2;
+		int32_t ract_dist = (motors.m[FRONT_RIGHT].distance + motors.m[REAR_RIGHT].distance)/2;
 
 		// ujetá vzdálenost
-		//d->moved_dist += act_dist - d->last_dist;
+		//dist_reg.moved_dist += act_dist - dist_reg.last_dist;
 
-		le = (d->req_dist - (lact_dist - d->lstart_dist));
-		re = (d->req_dist - (ract_dist - d->rstart_dist));
+		le = (dist_reg.req_dist - (lact_dist - dist_reg.lstart_dist));
+		re = (dist_reg.req_dist - (ract_dist - dist_reg.rstart_dist));
 
 		// výpoèet akèního zásahu -> rychlosti
-		lspeed = (d->P)*le + ((d->I)*d->lsum) - (d->D)*(lact_dist - d->llast_dist);
-		rspeed = (d->P)*re + ((d->I)*d->rsum) - (d->D)*(ract_dist - d->rlast_dist);
+		lspeed = (dist_reg.P)*le + ((dist_reg.I)*dist_reg.lsum) - (dist_reg.D)*(lact_dist - dist_reg.llast_dist);
+		rspeed = (dist_reg.P)*re + ((dist_reg.I)*dist_reg.rsum) - (dist_reg.D)*(ract_dist - dist_reg.rlast_dist);
 
 		lspeed /= 100;
 		rspeed /= 100;
 
 		if (lspeed>250) lspeed = 250;
 		else if (lspeed<-250) lspeed = -250;
-		else d->lsum+= le;
+		else dist_reg.lsum+= le;
 
 		if (rspeed>250) rspeed = 250;
 		else if (rspeed<-250) rspeed = -250;
-		else d->rsum+= re;
+		else dist_reg.rsum+= re;
 
 		// hotovo :-)
 		if (le < 10 && re < 10) {
@@ -248,15 +356,15 @@ void distReg(tcomm_state *c, tdist_reg *d, tsens *s, tmotors *m) {
 			lspeed = 0;
 			rspeed = 0;
 
-			d->state = R_READY;
+			dist_reg.state = R_READY;
 
 		}
 
-		setMotorsSpeed(&c,&s,&m,lspeed,rspeed);
+		setMotorsSpeed(lspeed,rspeed);
 
 		// uložení pro pøíštì
-		d->llast_dist = lact_dist;
-		d->rlast_dist = ract_dist;
+		dist_reg.llast_dist = lact_dist;
+		dist_reg.rlast_dist = ract_dist;
 
 	}
 
@@ -264,17 +372,17 @@ void distReg(tcomm_state *c, tdist_reg *d, tsens *s, tmotors *m) {
 }
 
 // regulátor pro otoèení o zadaný úhel
-void angleReg(tcomm_state *c, tangle_reg *a, tsens *s, tmotors *m) {
+void angleReg() {
 
-	if (a->state == R_RUNNING) {
+	if (angle_reg.state == R_RUNNING) {
 
 		int16_t speed,e;
 
 		// výpoèet odchylky (relativní, ne absolutní)
-		e = a->req_angle - (s->comp - a->start_angle);
+		e = angle_reg.req_angle - (sens.comp - angle_reg.start_angle);
 
 		// výpoèet  rychlosti
-		speed = a->P*e;
+		speed = angle_reg.P*e;
 
 		speed /= 100;
 
@@ -286,13 +394,13 @@ void angleReg(tcomm_state *c, tangle_reg *a, tsens *s, tmotors *m) {
 		if (labs(e)<5) {
 
 			speed = 0;
-			a->state = R_READY;
+			angle_reg.state = R_READY;
 
 		}
 
 		// urèení smìru otáèení
-		if (e>0) setMotorsSpeed(&c,&s,&m,speed,-speed);
-		else setMotorsSpeed(&c,&s,&m,-speed,speed);
+		if (e>0) setMotorsSpeed(speed,-speed);
+		else setMotorsSpeed(-speed,speed);
 
 
 
@@ -302,32 +410,211 @@ void angleReg(tcomm_state *c, tangle_reg *a, tsens *s, tmotors *m) {
 
 }
 
-void setAngleReg(tcomm_state *c, tangle_reg *a, tsens *s, tmotors *m, int16_t angle) {
+void setAngleReg(int16_t angle) {
 
-	if (angle>=-360 && angle<=360 && a->state==R_READY) {
+	if (angle>=-360 && angle<=360 && angle_reg.state==R_READY) {
 
-		setMotorsSpeed(&c,&s,&m,0,0);
-		a->req_angle = angle*10;
-		a->start_angle = s->comp;
-		a->state = R_RUNNING;
+		setMotorsSpeed(0,0);
+		angle_reg.req_angle = angle*10;
+		angle_reg.start_angle = sens.comp;
+		angle_reg.state = R_RUNNING;
 
 	}
 
 }
 
 // nastavení regulátoru ujeté vzd.
-void setDistReg(tdist_reg *d, tmotors *m, int16_t dist) {
+void setDistReg(int16_t dist) {
 
 	// nastavení poèáteèní vzdálenosti
-	d->lstart_dist = (m->m[FRONT_LEFT].distance + m->m[REAR_LEFT].distance)/2;
-	d->rstart_dist = (m->m[FRONT_RIGHT].distance + m->m[REAR_RIGHT].distance)/2;
+	dist_reg.lstart_dist = (motors.m[FRONT_LEFT].distance + motors.m[REAR_LEFT].distance)/2;
+	dist_reg.rstart_dist = (motors.m[FRONT_RIGHT].distance + motors.m[REAR_RIGHT].distance)/2;
 
 	// zadání požadované vzdálenosti k ujetí
-	d->req_dist = dist;
+	dist_reg.req_dist = dist;
 
-	d->state = R_RUNNING;
+	dist_reg.state = R_RUNNING;
 
 
 }
 
+// obsluha LCD
+void manageLcd() {
 
+	// obsluha lcd
+	switch (mod_state.menu_state) {
+
+	   case M_INIT: {
+
+
+	   } break;
+
+	   // základní obrazovka
+	   case M_STANDBY: {
+
+		   writeTime();
+	    	standBy();
+
+	    } break;
+
+	    // statistiky komunikace s moduly
+	    case M_COMMSTAT: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("CommStat");
+	    	commStat(&comm_state);
+
+	    } break;
+
+	    // stat. komunikace s PC
+	    case M_PCCOMMSTAT: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("PCCommStat");
+	    	commStat(&pccomm_state);
+
+	    } break;
+
+	    // levý pøední motor
+	    case M_MLF: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("MLeftFront");
+	    	motStat(&motors.m[FRONT_LEFT]);
+
+	    } break;
+
+	    // levý zadní motor
+	    case M_MLR: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("MLeftRear");
+	    	motStat(&motors.m[REAR_LEFT]);
+
+
+	    } break;
+
+
+	    // pravý pøední motor
+	    case M_MRF: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("MRightFront");
+	    	motStat(&motors.m[FRONT_RIGHT]);
+
+	    } break;
+
+	    // pravý zadní motor
+	    case M_MRR: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("MRightRear");
+	    	motStat(&motors.m[REAR_RIGHT]);
+
+
+	    } break;
+
+	    case M_PID: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("PIDconst");
+	    	motPID();
+
+	    } break;
+
+	    case M_SENS: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("Sensors");
+	    	sensInfo();
+
+	    } break;
+
+	    case M_SENS_FULL: {
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("FSensors");
+	    	sensFullInfo();
+
+	    	    } break;
+
+	    // zobrazení stavu joysticku
+	    case M_JOYSTICK: {
+
+	    	writeTime();
+	    	joy();
+
+	    } break;
+
+
+	    		} // switch
+
+
+
+}
+
+// obsluha joysticku
+void joyRide() {
+
+	int16_t sp = 0, ot = 0;
+
+	sp = (int16_t)(mod_state.joy_y-511)/2;
+
+	ot = (int16_t)(mod_state.joy_x-511)/2; // 255 vlevo, -255 vpravo
+
+
+	// jedeme dopøedu
+	if (sp > 10) {
+
+		// zatáèení doprava
+		if (ot<-10) setMotorsSpeed(sp,sp+(ot/2));
+
+		// zatáèení doleva
+		else if (ot > 10) setMotorsSpeed(sp-(ot/2),sp);
+
+		// jedeme rovnì
+		else setMotorsSpeed(sp,sp);
+
+	// jedeme dozadu
+	} else if (sp < -10) {
+
+		// zatáèení doprava
+		if (ot<-10) setMotorsSpeed(sp,sp-(ot/2));
+
+		// zatáèení doleva
+		else if (ot > 10) setMotorsSpeed(sp+(ot/2),sp);
+
+		// jedeme rovnì
+		else setMotorsSpeed(sp,sp);
+
+
+	// otáèení na místì - doprava
+	} else if (ot<-10){
+
+		setMotorsSpeed(-ot,ot);
+
+	// otáèení na místì - doleva
+	} else if (ot>10) {
+
+		setMotorsSpeed(-ot,ot);
+
+	// zastavení*/
+	} else {
+
+		setMotorsSpeed(0,0);
+
+		}
+
+
+
+
+}

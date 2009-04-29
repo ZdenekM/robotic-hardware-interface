@@ -1,144 +1,137 @@
-#define F_CPU 16000000UL
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include <string.h>
-#include <inttypes.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-#include <avr/sfr_defs.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
-#include <util/atomic.h>
-#include <avr/wdt.h>
 
 #include "sens.h"
 
+extern tmod_state mod_state;
+extern tcomm_state comm_state;
+extern tcomm_state pccomm_state;
+extern tdist_reg dist_reg;
+extern tangle_reg angle_reg;
+extern tmotors motors;
+extern tsens sens;
+
 // zobrazí informace ze senzorù na LCD
-void sensInfo(tsens *s) {
+void sensInfo() {
 
 	char abuff[11];
 
 	lcd_gotoxy(0,1);
-	sprintf_P(abuff,PSTR("UF:%7u"),s->us_fast);
+	sprintf_P(abuff,PSTR("UF:%7u"),sens.us_fast);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,1);
-	sprintf_P(abuff,PSTR("UF:%7u"),s->us_fast);
+	sprintf_P(abuff,PSTR("UF:%7u"),sens.us_fast);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,2);
-	sprintf_P(abuff,PSTR("S1:%7u"),s->sharp[0]);
+	sprintf_P(abuff,PSTR("S1:%7u"),sens.sharp[0]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,3);
-	sprintf_P(abuff,PSTR("S2:%7u"),s->sharp[1]);
+	sprintf_P(abuff,PSTR("S2:%7u"),sens.sharp[1]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(10,1);
-	sprintf_P(abuff,PSTR("S3:%7u"),s->sharp[2]);
+	sprintf_P(abuff,PSTR("S3:%7u"),sens.sharp[2]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(10,2);
-	sprintf_P(abuff,PSTR("S4:%7u"),s->sharp[3]);
+	sprintf_P(abuff,PSTR("S4:%7u"),sens.sharp[3]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(10,3);
-	sprintf_P(abuff,PSTR("CO:%7u"),s->comp);
+	sprintf_P(abuff,PSTR("CO:%7u"),sens.comp);
 	lcd_puts(abuff);
 
 
 }
 
 // zobrazí informace ze senzorù na LCD
-void sensFullInfo(tsens *s) {
+void sensFullInfo() {
 
 	char abuff[11];
 
 	lcd_gotoxy(0,1);
-	sprintf_P(abuff,PSTR("U1:%7u"),s->us_full[0]);
+	sprintf_P(abuff,PSTR("U1:%7u"),sens.us_full[0]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,2);
-	sprintf_P(abuff,PSTR("U2:%7u"),s->us_full[1]);
+	sprintf_P(abuff,PSTR("U2:%7u"),sens.us_full[1]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(0,3);
-	sprintf_P(abuff,PSTR("U3:%7u"),s->us_full[2]);
+	sprintf_P(abuff,PSTR("U3:%7u"),sens.us_full[2]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(10,1);
-	sprintf_P(abuff,PSTR("U4:%7u"),s->us_full[3]);
+	sprintf_P(abuff,PSTR("U4:%7u"),sens.us_full[3]);
 	lcd_puts(abuff);
 
 	lcd_gotoxy(10,2);
-	sprintf_P(abuff,PSTR("U5:%7u"),s->us_full[4]);
+	sprintf_P(abuff,PSTR("U5:%7u"),sens.us_full[4]);
 	lcd_puts(abuff);
 
 
 }
 
 // naète z modulu SensMod
-void getFastSensorState(tcomm_state *c, tsens *s) {
+void getFastSensorState() {
 
 	// ètení stavu levých motorù
-	makePacket(&c->op,NULL,0,P_SENS_FAST,21);
+	makePacket(&comm_state.op,NULL,0,P_SENS_FAST,21);
 
-	sendPacketE(&c);
+	sendPacketE();
 
 	C_CLEARBIT(RS485_SEND);
 
 	// èekání na odpovìï
-	c->receive_state = PR_WAITING;
-	while(c->receive_state != PR_PACKET_RECEIVED && c->receive_state!=PR_TIMEOUT && c->receive_state!=PR_READY);
+	comm_state.receive_state = PR_WAITING;
+	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
 	// crc souhlasí -> úspìšné pøijetí paketu
-	if (c->receive_state==PR_PACKET_RECEIVED && checkPacket(&c)) {
+	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
 	   // data ze sonaru
-	   s->us_fast = c->ip.data[0];
-	   s->us_fast |= c->ip.data[1]<<8;
+	   sens.us_fast = comm_state.ip.data[0];
+	   sens.us_fast |= comm_state.ip.data[1]<<8;
 
 	   // levý pøední sharp
-	   s->sharp[0] = c->ip.data[2];
-	   s->sharp[0] |= c->ip.data[3]<<8;
+	   sens.sharp[0] = comm_state.ip.data[2];
+	   sens.sharp[0] |= comm_state.ip.data[3]<<8;
 
 	   // pravý pøední sharp
-	   s->sharp[1] = c->ip.data[4];
-	   s->sharp[1] |= c->ip.data[5]<<8;
+	   sens.sharp[1] = comm_state.ip.data[4];
+	   sens.sharp[1] |= comm_state.ip.data[5]<<8;
 
 	   // levý zadní sharp
-	   s->sharp[2] = c->ip.data[6];
-	   s->sharp[2] |= c->ip.data[7]<<8;
+	   sens.sharp[2] = comm_state.ip.data[6];
+	   sens.sharp[2] |= comm_state.ip.data[7]<<8;
 
 	   // pravý zadní sharp
-	   s->sharp[3] = c->ip.data[8];
-	   s->sharp[3] |= c->ip.data[9]<<8;
+	   sens.sharp[3] = comm_state.ip.data[8];
+	   sens.sharp[3] |= comm_state.ip.data[9]<<8;
 
 	   // taktilní senzory
-	   s->tact = c->ip.data[10];
+	   sens.tact = comm_state.ip.data[10];
 
-	   s->comp = c->ip.data[11];
-	   s->comp |= c->ip.data[12]<<8;
+	   sens.comp = comm_state.ip.data[11];
+	   sens.comp |= comm_state.ip.data[12]<<8;
 
 
 	   };
 
-	 c->receive_state = PR_READY;
+	 comm_state.receive_state = PR_READY;
 
 
 }
 
 // provede plné skenování a naète data ze SensMod
-void getFullSensorState(tcomm_state *c, tsens *s) {
+void getFullSensorState() {
 
 	// ètení stavu levých motorù
-	makePacket(&c->op,NULL,0,P_SENS_FULL,21);
+	makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
 
-	sendPacketE(&c);
+	sendPacketE();
 
 	C_CLEARBIT(RS485_SEND);
 
@@ -147,56 +140,56 @@ void getFullSensorState(tcomm_state *c, tsens *s) {
 	//_delay_ms(1500);
 
 	// èekání na odpovìï
-	c->receive_state = PR_WAITING;
-	while(c->receive_state != PR_PACKET_RECEIVED && c->receive_state!=PR_READY);
+	comm_state.receive_state = PR_WAITING;
+	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_READY);
 
 	// crc souhlasí -> úspìšné pøijetí paketu
-	if (c->receive_state==PR_PACKET_RECEIVED && checkPacket(&c)) {
+	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
 	   // data ze sonaru
 	   // 0st
-	   s->us_full[0] = c->ip.data[0];
-	   s->us_full[0] |= c->ip.data[1]<<8;
+	   sens.us_full[0] = comm_state.ip.data[0];
+	   sens.us_full[0] |= comm_state.ip.data[1]<<8;
 
 	   // 45st
-	   s->us_full[1] = c->ip.data[2];
-	   s->us_full[1] |= c->ip.data[3]<<8;
+	   sens.us_full[1] = comm_state.ip.data[2];
+	   sens.us_full[1] |= comm_state.ip.data[3]<<8;
 
 	   // 90st
-	   s->us_full[2] = c->ip.data[4];
-	   s->us_full[2] |= c->ip.data[5]<<8;
+	   sens.us_full[2] = comm_state.ip.data[4];
+	   sens.us_full[2] |= comm_state.ip.data[5]<<8;
 
 	   // 135st
-	   s->us_full[3] = c->ip.data[6];
-	   s->us_full[3] |= c->ip.data[7]<<8;
+	   sens.us_full[3] = comm_state.ip.data[6];
+	   sens.us_full[3] |= comm_state.ip.data[7]<<8;
 
 	   // 180st
-	   s->us_full[4] = c->ip.data[8];
-	   s->us_full[4] |= c->ip.data[9]<<8;
+	   sens.us_full[4] = comm_state.ip.data[8];
+	   sens.us_full[4] |= comm_state.ip.data[9]<<8;
 
 	   // levý pøední sharp
-	   s->sharp[0] = c->ip.data[10];
-	   s->sharp[0] |= c->ip.data[11]<<8;
+	   sens.sharp[0] = comm_state.ip.data[10];
+	   sens.sharp[0] |= comm_state.ip.data[11]<<8;
 
 	   // pravý pøední sharp
-	   s->sharp[1] = c->ip.data[12];
-	   s->sharp[1] |= c->ip.data[13]<<8;
+	   sens.sharp[1] = comm_state.ip.data[12];
+	   sens.sharp[1] |= comm_state.ip.data[13]<<8;
 
 	   // levý zadní sharp
-	   s->sharp[2] = c->ip.data[14];
-	   s->sharp[2] |= c->ip.data[15]<<8;
+	   sens.sharp[2] = comm_state.ip.data[14];
+	   sens.sharp[2] |= comm_state.ip.data[15]<<8;
 
 	   // pravý zadní sharp
-	   s->sharp[3] = c->ip.data[16];
-	   s->sharp[3] |= c->ip.data[17]<<8;
+	   sens.sharp[3] = comm_state.ip.data[16];
+	   sens.sharp[3] |= comm_state.ip.data[17]<<8;
 
 	   // taktilní senzory
-	   s->tact = c->ip.data[18];
+	   sens.tact = comm_state.ip.data[18];
 
 
 	   };
 
-	 c->receive_state = PR_READY;
+	 comm_state.receive_state = PR_READY;
 
 
 }

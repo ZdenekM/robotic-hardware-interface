@@ -1,36 +1,37 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#ifndef _AVR035_H_
-#define _AVR035_H_
-
-// from AVR035: Efficient C Coding for AVR
-
-#define SETBIT(ADDRESS,BIT) (ADDRESS |= (1<<BIT))
-#define CLEARBIT(ADDRESS,BIT) (ADDRESS &= ~(1<<BIT))
-#define FLIPBIT(ADDRESS,BIT) (ADDRESS ^= (1<<BIT))
-#define CHECKBIT(ADDRESS,BIT) (ADDRESS & (1<<BIT))
-
-#define SETBITMASK(x,y) (x |= (y))
-#define CLEARBITMASK(x,y) (x &= (~y))
-#define FLIPBITMASK(x,y) (x ^= (y))
-#define CHECKBITMASK(x,y) (x & (y))
-
-#define VARFROMCOMB(x, y) x
-#define BITFROMCOMB(x, y) y
-
-#define C_SETBIT(comb) SETBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
-#define C_CLEARBIT(comb) CLEARBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
-#define C_FLIPBIT(comb) FLIPBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
-#define C_CHECKBIT(comb) CHECKBIT(VARFROMCOMB(comb), BITFROMCOMB(comb))
-
-#endif
 
 #define LCD_BL  PORTG, 1
 #define BUTT4 PIND, 5
 #define BUTT3 PIND, 6
 #define BUTT2 PIND, 7
 #define BUTT1 PING, 0
+
+#define F_CPU 16000000UL
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include <util/delay.h>
+#include <string.h>
+#include <inttypes.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <avr/sfr_defs.h>
+#include <avr/pgmspace.h>
+#include <avr/eeprom.h>
+#include <util/atomic.h>
+#include <avr/wdt.h>
+
+#include "lib/lcd.h"
+#include "lib/motors.h"
+#include "lib/comm.h"
+#include "lib/modr.h"
+#include "lib/sens.h"
+#include "lib/macros.h"
+#include "../CommLib/comm.h"
 
 // povolení vysílání na rs485
 #define RS485_SEND PORTD, 4
@@ -39,7 +40,6 @@
 #define RS485_OUT (C_SETBIT(RS485_SEND))
 #define RS485_IN (C_CLEARBIT(RS485_SEND))
 
-#include "../CommLib/comm.h"
 
 // data odesílaná do PC
 enum {COMMSTATE} tpcdata;
@@ -150,6 +150,8 @@ typedef struct {
 
 } tangle_reg;
 
+
+
 // ********** INICIALIZACE ***********************************************
 
 // inicializace procesoru
@@ -162,9 +164,6 @@ void ioinit(void);
 
 // obsluha LCD
 extern void manageLcd();
-
-
-
 
 
 

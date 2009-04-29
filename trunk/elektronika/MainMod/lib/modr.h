@@ -1,43 +1,49 @@
-
-
 #ifndef MODR_H_
 #define MODR_H_
 
+
 #include "../MainMod.h"
-#include "lcd.h"
-#include "motors.h"
 
-void checkButtons (tmod_state *m);
+// inicializace
+void ioinit();
 
-void updateTime(tmod_state *m);
+// inicializace regulátoru ujeté vzd.
+void initDistReg();
 
-void writeTime(tmod_state *m);
+void initAngleReg();
 
-void joy(tmod_state *m);
+void checkButtons ();
+
+void updateTime();
+
+void writeTime();
+
+void joy();
 
 void standBy();
 
 void set_uarts();
 
-void set_adc(void);
+void set_adc();
 
 // spustí AD pøevod pro urèení vychýlení joysticku
-void update_joystick(tmod_state *m);
+void update_joystick();
 
 // regulátor pro ujetí zadané vzdálenosti
-void distReg(tcomm_state *c, tdist_reg *d, tsens *s, tmotors *m);
+void distReg();
 
 // regulátor pro otoèení o zadaný úhel
-void angleReg(tcomm_state *c, tangle_reg *a, tsens *s, tmotors *m);
+void angleReg();
 
-void setAngleReg(tcomm_state *c, tangle_reg *a, tsens *s, tmotors *m, int16_t angle);
+void setAngleReg(int16_t angle);
 
 // nastavení regulátoru ujeté vzd.
-void setDistReg(tdist_reg *d, tmotors *m, int16_t dist);
+void setDistReg(int16_t dist);
 
+// obsluha lcd - menu
+void manageLcd();
 
-
-
-
+// obsluha joysticku
+void joyRide();
 
 #endif /* MODR_H_ */

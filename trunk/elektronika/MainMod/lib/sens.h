@@ -4,19 +4,20 @@
 #define SENS_H_
 
 #include "../MainMod.h"
-#include "lcd.h"
+
+
 
 // zobrazí informace ze senzorù na LCD
-void sensInfo(tsens *s);
+void sensInfo();
 
 // zobrazí informace ze senzorù na LCD
-void sensFullInfo(tsens *s);
+void sensFullInfo();
 
 // naète z modulu SensMod
-void getFastSensorState(tcomm_state *c, tsens *s);
+void getFastSensorState();
 
 // provede plné skenování a naète data ze SensMod
-void getFullSensorState(tcomm_state *c, tsens *s);
+void getFullSensorState();
 
 
 
