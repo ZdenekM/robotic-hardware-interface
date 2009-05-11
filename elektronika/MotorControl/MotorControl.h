@@ -32,9 +32,6 @@ typedef struct {
 	// pomocné poèítadlo impulzù pro výpoèet ujeté vzd.
 	int32_t penc;
 
-	// pomocné poèítadlo pro urèení 1s
-	uint8_t enc_count;
-
 	// žádaná rychlost
 	int16_t req_speed;
 

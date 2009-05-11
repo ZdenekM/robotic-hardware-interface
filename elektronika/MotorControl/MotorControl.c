@@ -71,7 +71,7 @@
 
 // TODO: uložení adresy do EEPROM
 // adresa na RS485
-#define ADDR 10
+#define ADDR 11
 
 
 volatile static uint8_t ena_st=0;
@@ -200,7 +200,7 @@ static inline void ioinit (void) {
 	DDRB = (1<<DDB1)|(1<<DDB2)|(1<<DDB0);
 	PORTB = (1<<PORTB1)|(1<<PORTB2)|(1<<PORTB0);
 
-	DDRC = (1<<DDC0)|(1<<DDC1)|(0<<DDC2)|(0<<DDC3)|(0<<DDC4)|(0<<DDC5);
+	DDRC = (0<<DDC0)|(0<<DDC1)|(0<<DDC2)|(0<<DDC3)|(0<<DDC4)|(0<<DDC5);
 	PORTC = (1<<PORTC2)|(1<<PORTC3)|(1<<PORTC4)|(1<<PORTC5);
 
 
@@ -288,16 +288,35 @@ uint16_t motor_reg(tmotor *m) {
 	m->act_speed = m->enc + (m->enc/2);
 
 	// aktualizace pomocné promìnné pro urèení ujeté vzdálenosti
-	m->penc += m->enc;
+	//m->penc += m->enc;
 
 	// urèení 1s -> výpoèet ujeté vzdálenosti z vìtšího množství impulzù
-	if (++m->enc_count==50) {
+	/*if (++m->enc_count==50) {
 
 		m->enc_count = 0;
 		m->distance += m->penc/33;
 		m->penc = 0;
 
 	}
+
+	// vynulování poèítadla impulzù
+	m->enc = 0;*/
+
+	// pomocné poèítadlo ujetých impulzù
+	m->penc += m->enc;
+
+	// TODO: vyzkoušet
+	// aktualizovat ujetou vzdálenost
+	if (labs(m->penc)>=33) {
+
+		// pøipoèítat vzdálenost
+		m->distance += m->penc/33;
+
+		// uložit zbytek po dìlení
+		m->penc = m->penc%33;
+
+	}
+
 
 	// vynulování poèítadla impulzù
 	m->enc = 0;
@@ -328,7 +347,6 @@ uint16_t motor_reg(tmotor *m) {
 				else if (m->act < 0) m->backwd();
 				else m->free();
 
-
 				// pøevedení akèního zásahu na abs. hodnotu
 				m->act = labs(m->act)/10;
 
@@ -337,11 +355,10 @@ uint16_t motor_reg(tmotor *m) {
 				if (m->act>8000) m->act = 8000;
 				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade všechny meze
 
-
 				// ulozeni aktualni rychlosti
 				m->last_speed = m->act_speed;
 
-				// výpoèet zátìže -> prùmìrování
+				// výpoèet zátìže v %
 				m->load = m->act/80;
 
 				return (uint16_t)m->act;
@@ -368,7 +385,7 @@ uint16_t motor_reg(tmotor *m) {
 			// aktivni brzda
 			case MOT_BRAKE: {
 
-				// regulator pro brzdu - v podstate servo
+				// regulator pro brzdu - vpodstate servo
 
 			} break;
 
@@ -541,9 +558,8 @@ void makeMotorInfo() {
 
 	// ********************************************
 	// požadovaná rychlost - stejná pro oba motory
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[0] = motor1.req_speed;
-	data[1] = motor1.req_speed>>8; }
+	data[1] = motor1.req_speed>>8;
 
 	// aktuální rychlost pøedního motoru
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
@@ -566,15 +582,14 @@ void makeMotorInfo() {
 	data[9] = (int32_t)motor1.distance>>16;
 	data[10] = (int32_t)motor1.distance>>24; }
 
-	// výkon pøedního motoru (pro ICR1==2500) - DP
+	// výkon pøedního motoru
 	data[11] =  motor1.load;
 
 
 	// ********************************************
 	// aktuální rychlost zadního motoru
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[12] = motor2.act_speed;
-	data[13] = motor2.act_speed>>8; }
+	data[13] = motor2.act_speed>>8;
 
 	// stav zadního motoru
 	data[14] = motor2.state;
@@ -632,7 +647,7 @@ void sendPacketE() {
 
 }
 
-
+// TODO: otestovat mìøení proudu
 // volá se z main
 // mìøení proudu motory
 void motor_current() {
@@ -644,7 +659,8 @@ void motor_current() {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	motor1.current = (motor1.current + (ADCW/6)) / 2;
+	motor2.current = (95*motor2.current + 5*((ADCW*10)/64))/100;
+	//motor1.current = ADCW/4;
 
 	ADMUX++;
 
@@ -654,7 +670,8 @@ void motor_current() {
 	// èeká na dokonèení pøevodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	motor2.current = (motor2.current + (ADCW/6)) / 2;
+	motor1.current = (95*motor1.current + 5*((ADCW*10)/64)) / 100;
+	//motor2.current = ADCW/4;
 
 	ADMUX--;
 
@@ -673,7 +690,7 @@ int main(void) {
 
 
 		// mìøení proudu motory
-		//motor_current();
+		motor_current();
 
 		// pøepnutí na pøíjem
 		C_CLEARBIT(RS485_SEND);
