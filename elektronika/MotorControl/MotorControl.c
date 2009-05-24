@@ -287,21 +287,6 @@ uint16_t motor_reg(tmotor *m) {
 	// výpoèet aktuální rychlosti 50/33 = 1.5
 	m->act_speed = m->enc + (m->enc/2);
 
-	// aktualizace pomocné promìnné pro urèení ujeté vzdálenosti
-	//m->penc += m->enc;
-
-	// urèení 1s -> výpoèet ujeté vzdálenosti z vìtšího množství impulzù
-	/*if (++m->enc_count==50) {
-
-		m->enc_count = 0;
-		m->distance += m->penc/33;
-		m->penc = 0;
-
-	}
-
-	// vynulování poèítadla impulzù
-	m->enc = 0;*/
-
 	// pomocné poèítadlo ujetých impulzù
 	m->penc += m->enc;
 

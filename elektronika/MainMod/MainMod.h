@@ -45,7 +45,7 @@
 enum {COMMSTATE} tpcdata;
 
 // stavy menu
-typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_PID,M_SENS,M_SENS_FULL,M_JOYSTICK} tmenu_states;
+typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_PID,M_SENS,M_SENS_FULL,M_DISTREG,M_JOYSTICK} tmenu_states;
 
 // zdroje povelù pro podøízené moduly - zdroj øízení
 typedef enum {C_AUTO,C_JOY,C_PC} tcontrol;
@@ -103,19 +103,13 @@ typedef struct {
 
 } tsens;
 
-typedef enum {R_READY,R_RUNNING} treg;
+typedef enum {R_READY,R_RUNNING,R_OBST} treg;
 
 // struktura pro regulátor zajišující ujetí poadované vzdálenosti
 typedef struct {
 
-	// suma regulátoru
-	int32_t lsum,rsum;
-
 	// parametry regulatoru
-	uint16_t P, I, D;
-
-	// poslední ujetá vzdálenost
-	int32_t llast_dist,rlast_dist;
+	uint16_t P;
 
 	// poèáteèní vzd.
 	int16_t lstart_dist,rstart_dist;
@@ -123,7 +117,11 @@ typedef struct {
 	// kolik se má ujet
 	int16_t req_dist;
 
+	// stav regulátoru
 	uint8_t state;
+
+	// odchylky pro reg.
+	int32_t le, re;
 
 } tdist_reg;
 

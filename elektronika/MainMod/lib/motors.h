@@ -73,7 +73,7 @@ void getMotorInfo(uint8_t addr, tmotor *front, tmotor *rear);
 
 void setMotorSpeed(uint8_t addr, int16_t speed);
 
-void setMotorsSpeed(int16_t left, int16_t right);
+uint8_t setMotorsSpeed(int16_t left, int16_t right);
 
 void getMotorPID(uint8_t addr);
 

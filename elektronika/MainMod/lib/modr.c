@@ -1,4 +1,7 @@
-
+// MainMod - kód pro øídicí modul
+// autor: Zdenìk Materna, zdenek.materna@gmail.com
+// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// modr.c -> spec. funkce modulu
 
 #include "modr.h"
 
@@ -14,17 +17,12 @@ extern tsens sens;
 // inicializace regulátoru ujeté vzd.
 void initDistReg() {
 
-	dist_reg.llast_dist = 0;
+
 	dist_reg.lstart_dist = 0;
-	dist_reg.lsum = 0;
 	dist_reg.req_dist = 0;
-	dist_reg.rlast_dist = 0;
 	dist_reg.rstart_dist = 0;
-	dist_reg.rsum = 0;
 	dist_reg.state = R_READY;
 	dist_reg.P = 60;
-	dist_reg.I = 0;
-	dist_reg.D = 0;
 
 }
 
@@ -138,10 +136,10 @@ void ioinit() {
 
 		lcd_puts_P("Starting-up...");
 
-		_delay_ms(2100);
+		_delay_ms(2000);
 
 		// zjistí dostupnost dalších modulù
-		//initModules(&comm_state);
+		//initModules();
 
 
 	}
@@ -151,8 +149,8 @@ void ioinit() {
 	// povolení pøíjmu
 	C_CLEARBIT(RS485_SEND);
 
-	// nastavení watchdogu -> 2s
-	//WDTCR = (1<<WDE)|(1<<WDP2)|(1<<WDP1)|(1<<WDP0);
+	// nastavení watchdogu -> 1s
+	//WDTCR = (1<<WDE)|(1<<WDP2)|(1<<WDP1)|(0<<WDP0);
 
 	wdt_reset();
 
@@ -324,53 +322,93 @@ void distReg() {
 
 	if (dist_reg.req_dist!=0 && dist_reg.state==R_RUNNING) {
 
-		int32_t le,re,lspeed,rspeed;
+		int32_t lspeed,rspeed;
 
 		int32_t lact_dist = (motors.m[FRONT_LEFT].distance + motors.m[REAR_LEFT].distance)/2;
 		int32_t ract_dist = (motors.m[FRONT_RIGHT].distance + motors.m[REAR_RIGHT].distance)/2;
 
-		// ujetá vzdálenost
-		//dist_reg.moved_dist += act_dist - dist_reg.last_dist;
-
-		le = (dist_reg.req_dist - (lact_dist - dist_reg.lstart_dist));
-		re = (dist_reg.req_dist - (ract_dist - dist_reg.rstart_dist));
+		dist_reg.le = (dist_reg.req_dist - (lact_dist - dist_reg.lstart_dist));
+		dist_reg.re = (dist_reg.req_dist - (ract_dist - dist_reg.rstart_dist));
 
 		// výpoèet akèního zásahu -> rychlosti
-		lspeed = (dist_reg.P)*le + ((dist_reg.I)*dist_reg.lsum) - (dist_reg.D)*(lact_dist - dist_reg.llast_dist);
-		rspeed = (dist_reg.P)*re + ((dist_reg.I)*dist_reg.rsum) - (dist_reg.D)*(ract_dist - dist_reg.rlast_dist);
+		lspeed = (dist_reg.P)*dist_reg.le;
+		rspeed = (dist_reg.P)*dist_reg.re;
 
 		lspeed /= 100;
 		rspeed /= 100;
 
 		if (lspeed>250) lspeed = 250;
 		else if (lspeed<-250) lspeed = -250;
-		else dist_reg.lsum+= le;
 
 		if (rspeed>250) rspeed = 250;
 		else if (rspeed<-250) rspeed = -250;
-		else dist_reg.rsum+= re;
 
-		// hotovo :-)
-		if (le < 10 && re < 10) {
 
-			lspeed = 0;
-			rspeed = 0;
+		// hotovo, odchylka je pod požadovanou mezí
+		if (labs(dist_reg.le) < 10 && labs(dist_reg.re) < 10) {
 
 			dist_reg.state = R_READY;
+			setMotorsSpeed(0,0);
+		}
+
+
+		// pokud senzory detekují pøekážku - nedá se jet dál, hotovo
+		else if (!setMotorsSpeed(lspeed,rspeed)) {
+
+			setMotorsSpeed(0,0);
+			dist_reg.state = R_OBST;
 
 		}
 
-		setMotorsSpeed(lspeed,rspeed);
-
-		// uložení pro pøíštì
-		dist_reg.llast_dist = lact_dist;
-		dist_reg.rlast_dist = ract_dist;
 
 	}
 
 
 }
 
+// zobrazí info o distreg na lcd
+void distRegInfo() {
+
+	char abuff[11];
+
+
+	// levá poèáteèní vzdálenost
+	lcd_gotoxy(0,1);
+	sprintf_P(abuff,PSTR("LS:%7d"),dist_reg.lstart_dist);
+	lcd_puts(abuff);
+
+	// levá odchylka
+	lcd_gotoxy(0,2);
+	sprintf_P(abuff,PSTR("LE:%7d"),dist_reg.le);
+	lcd_puts(abuff);
+
+	// žádaná vzdálenost
+	lcd_gotoxy(0,3);
+	sprintf_P(abuff,PSTR("RD:%7d"),dist_reg.req_dist);
+	lcd_puts(abuff);
+
+	// pravá poèáteèní vzdálenost
+	lcd_gotoxy(10,1);
+	sprintf_P(abuff,PSTR("RS:%7d"),dist_reg.rstart_dist);
+	lcd_puts(abuff);
+
+	// levá odchylka
+	lcd_gotoxy(10,2);
+	sprintf_P(abuff,PSTR("RE:%7d"),dist_reg.re);
+	lcd_puts(abuff);
+
+	// stav regulátoru
+	lcd_gotoxy(10,3);
+	if (dist_reg.state==R_READY) sprintf_P(abuff,PSTR("ST:  READY")); // pøipraven
+	else if (dist_reg.state==R_RUNNING) sprintf_P(abuff,PSTR("ST:    RUN")); // bìží
+	else sprintf_P(abuff,PSTR("ST:   OBST")); // pøekážka
+
+	lcd_puts(abuff);
+
+
+}
+
+//TODO: nefunguje - OPRAVIT
 // regulátor pro otoèení o zadaný úhel
 void angleReg() {
 
@@ -546,6 +584,18 @@ void manageLcd() {
 	    	sensFullInfo();
 
 	    	    } break;
+
+	    case M_DISTREG: {
+
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("DistReg");
+	    	distRegInfo();
+
+
+
+	    } break;
 
 	    // zobrazení stavu joysticku
 	    case M_JOYSTICK: {

@@ -1,3 +1,7 @@
+// MainMod - kód pro øídicí modul
+// autor: Zdenìk Materna, zdenek.materna@gmail.com
+// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// sens.c -> funkce zajišující obsluhu senzorù
 
 
 #include "sens.h"
