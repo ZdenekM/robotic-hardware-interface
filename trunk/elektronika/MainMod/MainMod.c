@@ -6,7 +6,7 @@
 // TODO: plné skenování okolí
 // TODO: náhodná projížïka
 // TODO: zastavení pøi výpadku SensMod
-// TODO: poladit komunikaci s PC - neèekat ve smyèce
+// TODO: zprovoznit watchdog
 
 #include "MainMod.h"
 
@@ -264,7 +264,7 @@ int main(void)
 			}*/
 
 			// test otoèení o zadaný úhel
-			static uint8_t flag = 0;
+			/*static uint8_t flag = 0;
 
 			if (flag==0) {
 
@@ -274,7 +274,7 @@ int main(void)
 
 
 
-			}
+			}*/
 
 		} break;
 
@@ -369,18 +369,16 @@ int main(void)
 
 
 
-
+    		// TODO: otestovat funkènost
     		// jízda rovnì
     		case PC_MOVE_STRAIGHT: {
 
-    			// TODO: naprogramovat
-    			if (mod_state.control == C_PC ) {
+    			int16_t dist;
 
+    			dist = pccomm_state.ip.data[0];
+    			dist |= pccomm_state.ip.data[1]<<8;
 
-
-
-
-    			}
+    			if (mod_state.control == C_PC && dist_reg.state == R_READY) setDistReg(dist);
 
 
     		} break;
@@ -454,7 +452,7 @@ int main(void)
     		// data ze senzorù - mìøeno za pohybu
     		case P_SENS_FAST: {
 
-    			uint8_t arr[11];
+    			uint8_t arr[13];
 
     			// ultrazvuk - rychlé mìøení
     			arr[0] = sens.us_fast;
@@ -479,9 +477,12 @@ int main(void)
     			// taktilní senzory
     			arr[10] = sens.tact;
 
+    			// azimut z kompasu
+    			arr[11] = sens.comp;
+    			arr[12] = sens.comp>>8;
 
     			// vytvoøení paketu
-    			makePacket(&pccomm_state.op,arr,11,P_SENS_FAST,0);
+    			makePacket(&pccomm_state.op,arr,13,P_SENS_FAST,0);
 
     			// obsluha odeslání paketu
     			sendPCPacketE();
@@ -551,12 +552,12 @@ int main(void)
 
     		} // switch
 
-    		//pccomm_state.receive_state = PR_WAITING;
+    		pccomm_state.receive_state = PR_WAITING;
 
     	} // if
 
 
-    	//if ((pccomm_state.receive_state == PR_TIMEOUT) || (pccomm_state.receive_state == PR_READY)) pccomm_state.receive_state = PR_WAITING;
+    	if ((pccomm_state.receive_state == PR_TIMEOUT) || (pccomm_state.receive_state == PR_READY)) pccomm_state.receive_state = PR_WAITING;
 
 
 

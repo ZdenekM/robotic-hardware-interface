@@ -2,6 +2,9 @@
 // autor: Zdenìk Materna, zdenek.materna@gmail.com
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
+// TODO: timeout pøi odpojeném kompasu
+// TODO: opravit plné skenování - bez èekání, v pøerušení -> až bude domìøeno, poslat místo paketu fast typ full, tøeba
+
 #define F_CPU 16000000UL
 
 #include <stdlib.h>
@@ -79,33 +82,54 @@ void state_init(tmod_state *m) {
 
 }
 
-char i2c_read(char address, char reg)
-{
-char read_data = 0;
+// TODO: opravit timeout pro kompas
+uint8_t i2c_confWait() {
 
-   TWCR = 0xA4;                                                  // send a start bit on i2c bus
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWDR = address;                                               // load address of i2c device
-   TWCR = 0x84;                                                  // transmit
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWDR = reg;                                                   // send register number to read from
-   TWCR = 0x84;                                                  // transmit
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+	mod_state.comp_to = 0;
+	while((!(TWCR & 0x80)) && (mod_state.comp_to<10));
 
-   TWCR = 0xA4;                                                  // send repeated start bit
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWDR = address+1;                                             // transmit address of i2c device with readbit set
-   TWCR = 0xC4;                                                  // clear transmit interupt flag
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWCR = 0x84;                                                  // transmit, nack (last byte request)
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   read_data = TWDR;                                             // and grab the target data
-   TWCR = 0x94;                                                  // send a stop bit on i2c bus
-   return read_data;
+	return (mod_state.comp_to<10);
 
 }
 
-void i2c_transmit(char address, char reg, char data)
+// pøeètení registru z i2c zaøízení
+uint8_t i2c_read(uint8_t address, uint8_t reg)
+{
+
+	uint8_t read_data = 0;
+
+	TWCR = 0xA4;										// send a start bit on i2c bus
+	if (i2c_confWait()) {	// wait for confirmation of transmit
+
+
+	   TWDR = address;                                               // load address of i2c device
+	   TWCR = 0x84;                                                  // transmit
+	   i2c_confWait();                                        // wait for confirmation of transmit
+
+	   TWDR = reg;                                                   // send register number to read from
+	   TWCR = 0x84;                                                  // transmit
+	   i2c_confWait();                                        // wait for confirmation of transmit
+
+	   TWCR = 0xA4;                                                  // send repeated start bit
+	   i2c_confWait();                                        // wait for confirmation of transmit
+
+	   TWDR = address+1;                                             // transmit address of i2c device with readbit set
+	   TWCR = 0xC4;                                                  // clear transmit interupt flag
+	   i2c_confWait();                                        // wait for confirmation of transmit
+
+	   TWCR = 0x84;                                                  // transmit, nack (last byte request)
+	   i2c_confWait();                                        // wait for confirmation of transmit
+
+	   read_data = TWDR;                                             // and grab the target data
+	   TWCR = 0x94;                                                  // send a stop bit on i2c bus
+	   return read_data;
+
+	} else return 0;
+
+}
+
+// vyslání znaku po i2c
+void i2c_transmit(uint8_t address, uint8_t reg, uint8_t data)
 {
    TWCR = 0xA4;                                                  // send a start bit on i2c bus
    while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
@@ -293,6 +317,7 @@ void sendPacketE() {
 
 }
 
+// 15625 Hz
 // pøerušení pro obecné použití
 ISR(TIMER0_OVF_vect){
 
@@ -312,7 +337,17 @@ ISR(TIMER0_OVF_vect){
 
 	}
 
+	static uint16_t poc = 0;
 
+	// 50 Hz
+	if (++poc==312) {
+
+		poc = 0;
+
+		if (mod_state.comp_to<255) mod_state.comp_to++;
+
+
+	}
 	// TODO: obsluha taktilních senzorù -> zkopírovat z MainMod
 
 
@@ -394,8 +429,7 @@ void makeFullScan() {
 // spoèítá vzdálenost pøekážky z ADC
 uint16_t sharpDist(uint16_t adc) {
 
-	// TODO: nová kalibrace
-	// -25 -> korekce kvùli umístìní na podvozku
+	// pøepoèet - zjištìno regresní analýzou
 	uint16_t pom = (125000/adc)-47-25;
 
 	// nula indikuje chybový stav - pøekroèení rozsahu
@@ -415,7 +449,7 @@ void getChanData(uint8_t index, uint8_t chan) {
 	while (CHECKBIT(ADCSRA,ADSC));
 
 	// prùmìr se poèítá ze surových dat, ne ze vzdálenosti - pro vìtší pøesnost
-	sharp[index] = (sharp[index] + ADCW)/2;
+	sharp[index] = (9*sharp[index] + 1*ADCW)/10;
 	mod_state.sharp[index] = sharpDist(sharp[index]);
 
 }
@@ -589,12 +623,6 @@ int main(void) {
 
 			} break;
 
-			// TODO: obsluha kompasu
-			case P_SENS_COMP: {
-
-
-
-			} break;
 
 			} // switch
 

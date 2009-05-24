@@ -1,3 +1,7 @@
+// MainMod - kód pro øídicí modul
+// autor: Zdenìk Materna, zdenek.materna@gmail.com
+// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// motors.c -> funkce pro obsluhu motorù
 
 #include "motors.h"
 
@@ -196,7 +200,7 @@ void setMotorSpeed(uint8_t addr, int16_t speed) {
 }
 
 // nastavení rychlosti motorù -> v závislosti na vzdálenosti pøekážky
-void setMotorsSpeed(int16_t left, int16_t right) {
+uint8_t setMotorsSpeed(int16_t left, int16_t right) {
 
 	// omezení rozsahu
 	if (left>250) left=250;
@@ -245,6 +249,9 @@ void setMotorsSpeed(int16_t left, int16_t right) {
 	// zmìna rychlosti - posílá se pouze pokus se liší nová a pùvodní hodnota
 	if (motors.m[FRONT_LEFT].req_speed!=left) setMotorSpeed(10,left);
 	if (motors.m[FRONT_RIGHT].req_speed!=right)	setMotorSpeed(11,right);
+
+	if (left==0 && right==0) return 0;
+	else return 1;
 
 
 }

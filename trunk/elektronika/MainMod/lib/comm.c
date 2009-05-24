@@ -1,3 +1,7 @@
+// MainMod - kód pro øídicí modul
+// autor: Zdenìk Materna, zdenek.materna@gmail.com
+// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// comm.c -> funkce zajišující komunikaci
 
 #include "comm.h"
 
@@ -24,12 +28,8 @@ void sendPacketE() {
 	// povolení pøerušení UDRIE
 	SETBIT(UCSR1B,UDRIE1);
 
-	//if (c->op.len == 30) C_FLIPBIT(LCD_BL);
-
 	// èekání na odeslání paketu
 	while(comm_state.send_state != PS_READY);
-
-	//C_FLIPBIT(LCD_BL);
 
 	// èekání na odeslání posledního bytu
 	while (!(UCSR1A & (1<<TXC1)));
