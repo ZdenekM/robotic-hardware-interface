@@ -4,7 +4,6 @@
 
 
 // TODO: opravit plné skenování
-// TODO: obsluha Sharpů v přerušení
 // TODO: obsluha kompasu v přerušení
 
 #define F_CPU 16000000UL
@@ -136,27 +135,6 @@ uint8_t i2c_read(uint8_t address, uint8_t reg)
 	} else return 0;
 
 }
-
-// vyslání znaku po i2c
-/*void i2c_transmit(uint8_t address, uint8_t reg, uint8_t data)
-{
-   TWCR = 0xA4;                                                  // send a start bit on i2c bus
-   //while(!(TWCR & 0x80));
-   if (i2c_confWait()) {		// wait for confirmation of transmit
-	   TWDR = address;                                               // load address of i2c device
-	   TWCR = 0x84;                                                  // transmit
-	   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-	   TWDR = reg;
-	   TWCR = 0x84;                                                  // transmit
-	   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-	   TWDR = data;
-	   TWCR = 0x84;                                                  // transmit
-	   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-	   TWCR = 0x94;                                                  // stop bit
-
-   }
-}*/
-
 
 // inicializace io
 static inline void ioinit (void) {
@@ -363,33 +341,6 @@ void startUS() {
 
 }
 
-/*
-void getChanData(uint8_t index, uint8_t chan) {
-
-	static uint16_t sharp[4];
-
-	ADMUX &= 0xF0;
-	ADMUX |= chan;
-	SETBIT(ADCSRA,ADSC);
-	while (CHECKBIT(ADCSRA,ADSC));
-
-	// průměr se počítá ze surových dat, ne ze vzdálenosti - pro větší přesnost
-	sharp[index] = (9*sharp[index] + 1*ADCW)/10;
-	mod_state.sharp[index] = sharpDist(sharp[index]);
-
-}
-
-// obsluha Sharpů
-void getAnalogData() {
-
-	getChanData(0,6);
-	getChanData(1,7);
-	getChanData(2,0);
-	getChanData(3,1);
-
-}
-*/
-
 // spočítá vzdálenost překážky z ADC
 uint16_t sharpDist(uint16_t adc) {
 
@@ -408,6 +359,7 @@ ISR(TIMER0_OVF_vect){
 
 	static uint8_t sharp_idx = 0;
 
+	// obsluha čidel Sharp
 	switch (sharp_idx) {
 
 	case 0: {
@@ -423,8 +375,6 @@ ISR(TIMER0_OVF_vect){
 
 		// měření dokončeno
 		if (!CHECKBIT(ADCSRA,ADSC)) {
-
-			C_FLIPBIT(LED);
 
 			mod_state.sharp[0] = (9*mod_state.sharp[0] + 1*sharpDist(ADCW))/10;
 			sharp_idx++;
@@ -503,7 +453,7 @@ ISR(TIMER0_OVF_vect){
 	// počítadlo timeoutu pro příjem po RS485
 	receiveTimeout(&comm_state);
 
-	// průběžné měření
+	// průběžné měření ultrazvukem
 	 if (mod_state.s_state==S_FAST_SCAN && !testUS()) startUS();
 
 	 // plné měření
@@ -513,7 +463,7 @@ ISR(TIMER0_OVF_vect){
 
 		static uint8_t state = A0;
 
-		#define MS150 80 // 37 = 150ms
+		#define MS150 40 // 37 = 150ms
 
 		static uint8_t zp=0;
 
@@ -523,7 +473,7 @@ ISR(TIMER0_OVF_vect){
 
 			if (OCR2!=35) {
 
-				zp = MS150*3;
+				zp = MS150*2;
 				OCR2 = 35;
 
 			}
@@ -533,12 +483,17 @@ ISR(TIMER0_OVF_vect){
 
 				state = A45;
 				mod_state.us_full_idx = 1;
+				break;
 
 			}
 
 			// zpoždění, než se otočí servo
-			if (zp==0) startUS();
-			else zp--;
+			if (zp==1 && !testUS()) {
+
+				startUS();
+				zp--;
+
+			} else if (zp!=0) zp--;
 
 
 		} break;
@@ -562,17 +517,22 @@ ISR(TIMER0_OVF_vect){
 			}
 
 			// zpoždění, než se otočí servo
-			if (zp==0) startUS();
-			else zp--;
+			if (zp==1 && !testUS()) {
+
+				startUS();
+				zp--;
+
+			} else if (zp!=0) zp--;
 
 
 		} break;
 
+		// přímý směr
 		case A90: {
 
 			if (OCR2!=22) {
 
-				zp = MS150;
+				zp = 2*MS150;
 				OCR2 = 22;
 				}
 
@@ -585,8 +545,12 @@ ISR(TIMER0_OVF_vect){
 			}
 
 			// zpoždění, než se otočí servo
-			if (zp==0) startUS();
-			else zp--;
+			if (zp==1 && !testUS()) {
+
+				startUS();
+				zp--;
+
+			} else if (zp!=0) zp--;
 
 
 		} break;
@@ -609,8 +573,12 @@ ISR(TIMER0_OVF_vect){
 			}
 
 			// zpoždění, než se otočí servo
-			if (zp==0) startUS();
-			else zp--;
+			if (zp==1 && !testUS()) {
+
+				startUS();
+				zp--;
+
+			} else if (zp!=0) zp--;
 
 
 
@@ -621,7 +589,7 @@ ISR(TIMER0_OVF_vect){
 
 			if (OCR2!=9) {
 
-				zp = MS150;
+				zp = 2*MS150;
 				OCR2 = 9;
 			}
 
@@ -637,9 +605,12 @@ ISR(TIMER0_OVF_vect){
 			} // if
 
 			// zpoždění, než se otočí servo
-			if (zp==0) startUS();
-			else zp--;
+			if (zp==1 && !testUS()) {
 
+				startUS();
+				zp--;
+
+			} else if (zp!=0) zp--;
 
 
 		} break;
@@ -689,7 +660,7 @@ int main(void) {
 		C_CLEARBIT(RS485_SEND);
 
 		// měření ultrazvukem (v přerušení)
-		if (mod_state.s_state == S_DONE) mod_state.s_state = S_FAST_SCAN;
+		//if (mod_state.s_state == S_DONE) mod_state.s_state = S_FAST_SCAN;
 
 		// obsluha Sharpů
 		//getAnalogData();
