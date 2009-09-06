@@ -1,17 +1,18 @@
-// MainMod - kód pro øídicí modul
-// autor: Zdenìk Materna, zdenek.materna@gmail.com
-// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// MainMod - kÃ³d pro Å™Ã­dicÃ­ modul
+// autor: ZdenÄ›k Materna, zdenek.materna@gmail.com
+// strÃ¡nky projektu: http://code.google.com/p/robotic-hardware-interface
 
-// TODO: ujetí zadané vzdálenosti
-// TODO: plné skenování okolí
-// TODO: náhodná projíïka
-// TODO: zastavení pøi vıpadku SensMod
+
+// TODO: plnÃ© skenovÃ¡nÃ­ okolÃ­
+// TODO: nÃ¡hodnÃ¡ projÃ­Å¾Äka
+// TODO: zastavenÃ­ pÅ™i vÃ½padku SensMod
 // TODO: zprovoznit watchdog
+// TODO: podmenu na lcd
 
 #include "MainMod.h"
 
 // *** GLOBALNI PROMENNE **************************************************
-// stavové promìnné modulu
+// stavovÃ© promÄ›nnÃ© modulu
 tmod_state mod_state;
 
 // stav komunikace - rs485
@@ -20,22 +21,22 @@ tcomm_state comm_state;
 // stav komunikace - rs232
 tcomm_state pccomm_state;
 
-// strukt. pro regulátor ujeté vzdálenosti
+// strukt. pro regulÃ¡tor ujetÃ© vzdÃ¡lenosti
 tdist_reg dist_reg;
 
-// reg. pro otáèení
+// reg. pro otÃ¡ÄenÃ­
 tangle_reg angle_reg;
 
-// struktura pro stav motorù
+// struktura pro stav motorÅ¯
 tmotors motors;
 
 // flagy pro obsluhu perif.
 volatile uint8_t flags = 0;
 
-// stav senzorù
+// stav senzorÅ¯
 tsens sens;
 
-// èasové flagy
+// ÄasovÃ© flagy
 #define F_1HZ flags, 0
 #define F_50HZ flags, 1
 
@@ -70,7 +71,7 @@ ISR(USART1_RX_vect) {
 // USART1 - UDR Empty
 ISR(USART1_UDRE_vect) {
 
-		// po odvysílání adresy zrušit nastavenı 9. bit
+		// po odvysÃ­lÃ¡nÃ­ adresy zruÅ¡it nastavenÃ½ 9. bit
 		if (comm_state.send_state>=PS_ADDR) CLEARBIT(UCSR1B,TXB81);
 		else SETBIT(UCSR1B,TXB81);
 
@@ -83,11 +84,11 @@ ISR(USART1_UDRE_vect) {
 
 
 
-// pøerušení - 50 Hz
+// pÅ™eruÅ¡enÃ­ - 50 Hz
 ISR(TIMER0_COMP_vect) {
 
 
-	// poèítadlo pro obnovení lcd
+	// poÄÃ­tadlo pro obnovenÃ­ lcd
 	static uint8_t lcdc=0;
 
 	//static uint8_t lcdbl=0;
@@ -97,13 +98,13 @@ ISR(TIMER0_COMP_vect) {
 	// aktualizace vnitrniho casu
 	updateTime(&mod_state);
 
-	// kontrola tlaèítek
+	// kontrola tlaÄÃ­tek
 	checkButtons(&mod_state);
 
-	// poèítadlo timeoutu pro pøíjem po RS485
+	// poÄÃ­tadlo timeoutu pro pÅ™Ã­jem po RS485
 	receiveTimeout(&comm_state);
 
-	// poèítadlo timeoutu pro pøíjem po RS232
+	// poÄÃ­tadlo timeoutu pro pÅ™Ã­jem po RS232
 	receiveTimeout(&pccomm_state);
 
 	// 1 Hz
@@ -111,10 +112,10 @@ ISR(TIMER0_COMP_vect) {
 
 		lcdc=0;
 
-		// zvıšení poèítadla pro timeout komunikace s PC
+		// zvÃ½Å¡enÃ­ poÄÃ­tadla pro timeout komunikace s PC
 		if (mod_state.pc_comm_to<PcCommTo) mod_state.pc_comm_to++;
 
-		// nastavení pøíznakù
+		// nastavenÃ­ pÅ™Ã­znakÅ¯
 		C_SETBIT(F_1HZ);
 
 
@@ -138,16 +139,16 @@ int main(void)
 
 	mod_state.menu_state = M_STANDBY;
 
-	// nastavení zdroje øízení na PC
+	// nastavenÃ­ zdroje Å™Ã­zenÃ­ na PC
 	mod_state.control = C_PC;
 
 	//pccomm_state.receive_state = PR_WAITING;
 
-	// zjištìní PID konstant nastavenıch v EEPROM
+	// zjiÅ¡tÄ›nÃ­ PID konstant nastavenÃ½ch v EEPROM
 	getMotorPID(10);
 
 
-	// nekoneèná smyèka
+	// nekoneÄnÃ¡ smyÄka
     while (1) {
 
     	// reset watchdogu
@@ -157,7 +158,7 @@ int main(void)
     	// obsluha LCD
     	if (C_CHECKBIT(F_1HZ)) {
 
-        	// pøepínání reimu lcd ---------------------------------------------------------------------------
+        	// pÅ™epÃ­nÃ¡nÃ­ reÅ¾imu lcd ---------------------------------------------------------------------------
         	if (CHECKBIT(mod_state.buttons,ABUTT1)) {
         	    lcd_clrscr();
 
@@ -190,8 +191,16 @@ int main(void)
 
         	if (CHECKBIT(mod_state.buttons,ABUTT4)) {
 
-        		//  nekoneèná smyèka -> reset modulu
-        		while(1);
+        		//setAngleReg(90);
+
+        		while(comm_state.send_state != PS_READY);
+
+        		// pÅ™Ã­kaz pro plnÃ© skenovÃ¡nÃ­
+        		makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
+        		sendPacketE();
+
+        		CLEARBIT(mod_state.buttons,ABUTT4);
+
 
         	}
 
@@ -202,7 +211,7 @@ int main(void)
     	}
 
 
-    	// obsluha periferií a podøízenıch modulù ---------------------------------------------------------------------------
+    	// obsluha periferiÃ­ a podÅ™Ã­zenÃ½ch modulÅ¯ ---------------------------------------------------------------------------
 
     	if (C_CHECKBIT(F_50HZ)) {
 
@@ -210,37 +219,37 @@ int main(void)
 
 			update_joystick();
 
-			// ètení stavu levıch motorù
+			// ÄtenÃ­ stavu levÃ½ch motorÅ¯
 			getMotorInfo(10,&motors.m[FRONT_LEFT],&motors.m[REAR_LEFT]);
 
-			// ètení stavu pravıch motorù
+			// ÄtenÃ­ stavu pravÃ½ch motorÅ¯
 			getMotorInfo(11,&motors.m[FRONT_RIGHT],&motors.m[REAR_RIGHT]);
 
-			// naètení dat ze senzorù
-			getFastSensorState();
+			// naÄtenÃ­ dat ze senzorÅ¯
+			getSensorState();
 
-			// regulátor pro ujetou vzdálenost
+			// regulÃ¡tor pro ujetou vzdÃ¡lenost
 			distReg();
 
-			// regulátor otoèení
+			// regulÃ¡tor otoÄenÃ­
 			angleReg();
 
 
 
 		switch(mod_state.control) {
 
-		// zdroj øízení nastaven na PC
+		// zdroj Å™Ã­zenÃ­ nastaven na PC
 		case C_PC: {
 
-			// zastavení pøi timeoutu komunikace s PC - 5s
+			// zastavenÃ­ pÅ™i timeoutu komunikace s PC - 5s
 			if (mod_state.pc_comm_to >= PcCommTo)
-				// po. rychlost není nula - zastavit
+				// poÅ¾. rychlost nenÃ­ nula - zastavit
 				setMotorsSpeed(0,0);
 
 
 		} break;
 
-		// zdroj øízení nastaven na joystick
+		// zdroj Å™Ã­zenÃ­ nastaven na joystick
 		case C_JOY: {
 
 			joyRide();
@@ -248,10 +257,10 @@ int main(void)
 
 		} break;
 
-		// autonomní operace
+		// autonomnÃ­ operace
 		case C_AUTO: {
 
-			// TODO: náhodná projíïka
+			// TODO: nÃ¡hodnÃ¡ projÃ­Å¾Äka
 
 			/*if (dist_reg.state == R_READY) {
 
@@ -263,7 +272,7 @@ int main(void)
 
 			}*/
 
-			// test otoèení o zadanı úhel
+			// test otoÄenÃ­ o zadanÃ½ Ãºhel
 			/*static uint8_t flag = 0;
 
 			if (flag==0) {
@@ -295,38 +304,38 @@ int main(void)
 
 		//while (pccomm_state.receive_state!=PR_PACKET_RECEIVED && pccomm_state.receive_state!=PR_TIMEOUT && pccomm_state.receive_state!=PR_READY);
 
-    	// crc souhlasí -> úspìšné pøijetí paketu
+    	// crc souhlasÃ­ -> ÃºspÄ›Å¡nÃ© pÅ™ijetÃ­ paketu
     	if ((pccomm_state.receive_state==PR_PACKET_RECEIVED) && checkPacket(&pccomm_state)) {
 
-    		// vynulování poèítadla timeoutu kom. s PC
+    		// vynulovÃ¡nÃ­ poÄÃ­tadla timeoutu kom. s PC
     		mod_state.pc_comm_to = 0;
 
     		switch (pccomm_state.ip.packet_type) {
 
-    		//echo - poslat zpìt stejnı paket
+    		//echo - poslat zpÄ›t stejnÃ½ paket
     		case P_ECHO: {
 
-    			// vytvoøení ECHO paketu
+    			// vytvoÅ™enÃ­ ECHO paketu
     			makePacket(&pccomm_state.op,pccomm_state.ip.data,pccomm_state.ip.len,P_ECHO,0);
 
-    			// obsluha odeslání paketu
+    			// obsluha odeslÃ¡nÃ­ paketu
     			sendPCPacketE(&pccomm_state);
 
 
     		} break;
 
-    		// volná jízda - ovládání joystickem
+    		// volnÃ¡ jÃ­zda - ovlÃ¡dÃ¡nÃ­ joystickem
     		case PC_FREE_RIDE: {
 
     			int16_t spl, spr;
 
     			if (mod_state.control == C_PC ) {
 
-					// rychlost pro levé motory
+					// rychlost pro levÃ© motory
 					spl = pccomm_state.ip.data[0];
 					spl |= pccomm_state.ip.data[1]<<8;
 
-					// rychlost pro pravé motory
+					// rychlost pro pravÃ© motory
 					spr = pccomm_state.ip.data[2];
 					spr |= pccomm_state.ip.data[3]<<8;
 
@@ -337,7 +346,7 @@ int main(void)
 
     		} break;
 
-    		// poadavek na nastavení PID konstant
+    		// poÅ¾adavek na nastavenÃ­ PID konstant
     		case P_MOTOR_SETPID: {
 
     			motors.P = pccomm_state.ip.data[0];
@@ -350,7 +359,7 @@ int main(void)
 
     		} break;
 
-    		// poadavek na pøeètení PID konstant
+    		// poÅ¾adavek na pÅ™eÄtenÃ­ PID konstant
     		case P_MOTOR_GETPID: {
 
     			uint8_t arr[3];
@@ -361,16 +370,14 @@ int main(void)
 
     		    makePacket(&pccomm_state.op,arr,3,P_MOTOR_GETPID,0);
 
-    		    // obsluha odeslání paketu
+    		    // obsluha odeslÃ¡nÃ­ paketu
     		    sendPCPacketE(&pccomm_state);
 
 
     		} break;
 
 
-
-    		// TODO: otestovat funkènost
-    		// jízda rovnì
+    		// jÃ­zda rovnÄ›
     		case PC_MOVE_STRAIGHT: {
 
     			int16_t dist;
@@ -383,7 +390,7 @@ int main(void)
 
     		} break;
 
-    		// otoèení
+    		// otoÄenÃ­
     		case PC_MOVE_ROUND: {
 
     		    // TODO: naprogramovat
@@ -396,7 +403,7 @@ int main(void)
 
     		} break;
 
-    		// informace o stavu pohonù
+    		// informace o stavu pohonÅ¯
     		case PC_MOVE_INFO: {
 
 				int16_t aspeedl,aspeedr, rspeedl, rspeedr;
@@ -437,7 +444,7 @@ int main(void)
 
 				makePacket(&pccomm_state.op,arr,16,P_MOTOR_INFO,0);
 
-				// obsluha odeslání paketu
+				// obsluha odeslÃ¡nÃ­ paketu
 				sendPCPacketE();
 
 
@@ -445,57 +452,57 @@ int main(void)
 
     		case PC_MOVE_AINFO: {
 
-    			// TODO: dodìlat
+    			// TODO: dodÄ›lat
 
     		} break;
 
-    		// data ze senzorù - mìøeno za pohybu
+    		// data ze senzorÅ¯ - mÄ›Å™eno za pohybu
     		case P_SENS_FAST: {
 
     			uint8_t arr[13];
 
-    			// ultrazvuk - rychlé mìøení
+    			// ultrazvuk - rychlÃ© mÄ›Å™enÃ­
     			arr[0] = sens.us_fast;
     			arr[1] = sens.us_fast>>8;
 
-    			// sharp 1 (levı pøední)
+    			// sharp 1 (levÃ½ pÅ™ednÃ­)
     			arr[2] = sens.sharp[0];
     			arr[3] = sens.sharp[0]>>8;
 
-    			// sharp 2 (pravı pøední)
+    			// sharp 2 (pravÃ½ pÅ™ednÃ­)
     			arr[4] = sens.sharp[1];
     			arr[5] = sens.sharp[1]>>8;
 
-    			// sharp 3 (levı zadní)
+    			// sharp 3 (levÃ½ zadnÃ­)
     			arr[6] = sens.sharp[2];
     			arr[7] = sens.sharp[2]>>8;
 
-    			// sharp 4 (pravı zadní)
+    			// sharp 4 (pravÃ½ zadnÃ­)
     			arr[8] = sens.sharp[3];
     			arr[9] = sens.sharp[3]>>8;
 
-    			// taktilní senzory
+    			// taktilnÃ­ senzory
     			arr[10] = sens.tact;
 
     			// azimut z kompasu
     			arr[11] = sens.comp;
     			arr[12] = sens.comp>>8;
 
-    			// vytvoøení paketu
+    			// vytvoÅ™enÃ­ paketu
     			makePacket(&pccomm_state.op,arr,13,P_SENS_FAST,0);
 
-    			// obsluha odeslání paketu
+    			// obsluha odeslÃ¡nÃ­ paketu
     			sendPCPacketE();
 
     		} break;
 
-    		// plné mìøení - pouze kdy se stojí
+    		// plnÃ© mÄ›Å™enÃ­ - pouze kdyÅ¾ se stojÃ­
     		case P_SENS_FULL: {
 
-    			// provede se pouze kdy robot stojí a zdroj øízení je nastavenı na PC
-    			if ((motors.m[FRONT_LEFT].act_speed == 0) && (motors.m[FRONT_RIGHT].act_speed == 0) && (mod_state.control == C_PC)) {
+    			// provede se pouze kdyÅ¾ robot stojÃ­ a zdroj Å™Ã­zenÃ­ je nastavenÃ½ na PC
+    			/*if ((motors.m[FRONT_LEFT].act_speed == 0) && (motors.m[FRONT_RIGHT].act_speed == 0) && (mod_state.control == C_PC)) {
 
-    				// provést plné skenování
+    				// provÃ©st plnÃ© skenovÃ¡nÃ­
     				getFullSensorState();
 
     				uint8_t arr[19];
@@ -521,29 +528,29 @@ int main(void)
     				arr[9] = sens.us_full[4]>>8;
 
 
-					// sharp 1 (levı pøední)
+					// sharp 1 (levÃ½ pÅ™ednÃ­)
     				arr[10] = sens.sharp[0];
     				arr[11] = sens.sharp[0]>>8;
 
-    				// sharp 2 (pravı pøední)
+    				// sharp 2 (pravÃ½ pÅ™ednÃ­)
     				arr[12] = sens.sharp[1];
     				arr[13] = sens.sharp[1]>>8;
 
-    				// sharp 3 (levı zadní)
+    				// sharp 3 (levÃ½ zadnÃ­)
     				arr[14] = sens.sharp[2];
     				arr[15] = sens.sharp[2]>>8;
 
-    				// sharp 4 (pravı zadní)
+    				// sharp 4 (pravÃ½ zadnÃ­)
     				arr[16] = sens.sharp[3];
     				arr[17] = sens.sharp[3]>>8;
 
-    				// taktilní senzory
+    				// taktilnÃ­ senzory
     				arr[18] = sens.tact;
 
-    				// obsluha odeslání paketu
-    				sendPCPacketE();
+    				// obsluha odeslÃ¡nÃ­ paketu
+    				sendPCPacketE();*/
 
-    			}
+    			//}
 
 
 

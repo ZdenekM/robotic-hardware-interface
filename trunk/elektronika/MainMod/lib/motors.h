@@ -22,16 +22,16 @@
 
 typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_OVERTEMP} tmotor_state;
 
-// zjednoduöen· struktura pro ukl·d·nÌ stavu motor˘
+// zjednodu≈°en√° struktura pro ukl√°d√°n√≠ stavu motor≈Ø
 typedef struct {
 
-	// û·dan· rychlost v cm/s
+	// ≈æ√°dan√° rychlost v cm/s
 	int16_t req_speed;
 
-	// aktu·lnÌ skuteËn· rychlost
+	// aktu√°ln√≠ skuteƒçn√° rychlost
 	int16_t act_speed;
 
-	// ujet· vzd·lenost
+	// ujet√° vzd√°lenost
 	int32_t distance;
 
 	// stav motoru
@@ -43,7 +43,7 @@ typedef struct {
 	// teplota motoru
 	uint8_t temp;
 
-	// v˝kon motoru
+	// v√Ωkon motoru
 	uint8_t load;
 
 } tmotor;

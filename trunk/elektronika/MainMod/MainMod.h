@@ -33,33 +33,33 @@
 #include "lib/macros.h"
 #include "../CommLib/comm.h"
 
-// povolení vysílání na rs485
+// povolenÃ­ vysÃ­lÃ¡nÃ­ na rs485
 #define RS485_SEND PORTD, 4
 
-// pøíjem / vysílání
+// pÅ™Ã­jem / vysÃ­lÃ¡nÃ­
 #define RS485_OUT (C_SETBIT(RS485_SEND))
 #define RS485_IN (C_CLEARBIT(RS485_SEND))
 
 
-// data odesílaná do PC
+// data odesÃ­lanÃ¡ do PC
 enum {COMMSTATE} tpcdata;
 
 // stavy menu
-typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_PID,M_SENS,M_SENS_FULL,M_DISTREG,M_JOYSTICK} tmenu_states;
+typedef enum {M_INIT,M_STANDBY,M_COMMSTAT,M_PCCOMMSTAT,M_MLF,M_MLR,M_MRF,M_MRR,M_PID,M_SENS,M_SENS_FULL,M_DISTREG,M_ANGLEREG,M_JOYSTICK} tmenu_states;
 
-// zdroje povelù pro podøízené moduly - zdroj øízení
+// zdroje povelÅ¯ pro podÅ™Ã­zenÃ© moduly - zdroj Å™Ã­zenÃ­
 typedef enum {C_AUTO,C_JOY,C_PC} tcontrol;
 
-// stav modulu - menu, tlaèítka, èas atd.
+// stav modulu - menu, tlaÄÃ­tka, Äas atd.
 typedef struct {
 
-	// aktuální stav menu
+	// aktuÃ¡lnÃ­ stav menu
 	tmenu_states menu_state;
 
-	// urèuje zdroj povelù pro podøízené moduly
+	// urÄuje zdroj povelÅ¯ pro podÅ™Ã­zenÃ© moduly
 	tcontrol control;
 
-	// poèítadlo pro krátké zapnutí podsvìtlení po stisku tlaèítka
+	// poÄÃ­tadlo pro krÃ¡tkÃ© zapnutÃ­ podsvÄ›tlenÃ­ po stisku tlaÄÃ­tka
 	uint16_t backlight;
 
 	// realny cas (nebo uptime?)
@@ -67,13 +67,13 @@ typedef struct {
 	volatile uint16_t msec;
 
 	#define PcCommTo 10
-	// poèítadlo pro timeout komunikace s PC
+	// poÄÃ­tadlo pro timeout komunikace s PC
 	volatile uint8_t pc_comm_to;
 
 	// stav joysticku
 	uint16_t joy_x, joy_y;
 
-	// stav tlaèítek - po pøeètení vynulovat
+	// stav tlaÄÃ­tek - po pÅ™eÄtenÃ­ vynulovat
 	volatile uint8_t buttons;
 
 	#define ABUTT1 0
@@ -84,19 +84,19 @@ typedef struct {
 } tmod_state;
 
 
-// stav senzorù
+// stav senzorÅ¯
 typedef struct {
 
-	// pole pro uloení zmìøenıch vzdáleností ze Sharpù
+	// pole pro uloÅ¾enÃ­ zmÄ›Å™enÃ½ch vzdÃ¡lenostÃ­ ze SharpÅ¯
 	uint16_t sharp[4];
 
-	// pole pro uloení full scan dat z ultrazvuku (0, 45, 90, 135, 180)
+	// pole pro uloÅ¾enÃ­ full scan dat z ultrazvuku (0, 45, 90, 135, 180)
 	uint16_t us_full[5];
 
-	// prom. pro uloení rychlého scanování (za jízdy)
+	// prom. pro uloÅ¾enÃ­ rychlÃ©ho scanovÃ¡nÃ­ (za jÃ­zdy)
 	uint16_t us_fast;
 
-	// taktilní senzory
+	// taktilnÃ­ senzory
 	uint8_t tact;
 
 	uint16_t comp;
@@ -105,19 +105,19 @@ typedef struct {
 
 typedef enum {R_READY,R_RUNNING,R_OBST} treg;
 
-// struktura pro regulátor zajišující ujetí poadované vzdálenosti
+// struktura pro regulÃ¡tor zajiÅ¡Å¥ujÃ­cÃ­ ujetÃ­ poÅ¾adovanÃ© vzdÃ¡lenosti
 typedef struct {
 
 	// parametry regulatoru
 	uint16_t P;
 
-	// poèáteèní vzd.
+	// poÄÃ¡teÄnÃ­ vzd.
 	int16_t lstart_dist,rstart_dist;
 
-	// kolik se má ujet
+	// kolik se mÃ¡ ujet
 	int16_t req_dist;
 
-	// stav regulátoru
+	// stav regulÃ¡toru
 	uint8_t state;
 
 	// odchylky pro reg.
@@ -125,22 +125,25 @@ typedef struct {
 
 } tdist_reg;
 
-// struktura pro regulátor zajišující otoèení o zadanı úhel
+// struktura pro regulÃ¡tor zajiÅ¡Å¥ujÃ­cÃ­ otoÄenÃ­ o zadanÃ½ Ãºhel
 typedef struct {
 
-	// suma regulátoru
+	// suma regulÃ¡toru
 	int32_t sum;
 
 	// parametry regulatoru
 	uint16_t P, I, D;
 
-	// poslední hodnota
+	// regulaÄnÃ­ odchylka
+	int16_t e;
+
+	// poslednÃ­ hodnota
 	int32_t last_angle;
 
-	// poèáteèní azimut
+	// poÄÃ¡teÄnÃ­ azimut
 	int16_t start_angle;
 
-	// poadovanı azimut
+	// poÅ¾adovanÃ½ azimut
 	int16_t req_angle;
 
 	// stav

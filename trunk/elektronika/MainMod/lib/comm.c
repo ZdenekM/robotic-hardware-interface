@@ -1,7 +1,7 @@
-// MainMod - kód pro øídicí modul
-// autor: Zdenìk Materna, zdenek.materna@gmail.com
-// stránky projektu: http://code.google.com/p/robotic-hardware-interface
-// comm.c -> funkce zajišující komunikaci
+// MainMod - kÃ³d pro Å™Ã­dicÃ­ modul
+// autor: ZdenÄ›k Materna, zdenek.materna@gmail.com
+// strÃ¡nky projektu: http://code.google.com/p/robotic-hardware-interface
+// comm.c -> funkce zajiÅ¡Å¥ujÃ­cÃ­ komunikaci
 
 #include "comm.h"
 
@@ -9,44 +9,44 @@ extern tcomm_state comm_state;
 extern tcomm_state pccomm_state;
 
 
-// volá se z main
-// odeslání paketu - extra funkce pro kadı modul
+// volÃ¡ se z main
+// odeslÃ¡nÃ­ paketu - extra funkce pro kaÅ¾dÃ½ modul
 void sendPacketE() {
 
-	// zakázání pøíjmu
+	// zakÃ¡zÃ¡nÃ­ pÅ™Ã­jmu
 	CLEARBIT(UCSR1B,RXEN1);
 
-	// pøepnutí na vysílání
+	// pÅ™epnutÃ­ na vysÃ­lÃ¡nÃ­
 	C_SETBIT(RS485_SEND);
 
-	// nastavení 9. bitu
+	// nastavenÃ­ 9. bitu
 	SETBIT(UCSR1B,TXB81);
 
-	// poslání prvního bytu - ostatní se vysílají automaticky
+	// poslÃ¡nÃ­ prvnÃ­ho bytu - ostatnÃ­ se vysÃ­lajÃ­ automaticky
 	sendFirstByte(&UDR1,&comm_state);
 
-	// povolení pøerušení UDRIE
+	// povolenÃ­ pÅ™eruÅ¡enÃ­ UDRIE
 	SETBIT(UCSR1B,UDRIE1);
 
-	// èekání na odeslání paketu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ paketu
 	while(comm_state.send_state != PS_READY);
 
-	// èekání na odeslání posledního bytu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ poslednÃ­ho bytu
 	while (!(UCSR1A & (1<<TXC1)));
 
-	// vynulování TXC1 - nastavením na jednièku
+	// vynulovÃ¡nÃ­ TXC1 - nastavenÃ­m na jedniÄku
 	SETBIT(UCSR1A,TXC1);
 
-	// pøepnutí na pøíjem
+	// pÅ™epnutÃ­ na pÅ™Ã­jem
 	C_CLEARBIT(RS485_SEND);
 
-	// povolení pøíjmu
+	// povolenÃ­ pÅ™Ã­jmu
 	SETBIT(UCSR1B,RXEN1);
 
 }
 
-// provìøí komunikaci s modulem zadané adresy
-// vrací úspìšnost v %
+// provÄ›Å™Ã­ komunikaci s modulem zadanÃ© adresy
+// vracÃ­ ÃºspÄ›Å¡nost v %
 uint8_t sendEcho(uint8_t addr) {
 
 	uint8_t data[30], i=0,sent=0,rec=0;
@@ -55,30 +55,30 @@ uint8_t sendEcho(uint8_t addr) {
 
 	for(sent=1; sent<=10;sent++) {
 
-		// vytvoøení paketu
+		// vytvoÅ™enÃ­ paketu
 		makePacket(&comm_state.op,data,30,P_ECHO,addr);
 
-		// odeslání paketu
+		// odeslÃ¡nÃ­ paketu
 		sendPacketE();
 
 		C_CLEARBIT(RS485_SEND);
-		// èekání na odpovìï
+		// ÄekÃ¡nÃ­ na odpovÄ›Ä
 		comm_state.receive_state = PR_WAITING;
 		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT);
 
-		// crc souhlasí -> úspìšné pøijetí paketu
+		// crc souhlasÃ­ -> ÃºspÄ›Å¡nÃ© pÅ™ijetÃ­ paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) rec++;
 
 		comm_state.receive_state = PR_READY;
 
 	}
 
-	// 10 pokusù -> rec*10 = úpìšnost v %
+	// 10 pokusÅ¯ -> rec*10 = ÃºpÄ›Å¡nost v %
 	return rec*10;
 
 }
 
-// inicializace modulù - echo
+// inicializace modulÅ¯ - echo
 void initModules() {
 
 	lcd_gotoxy(0,0);
@@ -121,32 +121,32 @@ void initModules() {
 }
 
 
-// zobrazí na lcd statistiky komunikace
+// zobrazÃ­ na lcd statistiky komunikace
 void commStat(tcomm_state *p) {
 
 	char abuff[11];
 
-	// odeslanıch paketù
+	// odeslanÃ½ch paketÅ¯
 	lcd_gotoxy(0,1);
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("SE:%7u"),p->packets_sended);}
 	lcd_puts(abuff);
 
-	// poèet pøijatıch paketù
+	// poÄet pÅ™ijatÃ½ch paketÅ¯
 	lcd_gotoxy(0,2);
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("RE:%7u"),p->packets_received);}
 	lcd_puts(abuff);
 
-	// poèet chyb rámce
+	// poÄet chyb rÃ¡mce
 	lcd_gotoxy(0,3);
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("FE:%7u"),p->frame_error);}
 	lcd_puts(abuff);
 
-	// poèet paketù s vadnım CRC
+	// poÄet paketÅ¯ s vadnÃ½m CRC
 	lcd_gotoxy(10,1);
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("BR:%7u"),p->packets_bad_received);}
 	lcd_puts(abuff);
 
-	// poèet timeoutù
+	// poÄet timeoutÅ¯
 	lcd_gotoxy(10,2);
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {sprintf_P(abuff,PSTR("TO:%7u"),p->packets_timeouted);}
 	lcd_puts(abuff);
@@ -159,11 +159,11 @@ void commStat(tcomm_state *p) {
 }
 
 
-// volá se z main
-// odeslání statistiky komunikace s moduly do PC
+// volÃ¡ se z main
+// odeslÃ¡nÃ­ statistiky komunikace s moduly do PC
 void sendCommStat() {
 
-	/*uint8_t data[15]; // 1 byte typ, 14 bytù data
+	/*uint8_t data[15]; // 1 byte typ, 14 bytÅ¯ data
 	data[0] = COMMSTATE;
 
 	uint8_t index = 1;
@@ -193,7 +193,7 @@ void sendCommStat() {
 
 	sendFirstByte(&UDR0,&pccomm_state);
 
-	// èekání na odeslání paketu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ paketu
 	while(pccomm_state.send_state != PS_READY);
 	*/
 
@@ -201,10 +201,10 @@ void sendCommStat() {
 
 void sendPCPacketE() {
 
-	// èekání na dokonèení odeslání paketu
+	// ÄekÃ¡nÃ­ na dokonÄenÃ­ odeslÃ¡nÃ­ paketu
 	while(pccomm_state.send_state != PS_READY);
 
-	// zahájení pøenosu
+	// zahÃ¡jenÃ­ pÅ™enosu
 	sendFirstByte(&UDR0,&pccomm_state);
 
 	SETBIT(UCSR0B,UDRIE0);

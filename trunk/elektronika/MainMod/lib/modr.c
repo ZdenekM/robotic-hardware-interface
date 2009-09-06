@@ -1,6 +1,6 @@
-// MainMod - kód pro øídicí modul
-// autor: Zdenìk Materna, zdenek.materna@gmail.com
-// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// MainMod - kÃ³d pro Å™Ã­dicÃ­ modul
+// autor: ZdenÄ›k Materna, zdenek.materna@gmail.com
+// strÃ¡nky projektu: http://code.google.com/p/robotic-hardware-interface
 // modr.c -> spec. funkce modulu
 
 #include "modr.h"
@@ -14,7 +14,7 @@ extern tmotors motors;
 extern tsens sens;
 
 
-// inicializace regulátoru ujeté vzd.
+// inicializace regulÃ¡toru ujetÃ© vzd.
 void initDistReg() {
 
 
@@ -28,7 +28,7 @@ void initDistReg() {
 
 void initAngleReg() {
 
-	angle_reg.P = 30;
+	angle_reg.P = 1;
 	angle_reg.I = 0;
 	angle_reg.D = 0;
 	angle_reg.last_angle = 0;
@@ -53,7 +53,7 @@ void ioinit() {
 	DDRE = (1<<DDE1);
 	PORTE = (1<<PORTE1);
 
-	// PORTD5-7 tlaèítka, aktivované pullupy, PD3 = TXD1, PD4 = RE/DE
+	// PORTD5-7 tlaÄÃ­tka, aktivovanÃ© pullupy, PD3 = TXD1, PD4 = RE/DE
 	DDRD = (0<<DDD5)|(0<<DDD6)|(0<<DDD7)|(1<<DDD3)|(1<<DDD4);
 	PORTD = (1<<PORTD5)|(1<<PORTD6)|(1<<PORTD7)|(1<<PORTD3)|(1<<PORTD4);
 
@@ -66,7 +66,7 @@ void ioinit() {
 		// 10 Hz - N=32, OCR=50
 		// 100 Hz - N=1, OCR=163
 
-		// asynchronní taktování
+		// asynchronnÃ­ taktovÃ¡nÃ­
 		ASSR = (1<<AS0);
 
 		// 100 Hz
@@ -76,7 +76,7 @@ void ioinit() {
 		// OCIE0: Timer/Counter0 Output Compare Match Interrupt Enable
 		TIMSK = (1<<OCIE0);
 
-	// nastavení obou UARTù
+	// nastavenÃ­ obou UARTÅ¯
 		// nastaveni uart1 - komunikace s moduly
 
 			// UCSZxx = 111 -> 9bit
@@ -86,7 +86,7 @@ void ioinit() {
 			// RXENn: Receiver Enable
 			// TXENn: Transmitter Enable
 			// UCSZn1:0: Character Size
-			// usbs - poèet stop bitù
+			// usbs - poÄet stop bitÅ¯
 			// UMSELn - async / sync
 			// UPMn1:0 parita
 			// TXB81 - 9. bit
@@ -111,21 +111,21 @@ void ioinit() {
 	UCSR1B = (1<<UCSZ12)|(0<<UDRIE1)|(1<<TXEN1)|(1<<RXEN1)|(1<<RXCIE1);
 	UCSR1C = (1<<USBS1)|(0<<UMSEL1)|(0<<UPM11)|(0<<UPM10)|(1<<UCSZ11)|(1<<UCSZ10);
 
-	// nastavení ADC
+	// nastavenÃ­ ADC
 	// reference = AVCC
 	ADMUX = (0<<REFS1)|(1<<REFS0)|(1<<MUX2)|(1<<MUX1);
 
-	// povolení ADC
+	// povolenÃ­ ADC
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 
 	// inicializace struktury comm_state
 	comm_state_init(&comm_state);
 	comm_state_init(&pccomm_state);
 
-	// inic. struktur motorù
+	// inic. struktur motorÅ¯
 	motor_init(&motors);
 
-	// inicializace regulátoru ujeté vzd.
+	// inicializace regulÃ¡toru ujetÃ© vzd.
 	initDistReg();
 
 	initAngleReg();
@@ -138,7 +138,7 @@ void ioinit() {
 
 		_delay_ms(2000);
 
-		// zjistí dostupnost dalších modulù
+		// zjistÃ­ dostupnost dalÅ¡Ã­ch modulÅ¯
 		//initModules();
 
 
@@ -146,10 +146,10 @@ void ioinit() {
 
 	lcd_clrscr();
 
-	// povolení pøíjmu
+	// povolenÃ­ pÅ™Ã­jmu
 	C_CLEARBIT(RS485_SEND);
 
-	// nastavení watchdogu -> 1s
+	// nastavenÃ­ watchdogu -> 1s
 	//WDTCR = (1<<WDE)|(1<<WDP2)|(1<<WDP1)|(0<<WDP0);
 
 	wdt_reset();
@@ -159,14 +159,14 @@ void ioinit() {
 }
 
 
-// volá se z pøerušení
-// ètení a zpracování stavu tlaèítek
+// volÃ¡ se z pÅ™eruÅ¡enÃ­
+// ÄtenÃ­ a zpracovÃ¡nÃ­ stavu tlaÄÃ­tek
 void checkButtons () {
 
 // udava kolikrat po sobe musi byt tlacitko sepnute
 #define BUTT_DEBOUNCE 5
 
-	// pomocné promìnné pro ošetøení zákmitù tlaèítek bez èekání
+	// pomocnÃ© promÄ›nnÃ© pro oÅ¡etÅ™enÃ­ zÃ¡kmitÅ¯ tlaÄÃ­tek bez ÄekÃ¡nÃ­
 	static uint8_t pbutt1=0, pbutt2=0, pbutt3=0, pbutt4=0;
 
 	if (!C_CHECKBIT(BUTT1) && ++pbutt1==BUTT_DEBOUNCE) {
@@ -196,8 +196,8 @@ void checkButtons () {
 
 }
 
-// volá se z pøerušení
-// poèítadlo pro èas
+// volÃ¡ se z pÅ™eruÅ¡enÃ­
+// poÄÃ­tadlo pro Äas
 void updateTime()
 {
 
@@ -216,8 +216,8 @@ void updateTime()
 
 }
 
-// volá se z main
-// vypíše èas na lcd - pravı horní roh
+// volÃ¡ se z main
+// vypÃ­Å¡e Äas na lcd - pravÃ½ hornÃ­ roh
 void writeTime() {
 
 	char ctrl=' ';
@@ -238,8 +238,8 @@ void writeTime() {
 
 }
 
-// volá se z main
-// zobrazí na LCD stav joysticku
+// volÃ¡ se z main
+// zobrazÃ­ na LCD stav joysticku
 void joy() {
 
 	char abuff[11];
@@ -260,7 +260,7 @@ void joy() {
 
 }
 
-// stand. reim displeje
+// stand. reÅ¾im displeje
 void standBy() {
 
 	lcd_gotoxy(0,0);
@@ -269,7 +269,7 @@ void standBy() {
 
 }
 
-// nastavení obou UARTù
+// nastavenÃ­ obou UARTÅ¯
 void set_uarts() {
 
 
@@ -286,29 +286,29 @@ void set_adc() {
 
 }
 
-// spustí AD pøevod pro urèení vychılení joysticku
+// spustÃ­ AD pÅ™evod pro urÄenÃ­ vychÃ½lenÃ­ joysticku
 void update_joystick() {
 
-	// nastavení kanálu
-	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
+	// nastavenÃ­ kanÃ¡lu
+	ADMUX &= 0xC0; // vynulovÃ¡nÃ­ 5 spodnich bitÅ¯
 	ADMUX |= 6&0x3F; // osa Y
 
-	// spustí pøevod
+	// spustÃ­ pÅ™evod
 	SETBIT(ADCSRA,ADSC);
 
-	// èeká na dokonèení pøevodu
+	// ÄekÃ¡ na dokonÄenÃ­ pÅ™evodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
 	mod_state.joy_y = (mod_state.joy_y + ADCW) / 2; // filtr
 
-	// nastavení kanálu
-	ADMUX &= 0xC0; // vynulování 5 spodnich bitù
+	// nastavenÃ­ kanÃ¡lu
+	ADMUX &= 0xC0; // vynulovÃ¡nÃ­ 5 spodnich bitÅ¯
 	ADMUX |= 7&0x3F; // osa X
 
-	// spustí pøevod
+	// spustÃ­ pÅ™evod
 	SETBIT(ADCSRA,ADSC);
 
-	// èeká na dokonèení pøevodu
+	// ÄekÃ¡ na dokonÄenÃ­ pÅ™evodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
 	mod_state.joy_x = (mod_state.joy_x + ADCW) / 2; // filtr
@@ -317,7 +317,7 @@ void update_joystick() {
 
 }
 
-// regulátor pro ujetí zadané vzdálenosti
+// regulÃ¡tor pro ujetÃ­ zadanÃ© vzdÃ¡lenosti
 void distReg() {
 
 	if (dist_reg.req_dist!=0 && dist_reg.state==R_RUNNING) {
@@ -330,7 +330,7 @@ void distReg() {
 		dist_reg.le = (dist_reg.req_dist - (lact_dist - dist_reg.lstart_dist));
 		dist_reg.re = (dist_reg.req_dist - (ract_dist - dist_reg.rstart_dist));
 
-		// vıpoèet akèního zásahu -> rychlosti
+		// vÃ½poÄet akÄnÃ­ho zÃ¡sahu -> rychlosti
 		lspeed = (dist_reg.P)*dist_reg.le;
 		rspeed = (dist_reg.P)*dist_reg.re;
 
@@ -344,7 +344,7 @@ void distReg() {
 		else if (rspeed<-250) rspeed = -250;
 
 
-		// hotovo, odchylka je pod poadovanou mezí
+		// hotovo, odchylka je pod poÅ¾adovanou mezÃ­
 		if (labs(dist_reg.le) < 10 && labs(dist_reg.re) < 10) {
 
 			dist_reg.state = R_READY;
@@ -352,7 +352,7 @@ void distReg() {
 		}
 
 
-		// pokud senzory detekují pøekáku - nedá se jet dál, hotovo
+		// pokud senzory detekujÃ­ pÅ™ekÃ¡Å¾ku - nedÃ¡ se jet dÃ¡l, hotovo
 		else if (!setMotorsSpeed(lspeed,rspeed)) {
 
 			setMotorsSpeed(0,0);
@@ -366,78 +366,113 @@ void distReg() {
 
 }
 
-// zobrazí info o distreg na lcd
+// zobrazÃ­ info o distreg na lcd
 void distRegInfo() {
 
 	char abuff[11];
 
 
-	// levá poèáteèní vzdálenost
+	// levÃ¡ poÄÃ¡teÄnÃ­ vzdÃ¡lenost
 	lcd_gotoxy(0,1);
 	sprintf_P(abuff,PSTR("LS:%7d"),dist_reg.lstart_dist);
 	lcd_puts(abuff);
 
-	// levá odchylka
+	// levÃ¡ odchylka
 	lcd_gotoxy(0,2);
 	sprintf_P(abuff,PSTR("LE:%7d"),dist_reg.le);
 	lcd_puts(abuff);
 
-	// ádaná vzdálenost
+	// Å¾Ã¡danÃ¡ vzdÃ¡lenost
 	lcd_gotoxy(0,3);
 	sprintf_P(abuff,PSTR("RD:%7d"),dist_reg.req_dist);
 	lcd_puts(abuff);
 
-	// pravá poèáteèní vzdálenost
+	// pravÃ¡ poÄÃ¡teÄnÃ­ vzdÃ¡lenost
 	lcd_gotoxy(10,1);
 	sprintf_P(abuff,PSTR("RS:%7d"),dist_reg.rstart_dist);
 	lcd_puts(abuff);
 
-	// levá odchylka
+	// levÃ¡ odchylka
 	lcd_gotoxy(10,2);
 	sprintf_P(abuff,PSTR("RE:%7d"),dist_reg.re);
 	lcd_puts(abuff);
 
-	// stav regulátoru
+	// stav regulÃ¡toru
 	lcd_gotoxy(10,3);
-	if (dist_reg.state==R_READY) sprintf_P(abuff,PSTR("ST:  READY")); // pøipraven
-	else if (dist_reg.state==R_RUNNING) sprintf_P(abuff,PSTR("ST:    RUN")); // bìí
-	else sprintf_P(abuff,PSTR("ST:   OBST")); // pøekáka
+	if (dist_reg.state==R_READY) sprintf_P(abuff,PSTR("ST:  READY")); // pÅ™ipraven
+	else if (dist_reg.state==R_RUNNING) sprintf_P(abuff,PSTR("ST:    RUN")); // bÄ›Å¾Ã­
+	else sprintf_P(abuff,PSTR("ST:   OBST")); // pÅ™ekÃ¡Å¾ka
 
 	lcd_puts(abuff);
 
 
 }
 
+// zobrazÃ­ info o anglereg na lcd
+void angleRegInfo() {
+
+	char abuff[11];
+
+
+	// poÄÃ¡teÄnÃ­ azimut
+	lcd_gotoxy(0,1);
+	sprintf_P(abuff,PSTR("SA:%7d"),angle_reg.start_angle);
+	lcd_puts(abuff);
+
+	// Å¾Ã¡danÃ© otoÄenÃ­
+	lcd_gotoxy(0,2);
+	sprintf_P(abuff,PSTR("RA:%7d"),angle_reg.req_angle);
+	lcd_puts(abuff);
+
+	// aktuÃ¡lnÃ­ azimut
+	lcd_gotoxy(0,3);
+	sprintf_P(abuff,PSTR("AA:%7d"),sens.comp);
+	lcd_puts(abuff);
+
+	// regulaÄnÃ­ odchylka
+	lcd_gotoxy(10,1);
+	sprintf_P(abuff,PSTR("E :%7d"),angle_reg.e);
+	lcd_puts(abuff);
+
+
+	// stav regulÃ¡toru
+	lcd_gotoxy(10,3);
+	if (angle_reg.state==R_READY) sprintf_P(abuff,PSTR("ST:  READY")); // pÅ™ipraven
+	else if (angle_reg.state==R_RUNNING) sprintf_P(abuff,PSTR("ST:    RUN")); // bÄ›Å¾Ã­
+
+
+}
+
 //TODO: nefunguje - OPRAVIT
-// regulátor pro otoèení o zadanı úhel
+// regulÃ¡tor pro otoÄenÃ­ o zadanÃ½ Ãºhel
 void angleReg() {
 
 	if (angle_reg.state == R_RUNNING) {
 
-		int16_t speed,e;
+		int16_t speed;
 
-		// vıpoèet odchylky (relativní, ne absolutní)
-		e = angle_reg.req_angle - (sens.comp - angle_reg.start_angle);
+		// vÃ½poÄet odchylky (relativnÃ­, ne absolutnÃ­)
+		angle_reg.e = angle_reg.req_angle - (sens.comp - angle_reg.start_angle);
 
-		// vıpoèet  rychlosti
-		speed = angle_reg.P*e;
+		// vÃ½poÄet  rychlosti
+		speed = angle_reg.P*angle_reg.e;
 
-		speed /= 100;
+		//speed /= 100;
 
-		// omezení rozsahu
+		// omezenÃ­ rozsahu
 		if (speed>250) speed = 250;
 		else if (speed<-250) speed = -250;
 
-		// hotovo (odchylka je 0.5°)
-		if (labs(e)<5) {
+		// hotovo (odchylka je 0.5Â°)
+		if (labs(angle_reg.e)<5) {
 
 			speed = 0;
 			angle_reg.state = R_READY;
 
 		}
 
-		// urèení smìru otáèení
-		if (e>0) setMotorsSpeed(speed,-speed);
+		// urÄenÃ­ smÄ›ru otÃ¡ÄenÃ­
+		if (angle_reg.e>0) setMotorsSpeed(speed,-speed);
 		else setMotorsSpeed(-speed,speed);
 
 
@@ -461,14 +496,14 @@ void setAngleReg(int16_t angle) {
 
 }
 
-// nastavení regulátoru ujeté vzd.
+// nastavenÃ­ regulÃ¡toru ujetÃ© vzd.
 void setDistReg(int16_t dist) {
 
-	// nastavení poèáteèní vzdálenosti
+	// nastavenÃ­ poÄÃ¡teÄnÃ­ vzdÃ¡lenosti
 	dist_reg.lstart_dist = (motors.m[FRONT_LEFT].distance + motors.m[REAR_LEFT].distance)/2;
 	dist_reg.rstart_dist = (motors.m[FRONT_RIGHT].distance + motors.m[REAR_RIGHT].distance)/2;
 
-	// zadání poadované vzdálenosti k ujetí
+	// zadÃ¡nÃ­ poÅ¾adovanÃ© vzdÃ¡lenosti k ujetÃ­
 	dist_reg.req_dist = dist;
 
 	dist_reg.state = R_RUNNING;
@@ -487,7 +522,7 @@ void manageLcd() {
 
 	   } break;
 
-	   // základní obrazovka
+	   // zÃ¡kladnÃ­ obrazovka
 	   case M_STANDBY: {
 
 		   writeTime();
@@ -515,7 +550,7 @@ void manageLcd() {
 
 	    } break;
 
-	    // levı pøední motor
+	    // levÃ½ pÅ™ednÃ­ motor
 	    case M_MLF: {
 
 	    	writeTime();
@@ -525,7 +560,7 @@ void manageLcd() {
 
 	    } break;
 
-	    // levı zadní motor
+	    // levÃ½ zadnÃ­ motor
 	    case M_MLR: {
 
 	    	writeTime();
@@ -537,7 +572,7 @@ void manageLcd() {
 	    } break;
 
 
-	    // pravı pøední motor
+	    // pravÃ½ pÅ™ednÃ­ motor
 	    case M_MRF: {
 
 	    	writeTime();
@@ -547,7 +582,7 @@ void manageLcd() {
 
 	    } break;
 
-	    // pravı zadní motor
+	    // pravÃ½ zadnÃ­ motor
 	    case M_MRR: {
 
 	    	writeTime();
@@ -597,7 +632,19 @@ void manageLcd() {
 
 	    } break;
 
-	    // zobrazení stavu joysticku
+	    case M_ANGLEREG: {
+
+
+	    	writeTime();
+	    	lcd_gotoxy(0,0);
+	    	lcd_puts_P("AngleReg");
+	    	angleRegInfo();
+
+
+
+	    } break;
+
+	    // zobrazenÃ­ stavu joysticku
 	    case M_JOYSTICK: {
 
 	    	writeTime();
@@ -622,42 +669,42 @@ void joyRide() {
 	ot = (int16_t)(mod_state.joy_x-511)/2; // 255 vlevo, -255 vpravo
 
 
-	// jedeme dopøedu
+	// jedeme dopÅ™edu
 	if (sp > 10) {
 
-		// zatáèení doprava
+		// zatÃ¡ÄenÃ­ doprava
 		if (ot<-10) setMotorsSpeed(sp,sp+(ot/2));
 
-		// zatáèení doleva
+		// zatÃ¡ÄenÃ­ doleva
 		else if (ot > 10) setMotorsSpeed(sp-(ot/2),sp);
 
-		// jedeme rovnì
+		// jedeme rovnÄ›
 		else setMotorsSpeed(sp,sp);
 
 	// jedeme dozadu
 	} else if (sp < -10) {
 
-		// zatáèení doprava
+		// zatÃ¡ÄenÃ­ doprava
 		if (ot<-10) setMotorsSpeed(sp,sp-(ot/2));
 
-		// zatáèení doleva
+		// zatÃ¡ÄenÃ­ doleva
 		else if (ot > 10) setMotorsSpeed(sp+(ot/2),sp);
 
-		// jedeme rovnì
+		// jedeme rovnÄ›
 		else setMotorsSpeed(sp,sp);
 
 
-	// otáèení na místì - doprava
+	// otÃ¡ÄenÃ­ na mÃ­stÄ› - doprava
 	} else if (ot<-10){
 
 		setMotorsSpeed(-ot,ot);
 
-	// otáèení na místì - doleva
+	// otÃ¡ÄenÃ­ na mÃ­stÄ› - doleva
 	} else if (ot>10) {
 
 		setMotorsSpeed(-ot,ot);
 
-	// zastavení*/
+	// zastavenÃ­*/
 	} else {
 
 		setMotorsSpeed(0,0);
