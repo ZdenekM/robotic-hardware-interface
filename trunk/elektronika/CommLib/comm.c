@@ -72,7 +72,7 @@ uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr)
 }
 
 
-// volá se z main
+// volÃ¡ se z main
 void makePacket(tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_type, uint8_t addr) {
 
 		p->addr = addr;
@@ -81,7 +81,7 @@ void makePacket(tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_type, uin
 
 		p->crc = makeCRC(data,len,packet_type,addr);
 
-		// kopírování dat
+		// kopÃ­rovÃ¡nÃ­ dat
 		if (len < BUFF_LEN && len > 0 && data !=NULL)
 			memcpy(p->data,data,len);
 
@@ -90,7 +90,7 @@ void makePacket(tpacket *p, uint8_t *data, uint8_t len, uint8_t packet_type, uin
 }
 
 
-// zahájení pøenosu - odeslání prvního bytu
+// zahÃ¡jenÃ­ pÅ™enosu - odeslÃ¡nÃ­ prvnÃ­ho bytu
 void sendFirstByte(uint8_t *tUDR, tcomm_state *c) {
 
 	c->send_state = PS_SYNC1;
@@ -99,37 +99,37 @@ void sendFirstByte(uint8_t *tUDR, tcomm_state *c) {
 }
 
 
-// funkce volaná z pøerušení TX_Complete
+// funkce volanÃ¡ z pÅ™eruÅ¡enÃ­ TX_Complete
 // PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY
 void sendPacket(uint8_t *tUDR, tcomm_state *c) {
 
-	static uint8_t index = 0;
+	//static uint8_t index = 0;
 
 	switch (c->send_state) {
 
 		case PS_SYNC1: {
-			// odeslání druhého s. bytu
+			// odeslÃ¡nÃ­ druhÃ©ho s. bytu
 			c->send_state = PS_SYNC2;
 			*tUDR = SYNC2;
 
 		} break;
 
 		case PS_SYNC2: {
-			// odeslání adresy pøíjemce
+			// odeslÃ¡nÃ­ adresy pÅ™Ã­jemce
 			c->send_state = PS_ADDR;
 			*tUDR = c->op.addr;
 
 		} break;
 
 		case PS_ADDR: {
-			// délka data
+			// dÃ©lka data
 			c->send_state = PS_LEN;
 			*tUDR = c->op.len;
 
 		} break;
 
 		case PS_LEN: {
-			// pøeskoèení odesílání dat, pokud je délka 0
+			// pÅ™eskoÄenÃ­ odesÃ­lÃ¡nÃ­ dat, pokud je dÃ©lka 0
 			if (c->op.len>0) c->send_state = PS_TYPE;
 			else c->send_state = PS_DATA;
 			// typ paketu
@@ -138,21 +138,21 @@ void sendPacket(uint8_t *tUDR, tcomm_state *c) {
 		} break;
 
 		case PS_TYPE: {
-			// odeslání prvního bytu obsahu
+			// odeslÃ¡nÃ­ prvnÃ­ho bytu obsahu
 			c->send_state = PS_DATA;
-			*tUDR = c->op.data[index++];
+			*tUDR = c->op.data[c->tx_idx++];
 
 
 
 		} break;
 
 		case PS_DATA: {
-			// odesílání obsahu paketu
-			if (index < c->op.len) *tUDR = c->op.data[index++];
+			// odesÃ­lÃ¡nÃ­ obsahu paketu
+			if (c->tx_idx < c->op.len) *tUDR = c->op.data[c->tx_idx++];
 			else {
-				// spodní byte CRC
+				// spodnÃ­ byte CRC
 				c->send_state = PS_CRC1;
-				index = 0;
+				c->tx_idx = 0;
 				// vynulovani horniho bytu
 				*tUDR = (uint8_t)(c->op.crc&0xFF);
 
@@ -162,18 +162,22 @@ void sendPacket(uint8_t *tUDR, tcomm_state *c) {
 		} break;
 
 		case PS_CRC1: {
-			// horní byte CRC
-			c->send_state = PS_CRC2;
+			// hornÃ­ byte CRC
+			//c->send_state = PS_CRC2;
 			*tUDR = (uint8_t)(c->op.crc>>8);
 
-		} break;
-
-		case PS_CRC2: {
-			// konec pøenosu paketu
+			// konec pÅ™enosu
 			c->send_state = PS_READY;
 			c->packets_sended++;
 
 		} break;
+
+		/*case PS_CRC2: {
+			// konec pÅ™enosu paketu
+			c->send_state = PS_READY;
+			c->packets_sended++;
+
+		} break;*/
 
 		//case PS_READY: break;
 
@@ -182,7 +186,7 @@ void sendPacket(uint8_t *tUDR, tcomm_state *c) {
 
 }
 
-// volá se pøed povolením pøerušení
+// volÃ¡ se pÅ™ed povolenÃ­m pÅ™eruÅ¡enÃ­
 // inicializace struktury typu tcomm_state
 void comm_state_init(tcomm_state *c) {
 
@@ -207,7 +211,7 @@ void comm_state_init(tcomm_state *c) {
 // PR_SYNC1, PR_SYNC2, PR_ADDR, PR_LEN, PR_TYPE, PR_DATA, PR_CRC1, PR_CRC2, PR_PACKET_RECEIVED, PR_READY
 void receivePacket(uint8_t tUDR, tcomm_state *c) {
 
-	static uint8_t index = 0;
+	//static uint8_t index = 0;
 
 	c->receive_timeout = 0;
 
@@ -258,7 +262,7 @@ void receivePacket(uint8_t tUDR, tcomm_state *c) {
 
 	case PR_TYPE: {
 
-		// pøeskoèení pøíjmu dat, pokud je délka dat 0
+		// pÅ™eskoÄenÃ­ pÅ™Ã­jmu dat, pokud je dÃ©lka dat 0
 		if (c->ip.len>0) c->receive_state = PR_DATA;
 		else c->receive_state = PR_CRC1;
 		c->ip.packet_type = tUDR;
@@ -267,12 +271,12 @@ void receivePacket(uint8_t tUDR, tcomm_state *c) {
 
 	case PR_DATA: {
 
-		c->ip.data[index++] = tUDR;
+		c->ip.data[c->rec_idx++] = tUDR;
 
-		// pøíjem dat dokonèen
-		if (index==c->ip.len) {
+		// pÅ™Ã­jem dat dokonÄen
+		if (c->rec_idx==c->ip.len) {
 			c->receive_state = PR_CRC1;
-			index = 0;
+			c->rec_idx = 0;
 		}
 
 
@@ -297,7 +301,7 @@ void receivePacket(uint8_t tUDR, tcomm_state *c) {
 
 	case PR_PACKET_RECEIVED: {
 
-		// nedìlá nic - pøíchozí byty se neberou v úvahu, dokud není nìkde zpracovanı aktuální paket
+		// nedÄ›lÃ¡ nic - pÅ™Ã­chozÃ­ byty se neberou v Ãºvahu, dokud nenÃ­ nÄ›kde zpracovanÃ½ aktuÃ¡lnÃ­ paket
 
 	} break;
 
@@ -314,7 +318,7 @@ void receivePacket(uint8_t tUDR, tcomm_state *c) {
 
 }
 
-// volá se z main
+// volÃ¡ se z main
 // zkontroluje CRC paketu
 uint8_t checkPacket(tcomm_state *c) {
 
@@ -340,7 +344,7 @@ void receiveTimeout(tcomm_state *c) {
 
 	if (c->receive_state!=PR_PACKET_RECEIVED && c->receive_state!=PR_READY) {
 
-		// chyba pøi pøenosu
+		// chyba pÅ™i pÅ™enosu
 		if (c->receive_timeout++ > MAXTIMEOUT) {
 
 			c->receive_timeout = 0;

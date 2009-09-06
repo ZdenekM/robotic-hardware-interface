@@ -4,17 +4,17 @@
 
 #define F_CPU 16000000UL
 
-// první synchronizaèní byte
+// prvnÃ­ synchronizaÄnÃ­ byte
 #define SYNC1 170
 
-// druhı synchronizaèní byte
+// druhÃ½ synchronizaÄnÃ­ byte
 #define SYNC2 171
 
-// maximální poèet bytù v paketu
+// maximÃ¡lnÃ­ poÄet bytÅ¯ v paketu
 #define BUFF_LEN 32
 
-// timeout pro pøíjem paketu - 2x 10ms = 20ms
-#define MAXTIMEOUT 10
+// timeout pro pÅ™Ã­jem paketu - 2x 10ms = 20ms
+#define MAXTIMEOUT 5
 
 
 typedef struct {
@@ -22,75 +22,80 @@ typedef struct {
 	// pole dat
 	uint8_t data[BUFF_LEN];
 
-	// délka dat
+	// dÃ©lka dat
 	uint8_t len;
 
 	// typ paketu
 	uint8_t packet_type;
 
-	// kontrolní souèet
+	// kontrolnÃ­ souÄet
 	uint16_t crc;
 
-	// adresa pøíjemce
+	// adresa pÅ™Ã­jemce
 	uint8_t addr;
 
 } tpacket;
 
 
-// definice typù paketù - 5. bajt paketu
-// P_ECHO - odeslání echo paketu
-// P_MOTOR_COMM - pøíkaz pro motor
-// P_MOTOR_INFO - informace z motorù
+// definice typÅ¯ paketÅ¯ - 5. bajt paketu
+// P_ECHO - odeslÃ¡nÃ­ echo paketu
+// P_MOTOR_COMM - pÅ™Ã­kaz pro motor
+// P_MOTOR_INFO - informace z motorÅ¯
 // P_COMM_INFO - informace o stavu komunikace
 
-// PC_MOVE_STRAIGHT - pohyb rovnì
-// PC_MOVE_ROUND - otoèení o zadanı úhel
+// PC_MOVE_STRAIGHT - pohyb rovnÄ›
+// PC_MOVE_ROUND - otoÄenÃ­ o zadanÃ½ Ãºhel
 // PC_MOVE_INFO - informace o pohybu
 
 
 typedef enum {P_ECHO, P_MOTOR_COMM,P_MOTOR_INFO,P_COMM_INFO,PC_FREE_RIDE, PC_MOVE_STRAIGHT, PC_MOVE_ROUND, PC_MOVE_INFO, PC_MOVE_AINFO, P_SENS_FAST,P_SENS_FULL,P_SENS_COMP,P_MOTOR_SETPID,P_MOTOR_GETPID} tpacket_type;
 
-// definice stavù odesílání paketu
+// definice stavÅ¯ odesÃ­lÃ¡nÃ­ paketu
 typedef enum {PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY} tsend_state;
 
-// definice stavù pøíjmu paketu
+// definice stavÅ¯ pÅ™Ã­jmu paketu
 typedef enum {PR_SYNC1, PR_SYNC2, PR_ADDR, PR_LEN, PR_TYPE, PR_DATA, PR_CRC1, PR_CRC2, PR_PACKET_RECEIVED, PR_TIMEOUT, PR_READY, PR_WAITING} treceive_state;
 
 
-// struktura pro uchování stavu komunikace a statistiky pøenosu
+// struktura pro uchovÃ¡nÃ­ stavu komunikace a statistiky pÅ™enosu
 typedef struct {
 
-	// stav vysílání
+	// stav vysÃ­lÃ¡nÃ­
 	volatile tsend_state send_state;
 
-	// stav pøíjmu
+	// stav pÅ™Ã­jmu
 	volatile treceive_state receive_state;
 
-	// timeout pro pøíjem paketu (poèítadlo milisekund)
+	// timeout pro pÅ™Ã­jem paketu (poÄÃ­tadlo milisekund)
 	uint8_t receive_timeout;
 
-	// paket k odeslání
+	// paket k odeslÃ¡nÃ­
 	tpacket op;
 
-	// poèet úspìšnì poslanıch paketù
+	// poÄet ÃºspÄ›Å¡nÄ› poslanÃ½ch paketÅ¯
 	uint32_t packets_sended;
 
-	// poèet pøijatıch paketù
+	// poÄet pÅ™ijatÃ½ch paketÅ¯
 	uint32_t packets_received;
 
-	// poèet paketù s vadnım CRC
+	// poÄet paketÅ¯ s vadnÃ½m CRC
 	uint16_t packets_bad_received;
 
-	// kolikrát nastal time-out
+	// kolikrÃ¡t nastal time-out
 	uint16_t packets_timeouted;
 
-	// kolikrát došlo pøi pøíjmu bytu k chybì rámce
+	// kolikrÃ¡t doÅ¡lo pÅ™i pÅ™Ã­jmu bytu k chybÄ› rÃ¡mce
 	uint16_t frame_error;
 
 	// chyba synchronizace
 	uint16_t sync_error;
 
-	// pøijatı paket
+	// index pro pÅ™Ã­jem dat
+	uint8_t rec_idx;
+
+	uint8_t tx_idx;
+
+	// pÅ™ijatÃ½ paket
 	tpacket ip;
 
 	// adresa modulu
@@ -102,32 +107,32 @@ typedef struct {
 // inicializace struktury typu tcomm_state
 void comm_state_init(tcomm_state *c);
 
-// spoèítání CRC pro pole o zadané délce
+// spoÄÃ­tÃ¡nÃ­ CRC pro pole o zadanÃ© dÃ©lce
 extern uint16_t makeCRC(uint8_t *input, uint8_t len, uint8_t type, uint8_t addr);
 
 
-// pomocná funkce pro vıpoèet CRC
+// pomocnÃ¡ funkce pro vÃ½poÄet CRC
 extern uint16_t crc16_update(uint16_t crc, uint8_t a);
 
-// sestavení paketu pro komunikaci
+// sestavenÃ­ paketu pro komunikaci
 extern void makePacket(tpacket *p, uint8_t *data,uint8_t len, uint8_t packet_type, uint8_t addr);
 
-// zahájení pøenosu - odeslání prvního bytu
+// zahÃ¡jenÃ­ pÅ™enosu - odeslÃ¡nÃ­ prvnÃ­ho bytu
 extern void sendFirstByte(uint8_t *tUDR, tcomm_state *c);
 
-// odeslání paketu
+// odeslÃ¡nÃ­ paketu
 extern void sendPacket(uint8_t *tUDR, tcomm_state *c);
 
-// pøíjem paketu
+// pÅ™Ã­jem paketu
 extern void receivePacket(uint8_t tUDR, tcomm_state *c);
 
-// obsluha poèítadla pro timeout
+// obsluha poÄÃ­tadla pro timeout
 extern void receiveTimeout(tcomm_state *c);
 
 // zkontroluje CRC paketu
 extern uint8_t checkPacket(tcomm_state *c);
 
-// uvolnìní paketu
+// uvolnÄ›nÃ­ paketu
 extern void freePacket(tpacket *p);
 
 extern void pokus(tcomm_state *c);
