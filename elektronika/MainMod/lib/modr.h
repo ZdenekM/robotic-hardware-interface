@@ -7,7 +7,7 @@
 // inicializace
 void ioinit();
 
-// inicializace regulátoru ujeté vzd.
+// inicializace regulÃ¡toru ujetÃ© vzd.
 void initDistReg();
 
 void initAngleReg();
@@ -26,18 +26,18 @@ void set_uarts();
 
 void set_adc();
 
-// spustí AD pøevod pro urèení vychýlení joysticku
+// spustÃ­ AD prevod pro urceni vychyleni joysticku
 void update_joystick();
 
-// regulátor pro ujetí zadané vzdálenosti
+// regulÃ¡tor pro ujetÃ­ zadanÃ© vzdÃ¡lenosti
 void distReg();
 
-// regulátor pro otoèení o zadaný úhel
+// regulÃ¡tor pro otoceni o zadany uhel
 void angleReg();
 
 void setAngleReg(int16_t angle);
 
-// nastavení regulátoru ujeté vzd.
+// nastavenÃ­ regulÃ¡toru ujetÃ© vzd.
 void setDistReg(int16_t dist);
 
 // obsluha lcd - menu

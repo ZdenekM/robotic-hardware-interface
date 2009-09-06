@@ -1,7 +1,7 @@
-// MainMod - kód pro øídicí modul
-// autor: Zdenìk Materna, zdenek.materna@gmail.com
-// stránky projektu: http://code.google.com/p/robotic-hardware-interface
-// sens.c -> funkce zajišující obsluhu senzorù
+// MainMod - kÃ³d pro Å™Ã­dicÃ­ modul
+// autor: ZdenÄ›k Materna, zdenek.materna@gmail.com
+// strÃ¡nky projektu: http://code.google.com/p/robotic-hardware-interface
+// sens.c -> funkce zajiÅ¡Å¥ujÃ­cÃ­ obsluhu senzorÅ¯
 
 
 #include "sens.h"
@@ -14,7 +14,7 @@ extern tangle_reg angle_reg;
 extern tmotors motors;
 extern tsens sens;
 
-// zobrazí informace ze senzorù na LCD
+// zobrazÃ­ informace ze senzorÅ¯ na LCD
 void sensInfo() {
 
 	char abuff[11];
@@ -50,7 +50,7 @@ void sensInfo() {
 
 }
 
-// zobrazí informace ze senzorù na LCD
+// zobrazÃ­ informace ze senzorÅ¯ na LCD
 void sensFullInfo() {
 
 	char abuff[11];
@@ -78,122 +78,107 @@ void sensFullInfo() {
 
 }
 
-// naète z modulu SensMod
-void getFastSensorState() {
 
-	// ètení stavu levıch motorù
+// naÄte z modulu SensMod
+uint8_t getSensorState() {
+
+	// ÄtenÃ­ stavu senzorÅ¯
 	makePacket(&comm_state.op,NULL,0,P_SENS_FAST,21);
 
 	sendPacketE();
 
-	C_CLEARBIT(RS485_SEND);
-
-	// èekání na odpovìï
+	// ÄekÃ¡nÃ­ na odpovÄ›Ä
 	comm_state.receive_state = PR_WAITING;
 	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
-	// crc souhlasí -> úspìšné pøijetí paketu
+	// crc souhlasÃ­ -> ÃºspÄ›Å¡nÃ© pÅ™ijetÃ­ paketu
 	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
-	   // data ze sonaru
-	   sens.us_fast = comm_state.ip.data[0];
-	   sens.us_fast |= comm_state.ip.data[1]<<8;
 
-	   // levı pøední sharp
-	   sens.sharp[0] = comm_state.ip.data[2];
-	   sens.sharp[0] |= comm_state.ip.data[3]<<8;
+		if (comm_state.ip.packet_type==P_SENS_FAST) {
 
-	   // pravı pøední sharp
-	   sens.sharp[1] = comm_state.ip.data[4];
-	   sens.sharp[1] |= comm_state.ip.data[5]<<8;
+		   // data ze sonaru
+		   sens.us_fast = comm_state.ip.data[0];
+		   sens.us_fast |= comm_state.ip.data[1]<<8;
 
-	   // levı zadní sharp
-	   sens.sharp[2] = comm_state.ip.data[6];
-	   sens.sharp[2] |= comm_state.ip.data[7]<<8;
+		   // levÃ½ pÅ™ednÃ­ sharp
+		   sens.sharp[0] = comm_state.ip.data[2];
+		   sens.sharp[0] |= comm_state.ip.data[3]<<8;
 
-	   // pravı zadní sharp
-	   sens.sharp[3] = comm_state.ip.data[8];
-	   sens.sharp[3] |= comm_state.ip.data[9]<<8;
+		   // pravÃ½ pÅ™ednÃ­ sharp
+		   sens.sharp[1] = comm_state.ip.data[4];
+		   sens.sharp[1] |= comm_state.ip.data[5]<<8;
 
-	   // taktilní senzory
-	   sens.tact = comm_state.ip.data[10];
+		   // levÃ½ zadnÃ­ sharp
+		   sens.sharp[2] = comm_state.ip.data[6];
+		   sens.sharp[2] |= comm_state.ip.data[7]<<8;
 
-	   sens.comp = comm_state.ip.data[11];
-	   sens.comp |= comm_state.ip.data[12]<<8;
+		   // pravÃ½ zadnÃ­ sharp
+		   sens.sharp[3] = comm_state.ip.data[8];
+		   sens.sharp[3] |= comm_state.ip.data[9]<<8;
+
+		   // taktilnÃ­ senzory
+		   sens.tact = comm_state.ip.data[10];
+
+		   sens.comp = comm_state.ip.data[11];
+		   sens.comp |= comm_state.ip.data[12]<<8;
+
+		   comm_state.receive_state = PR_READY;
+
+		   return FAST_SCAN;
+
+		} else if (comm_state.ip.packet_type==P_SENS_FULL) {
+
+			// data ze sonaru
+			// 0st
+			sens.us_full[0] = comm_state.ip.data[0];
+			sens.us_full[0] |= comm_state.ip.data[1]<<8;
+
+			// 45st
+			sens.us_full[1] = comm_state.ip.data[2];
+			sens.us_full[1] |= comm_state.ip.data[3]<<8;
+
+			// 90st
+			sens.us_full[2] = comm_state.ip.data[4];
+			sens.us_full[2] |= comm_state.ip.data[5]<<8;
+
+			// 135st
+			sens.us_full[3] = comm_state.ip.data[6];
+			sens.us_full[3] |= comm_state.ip.data[7]<<8;
+
+			// 180st
+			sens.us_full[4] = comm_state.ip.data[8];
+			sens.us_full[4] |= comm_state.ip.data[9]<<8;
+
+			// levÃ½ pÅ™ednÃ­ sharp
+			sens.sharp[0] = comm_state.ip.data[10];
+			sens.sharp[0] |= comm_state.ip.data[11]<<8;
+
+			// pravÃ½ pÅ™ednÃ­ sharp
+			sens.sharp[1] = comm_state.ip.data[12];
+			sens.sharp[1] |= comm_state.ip.data[13]<<8;
+
+			// levÃ½ zadnÃ­ sharp
+			sens.sharp[2] = comm_state.ip.data[14];
+			sens.sharp[2] |= comm_state.ip.data[15]<<8;
+
+			// pravÃ½ zadnÃ­ sharp
+			sens.sharp[3] = comm_state.ip.data[16];
+			sens.sharp[3] |= comm_state.ip.data[17]<<8;
+
+			// taktilnÃ­ senzory
+			sens.tact = comm_state.ip.data[18];
+
+			comm_state.receive_state = PR_READY;
+
+			return FULL_SCAN;
+
+
+		}
 
 
 	   };
 
-	 comm_state.receive_state = PR_READY;
-
-
-}
-
-// provede plné skenování a naète data ze SensMod
-void getFullSensorState() {
-
-	// ètení stavu levıch motorù
-	makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
-
-	sendPacketE();
-
-	C_CLEARBIT(RS485_SEND);
-
-	// TODO: vyzkoušet, jestli je 1500ms dost
-	// èekání na dokonèení mìøení
-	//_delay_ms(1500);
-
-	// èekání na odpovìï
-	comm_state.receive_state = PR_WAITING;
-	while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_READY);
-
-	// crc souhlasí -> úspìšné pøijetí paketu
-	if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
-
-	   // data ze sonaru
-	   // 0st
-	   sens.us_full[0] = comm_state.ip.data[0];
-	   sens.us_full[0] |= comm_state.ip.data[1]<<8;
-
-	   // 45st
-	   sens.us_full[1] = comm_state.ip.data[2];
-	   sens.us_full[1] |= comm_state.ip.data[3]<<8;
-
-	   // 90st
-	   sens.us_full[2] = comm_state.ip.data[4];
-	   sens.us_full[2] |= comm_state.ip.data[5]<<8;
-
-	   // 135st
-	   sens.us_full[3] = comm_state.ip.data[6];
-	   sens.us_full[3] |= comm_state.ip.data[7]<<8;
-
-	   // 180st
-	   sens.us_full[4] = comm_state.ip.data[8];
-	   sens.us_full[4] |= comm_state.ip.data[9]<<8;
-
-	   // levı pøední sharp
-	   sens.sharp[0] = comm_state.ip.data[10];
-	   sens.sharp[0] |= comm_state.ip.data[11]<<8;
-
-	   // pravı pøední sharp
-	   sens.sharp[1] = comm_state.ip.data[12];
-	   sens.sharp[1] |= comm_state.ip.data[13]<<8;
-
-	   // levı zadní sharp
-	   sens.sharp[2] = comm_state.ip.data[14];
-	   sens.sharp[2] |= comm_state.ip.data[15]<<8;
-
-	   // pravı zadní sharp
-	   sens.sharp[3] = comm_state.ip.data[16];
-	   sens.sharp[3] |= comm_state.ip.data[17]<<8;
-
-	   // taktilní senzory
-	   sens.tact = comm_state.ip.data[18];
-
-
-	   };
-
-	 comm_state.receive_state = PR_READY;
 
 
 }

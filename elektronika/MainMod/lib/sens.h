@@ -5,19 +5,16 @@
 
 #include "../MainMod.h"
 
+enum {FAST_SCAN,FULL_SCAN};
 
-
-// zobrazí informace ze senzorù na LCD
+// zobrazÃ­ informace ze senzorÅ¯ na LCD
 void sensInfo();
 
-// zobrazí informace ze senzorù na LCD
+// zobrazÃ­ informace ze senzorÅ¯ na LCD
 void sensFullInfo();
 
-// naète z modulu SensMod
-void getFastSensorState();
-
-// provede plné skenování a naète data ze SensMod
-void getFullSensorState();
+// naÄte z modulu SensMod
+uint8_t getSensorState();
 
 
 
