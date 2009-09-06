@@ -2,33 +2,36 @@
 #define SENS_H
 
 // typ pro stav modulu
-typedef enum {S_FAST_SCAN, S_FULL_SCAN, S_ERROR} ts_state;
+typedef enum {S_DONE, S_FAST_SCAN, S_FULL_SCAN, S_ERROR} ts_state;
 
 typedef struct {
 
-	// pole pro uloení zmìøenıch vzdáleností ze Sharpù
+	// pole pro uloÅ¾enÃ­ zmÄ›Å™enÃ½ch vzdÃ¡lenostÃ­ ze SharpÅ¯
 	uint16_t sharp[4];
 
 	// stav modulu
 	volatile ts_state s_state;
 
-	// pole pro uloení full scan dat z ultrazvuku
-	uint16_t us_full[5];
+	// pole pro uloÅ¾enÃ­ full scan dat z ultrazvuku
+	volatile uint16_t us_full[5];
 
-	// prom. pro uloení rychlého scanování (za jízdy)
-	uint16_t us_fast;
+	// index pro aktuÃ¡lnÃ­ poloÅ¾ku
+	volatile uint8_t us_full_idx;
 
-	// promìnná pro uloení vısledku plného skenování (bez filtrování)
-	uint16_t us_comp;
+	// prom. pro uloÅ¾enÃ­ rychlÃ©ho scanovÃ¡nÃ­ (za jÃ­zdy)
+	volatile uint16_t us_fast;
 
-	// údaje z kompasu
+	// Ãºdaje z kompasu
 	uint16_t comp;
 
-	// taktilní senzory
+	// taktilnÃ­ senzory
 	uint8_t tact;
 
-	// timeout pro ètení kompasu
+	// timeout pro ÄtenÃ­ kompasu
 	volatile uint8_t comp_to;
+
+	// flag pro odeslÃ¡nÃ­ full_scan
+	uint8_t full_flag;
 
 
 

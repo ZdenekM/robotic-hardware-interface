@@ -1,9 +1,11 @@
-// SensMod - kód modulu obsluhujícího senzory
-// autor: Zdenìk Materna, zdenek.materna@gmail.com
-// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// SensMod - kÃ³d modulu obsluhujÃ­cÃ­ho senzory
+// autor: ZdenÄ›k Materna, zdenek.materna@gmail.com
+// strÃ¡nky projektu: http://code.google.com/p/robotic-hardware-interface
 
-// TODO: timeout pøi odpojeném kompasu
-// TODO: opravit plné skenování - bez èekání, v pøerušení -> a bude domìøeno, poslat místo paketu fast typ full, tøeba
+
+// TODO: opravit plnÃ© skenovÃ¡nÃ­
+// TODO: obsluha SharpÅ¯ v pÅ™eruÅ¡enÃ­
+// TODO: obsluha kompasu v pÅ™eruÅ¡enÃ­
 
 #define F_CPU 16000000UL
 
@@ -50,16 +52,16 @@
 #define US_ECHO PORTB, 0
 #define RS485_SEND PORTD, 2
 
-// TODO: uloení adresy do EEPROM
+// TODO: uloÅ¾enÃ­ adresy do EEPROM
 // adresa na RS485
 #define ADDR 21
 
 
-// GLOBÁLNÍ PROMÌNNÉ
+// GLOBÃLNÃ PROMÄšNNÃ‰
 // stav komunikace
 static tcomm_state comm_state;
 
-// stav senzorù
+// stav senzorÅ¯
 static tmod_state mod_state;
 
 
@@ -79,20 +81,27 @@ void state_init(tmod_state *m) {
 
 	m->tact = 0;
 
+	m->full_flag = 0;
+
+	m->us_full_idx = 0;
+
 
 }
 
-// TODO: opravit timeout pro kompas
 uint8_t i2c_confWait() {
 
 	mod_state.comp_to = 0;
-	while((!(TWCR & 0x80)) && (mod_state.comp_to<10));
+	while(!(TWCR & 0x80) && (mod_state.comp_to<2));
 
-	return (mod_state.comp_to<10);
+	uint8_t pom = mod_state.comp_to;
+
+	mod_state.comp_to = 0;
+
+	return (pom<2);
 
 }
 
-// pøeètení registru z i2c zaøízení
+// pÅ™eÄtenÃ­ registru z i2c zaÅ™Ã­zenÃ­
 uint8_t i2c_read(uint8_t address, uint8_t reg)
 {
 
@@ -104,21 +113,21 @@ uint8_t i2c_read(uint8_t address, uint8_t reg)
 
 	   TWDR = address;                                               // load address of i2c device
 	   TWCR = 0x84;                                                  // transmit
-	   i2c_confWait();                                        // wait for confirmation of transmit
+	   if (!i2c_confWait()) return 0;                                        // wait for confirmation of transmit
 
 	   TWDR = reg;                                                   // send register number to read from
 	   TWCR = 0x84;                                                  // transmit
-	   i2c_confWait();                                        // wait for confirmation of transmit
+	   if (!i2c_confWait()) return 0;                                         // wait for confirmation of transmit
 
 	   TWCR = 0xA4;                                                  // send repeated start bit
-	   i2c_confWait();                                        // wait for confirmation of transmit
+	   if (!i2c_confWait()) return 0;                                         // wait for confirmation of transmit
 
 	   TWDR = address+1;                                             // transmit address of i2c device with readbit set
 	   TWCR = 0xC4;                                                  // clear transmit interupt flag
-	   i2c_confWait();                                        // wait for confirmation of transmit
+	   if (!i2c_confWait()) return 0;                                         // wait for confirmation of transmit
 
 	   TWCR = 0x84;                                                  // transmit, nack (last byte request)
-	   i2c_confWait();                                        // wait for confirmation of transmit
+	   if (!i2c_confWait()) return 0;                                         // wait for confirmation of transmit
 
 	   read_data = TWDR;                                             // and grab the target data
 	   TWCR = 0x94;                                                  // send a stop bit on i2c bus
@@ -128,22 +137,25 @@ uint8_t i2c_read(uint8_t address, uint8_t reg)
 
 }
 
-// vyslání znaku po i2c
-void i2c_transmit(uint8_t address, uint8_t reg, uint8_t data)
+// vyslÃ¡nÃ­ znaku po i2c
+/*void i2c_transmit(uint8_t address, uint8_t reg, uint8_t data)
 {
    TWCR = 0xA4;                                                  // send a start bit on i2c bus
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWDR = address;                                               // load address of i2c device
-   TWCR = 0x84;                                                  // transmit
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWDR = reg;
-   TWCR = 0x84;                                                  // transmit
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWDR = data;
-   TWCR = 0x84;                                                  // transmit
-   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
-   TWCR = 0x94;                                                  // stop bit
-}
+   //while(!(TWCR & 0x80));
+   if (i2c_confWait()) {		// wait for confirmation of transmit
+	   TWDR = address;                                               // load address of i2c device
+	   TWCR = 0x84;                                                  // transmit
+	   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+	   TWDR = reg;
+	   TWCR = 0x84;                                                  // transmit
+	   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+	   TWDR = data;
+	   TWCR = 0x84;                                                  // transmit
+	   while(!(TWCR & 0x80));                                        // wait for confirmation of transmit
+	   TWCR = 0x94;                                                  // stop bit
+
+   }
+}*/
 
 
 // inicializace io
@@ -159,9 +171,9 @@ static inline void ioinit (void) {
 	C_CLEARBIT(LED);
 
 
-	// øízení serva
+	// Å™Ã­zenÃ­ serva
 	TCCR2 = (1<<WGM21)|(1<<WGM20)|(1<<CS22)|(1<<CS21)|(1<<CS20)|(1<<COM21)|(0<<COM20); // fast pwm, 1024x, non-inverting mode
-	OCR2 = 22; // 22 - støední poloha serva, 35 - zcela vlevo, 9 - zcela vpravo, 15 - vpravo (45st), 28 - vlevo (45st)
+	OCR2 = 22; // 22 - stÅ™ednÃ­ poloha serva, 35 - zcela vlevo, 9 - zcela vpravo, 15 - vpravo (45st), 28 - vlevo (45st)
 
 
 	// RS485 9n2
@@ -176,19 +188,19 @@ static inline void ioinit (void) {
 	UCSRB = (1<<UCSZ2)|(1<<UDRE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
 	UCSRC = (1<<URSEL)|(1<<USBS)|(0<<UMSEL)|(0<<UPM1)|(0<<UPM0)|(1<<UCSZ1)|(1<<UCSZ0);
 
-	// ct0 - pro obecné pouití
-	TCCR0 = (1<<CS02)|(0<<CS01)|(1<<CS00);
+	// ct0 - pro obecnÃ© pouÅ¾itÃ­
+	TCCR0 = (1<<CS02)|(0<<CS01)|(0<<CS00);
 
 	// reference = internal, 2.56V
 	ADMUX = (1<<REFS1)|(1<<REFS0);
 
-	// povolení ADC, free running mode
+	// povolenÃ­ ADC, free running mode
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0)|(0<<ADFR)|(0<<ADSC)|(0<<ADIE);
 
-	// nastavení pøerušení od èasovaèù
+	// nastavenÃ­ pÅ™eruÅ¡enÃ­ od ÄasovaÄÅ¯
 	TIMSK = (1<<TICIE1)|(1<<TOIE1)|(1<<TOIE0);
 
-	// nastavení I2C
+	// nastavenÃ­ I2C
 	TWBR = 32; // 100khz i2c bus speed
 
 	// inicializace struktury
@@ -196,7 +208,7 @@ static inline void ioinit (void) {
 
 	state_init(&mod_state);
 
-	// povolení pøíjmu
+	// povolenÃ­ pÅ™Ã­jmu
 	C_CLEARBIT(RS485_SEND);
 
 	_delay_ms(2000);
@@ -209,43 +221,51 @@ static inline void ioinit (void) {
 // input capture
 ISR(TIMER1_CAPT_vect){
 
-	// nábìná hrana
+	// nÃ¡bÄ›Å¾nÃ¡ hrana
 	if (CHECKBIT(TCCR1B,ICES1)) {
 
-		// nastavení poèátku
+		// nastavenÃ­ poÄÃ¡tku
 		TCNT1 = 0;
 		ICR1 = 0;
 
-		// pøepnutí na detekci sestupné hrany
+		// pÅ™epnutÃ­ na detekci sestupnÃ© hrany
 		CLEARBIT(TCCR1B,ICES1);
 
 	} else {
 
-		// TODO: dodìlat kalibraci podle teploty
+		// TODO: dodÄ›lat kalibraci podle teploty
 
-		// filtrování
-		static uint16_t pICR1;
+		// uloÅ¾enÃ­ vÃ½sledku - v mm
+		if (mod_state.s_state == S_FAST_SCAN) {
 
-		// uloení vısledku - v mm
-		mod_state.us_fast = ((ICR1 + pICR1)/2)/12-10;
-		mod_state.us_comp = ICR1/12-10;
+			mod_state.us_fast = ICR1/12-10;
+			mod_state.s_state = S_DONE;
 
-		pICR1 = ICR1;
+		}
+		else mod_state.us_full[mod_state.us_full_idx] = ICR1/12-10;
 
-		// zastavení mìøení
+		// zastavenÃ­ mÄ›Å™enÃ­
 		CLEARBIT(TCCR1B,CS11);
 
 	}
 
 }
 
-// pøeteèení CT1 -> chyba mìøení us
+// pÅ™eteÄenÃ­ CT1 -> chyba mÄ›Å™enÃ­ us
 ISR(TIMER1_OVF_vect){
 
-	// v dosahu není ádná pøekáka (t>30ms)
-	mod_state.us_fast = 0;
+	// v dosahu nenÃ­ Å¾Ã¡dnÃ¡ pÅ™ekÃ¡Å¾ka (t>30ms)
+	if (mod_state.s_state==S_FAST_SCAN) {
 
-	// zastavení mìøení
+		mod_state.us_fast = 0;
+		mod_state.s_state = S_DONE;
+
+	}
+	else mod_state.us_full[mod_state.us_full_idx] = 0;
+
+
+
+	// zastavenÃ­ mÄ›Å™enÃ­
 	CLEARBIT(TCCR1B,CS11);
 
 }
@@ -257,18 +277,18 @@ ISR(USART_RXC_vect) {
 	//if (CHECKBIT(UCSRA,FE)) comm_state.frame_error++;
 	receivePacket(UDR,&comm_state);
 
-	// právì pøišla adresa
+	// prÃ¡vÄ› pÅ™iÅ¡la adresa
 	if (comm_state.receive_state==PR_LEN) {
 
-		// adresa sedí -> zrušit MPCM
+		// adresa sedÃ­ -> zruÅ¡it MPCM
 		if (comm_state.ip.addr==ADDR) CLEARBIT(UCSRA,MPCM);
 
-		// adresa nesedí -> nastavit pøíznak
+		// adresa nesedÃ­ -> nastavit pÅ™Ã­znak
 		else comm_state.receive_state = PR_READY;
 
 	}
 
-	// konec pøíjmu všeho
+	// konec pÅ™Ã­jmu vÅ¡eho
 	if (comm_state.receive_state==PR_PACKET_RECEIVED || comm_state.receive_state==PR_READY ||
 			comm_state.receive_state==PR_TIMEOUT) SETBIT(UCSRA,MPCM);
 
@@ -284,50 +304,52 @@ ISR(USART_UDRE_vect) {
 
 }
 
-// kompletní obsluha odeslání paketu
+// kompletnÃ­ obsluha odeslÃ¡nÃ­ paketu
 void sendPacketE() {
 
-	// zakázání pøíjmu
+	// zakÃ¡zÃ¡nÃ­ pÅ™Ã­jmu
 	CLEARBIT(UCSRB,RXEN);
 
-	// pøepnutí na odesílání
+	// pÅ™epnutÃ­ na odesÃ­lÃ¡nÃ­
 	C_SETBIT(RS485_SEND);
 
-	// odeslání prvního bytu
+	// odeslÃ¡nÃ­ prvnÃ­ho bytu
 	sendFirstByte(&UDR,&comm_state);
 
-	// povolení pøerušení UDRIE
+	// povolenÃ­ pÅ™eruÅ¡enÃ­ UDRIE
 	SETBIT(UCSRB,UDRIE);
 
-	// èekání na odeslání paketu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ paketu
 	while(comm_state.send_state != PS_READY);
 
-	// èekání na odeslání posledního bytu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ poslednÃ­ho bytu
 	while (!(UCSRA & (1<<TXC)));
 
-	// vynulování TXC - nastavením na jednièku
+	// vynulovÃ¡nÃ­ TXC - nastavenÃ­m na jedniÄku
 	SETBIT(UCSRA,TXC);
 
-	// pøepnutí na pøíjem
+	// pÅ™epnutÃ­ na pÅ™Ã­jem
 	C_CLEARBIT(RS485_SEND);
 
-	// povolení pøíjmu
+	// povolenÃ­ pÅ™Ã­jmu
 	SETBIT(UCSRB,RXEN);
 
 
 }
 
-// 15625 Hz
-// pøerušení pro obecné pouití
-ISR(TIMER0_OVF_vect){
+uint8_t testUS() {
 
-	// poèítadlo timeoutu pro pøíjem po RS485
-	receiveTimeout(&comm_state);
+	return CHECKBIT(TCCR1B,CS11);
 
-	// us mìøení nebylo spuštìno
-	if (!CHECKBIT(TCCR1B,CS11) && mod_state.s_state==S_FAST_SCAN) {
+}
 
-		// spuštìní mìøení
+// spuÅ¡tÄ›nÃ­ UZ mÄ›Å™enÃ­
+void startUS() {
+
+	// pokud UZ nebÄ›Å¾Ã­
+	if (!testUS()) {
+
+		// spuÅ¡tÄ›nÃ­ mÄ›Å™enÃ­
 		C_SETBIT(US_TRIG);
 		_delay_us(10);
 		C_CLEARBIT(US_TRIG);
@@ -335,110 +357,13 @@ ISR(TIMER0_OVF_vect){
 		// ICNC1 - noise canceler, ICES1 - edge select (1=rising), presc 8x
 		TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
 
-	}
-
-	static uint16_t poc = 0;
-
-	// 50 Hz
-	if (++poc==312) {
-
-		poc = 0;
-
-		if (mod_state.comp_to<255) mod_state.comp_to++;
-
 
 	}
-	// TODO: obsluha taktilních senzorù -> zkopírovat z MainMod
-
-
 
 
 }
 
-// mìøení sonarem mimo pøerušení
-void us_measure(uint8_t index) {
-
-	// spuštìní mìøení
-	C_SETBIT(US_TRIG);
-	_delay_us(10);
-	C_CLEARBIT(US_TRIG);
-
-	uint16_t pom;
-
-	TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
-
-	// èekání na dokonèení mìøení
-	while (CHECKBIT(TCCR1B,CS11));
-
-	// uloení vzd. do pom. prom.
-	pom = mod_state.us_comp;
-	mod_state.us_comp = 0;
-
-	TCCR1B = (1<<ICNC1)|(1<<ICES1)|(0<<CS12)|(1<<CS11)|(0<<CS10);
-
-	// èekání na dokonèení mìøení
-	while (CHECKBIT(TCCR1B,CS11));
-
-	// uloení vısledku do pole, filtrování prùmìrem dvou mìøení
-	mod_state.us_full[index] = (mod_state.us_comp + pom)/2;
-	mod_state.us_comp = 0;
-
-}
-
-void makeFullScan() {
-
-	//OCR2 = 22; // 22 - støední poloha serva, 35 - zcela vlevo, 9 - zcela vpravo, 15 - vpravo (45st), 28 - vlevo (45st)
-
-	mod_state.s_state = S_FULL_SCAN;
-
-	// èekání na dokonèení pøedchozího mìøení
-	while (CHECKBIT(TCCR1B,CS11));
-
-	// doba v ms pro servo na otoèení o 45st.
-	#define SDEL 150
-
-	OCR2 = 35; // 0st
-	_delay_ms(2*SDEL);
-	us_measure(0);
-
-	OCR2 = 28; // 45st
-	_delay_ms(SDEL);
-	us_measure(1);
-
-	OCR2 = 22; // 90st
-	_delay_ms(SDEL);
-	us_measure(2);
-
-	OCR2 = 15; // 135st
-	_delay_ms(SDEL);
-	us_measure(3);
-
-	OCR2 = 9; // 180st
-	_delay_ms(SDEL);
-	us_measure(4);
-
-	OCR2 = 22;
-	_delay_ms(2*SDEL);
-
-	mod_state.s_state = S_FAST_SCAN;
-
-
-}
-
-
-// spoèítá vzdálenost pøekáky z ADC
-uint16_t sharpDist(uint16_t adc) {
-
-	// pøepoèet - zjištìno regresní analızou
-	uint16_t pom = (125000/adc)-47-25;
-
-	// nula indikuje chybovı stav - pøekroèení rozsahu
-	if (pom < 900) return pom;
-	else return 0;
-
-}
-
-
+/*
 void getChanData(uint8_t index, uint8_t chan) {
 
 	static uint16_t sharp[4];
@@ -448,13 +373,13 @@ void getChanData(uint8_t index, uint8_t chan) {
 	SETBIT(ADCSRA,ADSC);
 	while (CHECKBIT(ADCSRA,ADSC));
 
-	// prùmìr se poèítá ze surovıch dat, ne ze vzdálenosti - pro vìtší pøesnost
+	// prÅ¯mÄ›r se poÄÃ­tÃ¡ ze surovÃ½ch dat, ne ze vzdÃ¡lenosti - pro vÄ›tÅ¡Ã­ pÅ™esnost
 	sharp[index] = (9*sharp[index] + 1*ADCW)/10;
 	mod_state.sharp[index] = sharpDist(sharp[index]);
 
 }
 
-// obsluha Sharpù
+// obsluha SharpÅ¯
 void getAnalogData() {
 
 	getChanData(0,6);
@@ -463,8 +388,283 @@ void getAnalogData() {
 	getChanData(3,1);
 
 }
+*/
 
-// pøeètení úhlu z kompasu
+// spoÄÃ­tÃ¡ vzdÃ¡lenost pÅ™ekÃ¡Å¾ky z ADC
+uint16_t sharpDist(uint16_t adc) {
+
+	// pÅ™epoÄet - zjiÅ¡tÄ›no regresnÃ­ analÃ½zou
+	uint16_t pom = (125000/adc)-47-25;
+
+	// nula indikuje chybovÃ½ stav - pÅ™ekroÄenÃ­ rozsahu
+	if (pom < 900) return pom;
+	else return 0;
+
+}
+
+// 245 Hz
+// pÅ™eruÅ¡enÃ­ pro obecnÃ© pouÅ¾itÃ­
+ISR(TIMER0_OVF_vect){
+
+	static uint8_t sharp_idx = 0;
+
+	switch (sharp_idx) {
+
+	case 0: {
+
+		// sharp 1 jeÅ¡tÄ› nebyl nastaven
+		if ((ADMUX & 0x0F) != 6) {
+
+			ADMUX &= 0xF0;
+			ADMUX |= 6;
+			SETBIT(ADCSRA,ADSC);
+
+		} else
+
+		// mÄ›Å™enÃ­ dokonÄeno
+		if (!CHECKBIT(ADCSRA,ADSC)) {
+
+			C_FLIPBIT(LED);
+
+			mod_state.sharp[0] = (9*mod_state.sharp[0] + 1*sharpDist(ADCW))/10;
+			sharp_idx++;
+
+		}
+
+
+	} break;
+
+	case 1: {
+
+		// sharp 2 jeÅ¡tÄ› nebyl nastaven
+		if ((ADMUX&0x0F) != 7) {
+
+			ADMUX &= 0xF0;
+			ADMUX |= 7;
+			SETBIT(ADCSRA,ADSC);
+
+		} else
+
+		if (!CHECKBIT(ADCSRA,ADSC)) {
+
+			mod_state.sharp[1] = (9*mod_state.sharp[1] + 1*sharpDist(ADCW))/10;
+			sharp_idx++;
+
+		}
+
+
+		} break;
+
+	case 2: {
+
+		// sharp 3 jeÅ¡tÄ› nebyl nastaven
+		if ((ADMUX&0x0F) != 0) {
+
+			ADMUX &= 0xF0;
+			ADMUX |= 0;
+			SETBIT(ADCSRA,ADSC);
+
+		} else
+
+		if (!CHECKBIT(ADCSRA,ADSC)) {
+
+			mod_state.sharp[2] = (9*mod_state.sharp[2] + 1*sharpDist(ADCW))/10;
+			sharp_idx++;
+
+		}
+
+
+		} break;
+
+	case 3: {
+
+		// sharp 4 jeÅ¡tÄ› nebyl nastaven
+		if ((ADMUX&0x0F) != 1) {
+
+			ADMUX &= 0xF0;
+			ADMUX |= 1;
+			SETBIT(ADCSRA,ADSC);
+
+		} else
+
+		if (!CHECKBIT(ADCSRA,ADSC)) {
+
+			mod_state.sharp[3] = (9*mod_state.sharp[3] + 1*sharpDist(ADCW))/10;
+			sharp_idx = 0;
+
+		}
+
+
+		} break;
+
+
+	}
+
+	// poÄÃ­tadlo timeoutu pro pÅ™Ã­jem po RS485
+	receiveTimeout(&comm_state);
+
+	// prÅ¯bÄ›Å¾nÃ© mÄ›Å™enÃ­
+	 if (mod_state.s_state==S_FAST_SCAN && !testUS()) startUS();
+
+	 // plnÃ© mÄ›Å™enÃ­
+	 else if (mod_state.s_state==S_FULL_SCAN) {
+
+		enum {A0,A45,A90,A135,A180};
+
+		static uint8_t state = A0;
+
+		#define MS150 80 // 37 = 150ms
+
+		static uint8_t zp=0;
+
+		switch(state) {
+
+		case A0: {
+
+			if (OCR2!=35) {
+
+				zp = MS150*3;
+				OCR2 = 35;
+
+			}
+
+			// mÄ›Å™enÃ­ skonÄilo -> UZ uÅ¾ nebÄ›Å¾Ã­
+			if (zp==0 && !testUS()) {
+
+				state = A45;
+				mod_state.us_full_idx = 1;
+
+			}
+
+			// zpoÅ¾dÄ›nÃ­, neÅ¾ se otoÄÃ­ servo
+			if (zp==0) startUS();
+			else zp--;
+
+
+		} break;
+
+		case A45: {
+
+
+			if (OCR2!=28) {
+
+				zp = MS150;
+				OCR2 = 28;
+
+			}
+
+			// mÄ›Å™enÃ­ skonÄilo
+			if (zp==0 && !testUS()) {
+
+				mod_state.us_full_idx = 2;
+				state = A90;
+
+			}
+
+			// zpoÅ¾dÄ›nÃ­, neÅ¾ se otoÄÃ­ servo
+			if (zp==0) startUS();
+			else zp--;
+
+
+		} break;
+
+		case A90: {
+
+			if (OCR2!=22) {
+
+				zp = MS150;
+				OCR2 = 22;
+				}
+
+			// mÄ›Å™enÃ­ skonÄilo
+			if (zp==0 && !testUS()) {
+
+				mod_state.us_full_idx = 3;
+				state = A135;
+
+			}
+
+			// zpoÅ¾dÄ›nÃ­, neÅ¾ se otoÄÃ­ servo
+			if (zp==0) startUS();
+			else zp--;
+
+
+		} break;
+
+		case A135: {
+
+			if (OCR2!=15) {
+
+				zp = MS150;
+				OCR2 = 15;
+
+			}
+
+			// mÄ›Å™enÃ­ skonÄilo
+			if (zp==0 && !testUS()) {
+
+				mod_state.us_full_idx = 4;
+				state = A180;
+
+			}
+
+			// zpoÅ¾dÄ›nÃ­, neÅ¾ se otoÄÃ­ servo
+			if (zp==0) startUS();
+			else zp--;
+
+
+
+		} break;
+
+		case A180: {
+
+
+			if (OCR2!=9) {
+
+				zp = MS150;
+				OCR2 = 9;
+			}
+
+			// mÄ›Å™enÃ­ skonÄilo
+			if (zp==0 && !testUS()) {
+
+				OCR2 = 22;
+				state = A0;
+				mod_state.us_full_idx = 0;
+				mod_state.full_flag = 1; // pÅ™Ã­znak dokonÄenÃ­ plnÃ©ho mÄ›Å™enÃ­
+				mod_state.s_state = S_DONE;
+
+			} // if
+
+			// zpoÅ¾dÄ›nÃ­, neÅ¾ se otoÄÃ­ servo
+			if (zp==0) startUS();
+			else zp--;
+
+
+
+		} break;
+
+
+
+		} // switch
+
+
+
+	}
+
+
+	if (mod_state.comp_to<255) mod_state.comp_to++;
+
+
+
+
+
+
+}
+
+
+
+// pÅ™eÄtenÃ­ Ãºhlu z kompasu
 void getAngle(tmod_state *m) {
 
 	uint16_t angle=0;
@@ -483,143 +683,142 @@ int main(void) {
 
 	sei();
 
-
 	while(1) {
 
-		// pøepnutí na pøíjem
+		// pÅ™epnutÃ­ na pÅ™Ã­jem
 		C_CLEARBIT(RS485_SEND);
 
-		// obsluha Sharpù
-		getAnalogData();
+		// mÄ›Å™enÃ­ ultrazvukem (v pÅ™eruÅ¡enÃ­)
+		if (mod_state.s_state == S_DONE) mod_state.s_state = S_FAST_SCAN;
 
-		getAngle(&mod_state);
+		// obsluha SharpÅ¯
+		//getAnalogData();
+
+		//getAngle(&mod_state);
 
 		comm_state.receive_state = PR_WAITING;
 
-		// èekání na pøíjem paketu
+		// ÄekÃ¡nÃ­ na pÅ™Ã­jem paketu
 		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
 
-		// pokud byl pøijat paket -> rozhodnutí podle typu paketu
+		// pokud byl pÅ™ijat paket -> rozhodnutÃ­ podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
-			// indikace pøíjmu paketu
-			C_FLIPBIT(LED);
+			// indikace pÅ™Ã­jmu paketu
+			//C_FLIPBIT(LED);
 
 			switch(comm_state.ip.packet_type) {
 
-			// poadavek na odeslání echo paketu
+			// poÅ¾adavek na odeslÃ¡nÃ­ echo paketu
 			case P_ECHO: {
 
-				// vytvoøení ECHO paketu
+				// vytvoÅ™enÃ­ ECHO paketu
 				makePacket(&comm_state.op,comm_state.ip.data,comm_state.ip.len,P_ECHO,0);
 
-				// odeslání paketu
+				// odeslÃ¡nÃ­ paketu
 				sendPacketE();
 
 			} break;
 
-			// rychlé mìøení - jízda rovnì
+			// rychlÃ© mÄ›Å™enÃ­ - jÃ­zda rovnÄ›
 			case P_SENS_FAST: {
-
-				uint8_t arr[13];
-
-				// ultrazvuk - rychlé mìøení
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[0] = mod_state.us_fast;
-				arr[1] = mod_state.us_fast>>8; }
-
-				// sharp 1 (levı pøední)
-				arr[2] = mod_state.sharp[0];
-				arr[3] = mod_state.sharp[0]>>8;
-
-				// sharp 2 (pravı pøední)
-				arr[4] = mod_state.sharp[1];
-				arr[5] = mod_state.sharp[1]>>8;
-
-				// sharp 3 (levı zadní)
-				arr[6] = mod_state.sharp[2];
-				arr[7] = mod_state.sharp[2]>>8;
-
-				// sharp 4 (pravı zadní)
-				arr[8] = mod_state.sharp[3];
-				arr[9] = mod_state.sharp[3]>>8;
-
-				// taktilní senzory
-				arr[10] = mod_state.tact;
-
-				// kompas
-				arr[11] = mod_state.comp;
-				arr[12] = mod_state.comp>>8;
-
-				makePacket(&comm_state.op,arr,13,P_SENS_FAST,0);
-
-				sendPacketE();
-
-			} break;
-
-			// úplné mìøení - na místì, s otáèením serva
-			case P_SENS_FULL: {
-
-				// funkce realizující plné mìøení, trvá cca 1,5 sekundy
-				makeFullScan();
 
 				uint8_t arr[19];
 
-				// us - 0st
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[0] = mod_state.us_full[0];
-				arr[1] = mod_state.us_full[0]>>8; }
+				if (!mod_state.full_flag) {
 
-				// us - 45st
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[2] = mod_state.us_full[1];
-				arr[3] = mod_state.us_full[1]>>8; }
+					// ultrazvuk - rychlÃ© mÄ›Å™enÃ­
+					ATOMIC_BLOCK(ATOMIC_FORCEON) {
+					arr[0] = mod_state.us_fast;
+					arr[1] = mod_state.us_fast>>8; }
 
-				// us - 90st
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[4] = mod_state.us_full[2];
-				arr[5] = mod_state.us_full[2]>>8; }
+					// sharp 1 (levÃ½ pÅ™ednÃ­)
+					arr[2] = mod_state.sharp[0];
+					arr[3] = mod_state.sharp[0]>>8;
 
-				// us - 135st
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[6] = mod_state.us_full[3];
-				arr[7] = mod_state.us_full[3]>>8; }
+					// sharp 2 (pravÃ½ pÅ™ednÃ­)
+					arr[4] = mod_state.sharp[1];
+					arr[5] = mod_state.sharp[1]>>8;
 
-				// us - 180st
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[8] = mod_state.us_full[4];
-				arr[9] = mod_state.us_full[4]>>8; }
+					// sharp 3 (levÃ½ zadnÃ­)
+					arr[6] = mod_state.sharp[2];
+					arr[7] = mod_state.sharp[2]>>8;
+
+					// sharp 4 (pravÃ½ zadnÃ­)
+					arr[8] = mod_state.sharp[3];
+					arr[9] = mod_state.sharp[3]>>8;
+
+					// taktilnÃ­ senzory
+					arr[10] = mod_state.tact;
+
+					// kompas
+					arr[11] = mod_state.comp;
+					arr[12] = mod_state.comp>>8;
+
+					makePacket(&comm_state.op,arr,13,P_SENS_FAST,0);
+
+				} else {
+
+					// us - 0st
+					arr[0] = mod_state.us_full[0];
+					arr[1] = mod_state.us_full[0]>>8;
+
+					// us - 45st
+					arr[2] = mod_state.us_full[1];
+					arr[3] = mod_state.us_full[1]>>8;
+
+					// us - 90st
+					arr[4] = mod_state.us_full[2];
+					arr[5] = mod_state.us_full[2]>>8;
+
+					// us - 135st
+					arr[6] = mod_state.us_full[3];
+					arr[7] = mod_state.us_full[3]>>8;
+
+					// us - 180st
+					arr[8] = mod_state.us_full[4];
+					arr[9] = mod_state.us_full[4]>>8;
 
 
-				// sharp 1 (levı pøední)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[10] = mod_state.sharp[0];
-				arr[11] = mod_state.sharp[0]>>8; }
+					// sharp 1 (levÃ½ pÅ™ednÃ­)
+					arr[10] = mod_state.sharp[0];
+					arr[11] = mod_state.sharp[0]>>8;
 
-				// sharp 2 (pravı pøední)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[12] = mod_state.sharp[1];
-				arr[13] = mod_state.sharp[1]>>8; }
+					// sharp 2 (pravÃ½ pÅ™ednÃ­)
+					arr[12] = mod_state.sharp[1];
+					arr[13] = mod_state.sharp[1]>>8;
 
-				// sharp 3 (levı zadní)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[14] = mod_state.sharp[2];
-				arr[15] = mod_state.sharp[2]>>8; }
+					// sharp 3 (levÃ½ zadnÃ­)
+					arr[14] = mod_state.sharp[2];
+					arr[15] = mod_state.sharp[2]>>8;
 
-				// sharp 4 (pravı zadní)
-				ATOMIC_BLOCK(ATOMIC_FORCEON) {
-				arr[16] = mod_state.sharp[3];
-				arr[17] = mod_state.sharp[3]>>8; }
+					// sharp 4 (pravÃ½ zadnÃ­)
+					arr[16] = mod_state.sharp[3];
+					arr[17] = mod_state.sharp[3]>>8;
 
-				// taktilní senzory
-				arr[18] = mod_state.tact;
+					// taktilnÃ­ senzory
+					arr[18] = mod_state.tact;
 
-				makePacket(&comm_state.op,arr,19,P_SENS_FULL,0);
+					makePacket(&comm_state.op,arr,19,P_SENS_FULL,0);
+
+					mod_state.full_flag = 0;
+
+				}
 
 				sendPacketE();
 
 
+			} break;
+
+			// ÃºplnÃ© mÄ›Å™enÃ­ - na mÃ­stÄ›, s otÃ¡ÄenÃ­m serva
+			case P_SENS_FULL: {
+
+				// poÄkat na dokonÄenÃ­ mÄ›Å™enÃ­
+				while(mod_state.s_state!=S_DONE);
+
+				// spustit plnÃ© mÄ›Å™enÃ­
+				mod_state.s_state = S_FULL_SCAN;
 
 			} break;
 
