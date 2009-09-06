@@ -1,9 +1,9 @@
-// MotorControl - kód pro modul øídicí pohon
-// autor: Zdenìk Materna, zdenek.materna@gmail.com
-// stránky projektu: http://code.google.com/p/robotic-hardware-interface
+// MotorControl - kÃ³d pro modul Å™Ã­dicÃ­ pohon
+// autor: ZdenÄ›k Materna, zdenek.materna@gmail.com
+// strÃ¡nky projektu: http://code.google.com/p/robotic-hardware-interface
 
-// TODO: mìøení proudu
-// TODO: mìøení teploty motoru
+// TODO: mÄ›Å™enÃ­ proudu
+// TODO: mÄ›Å™enÃ­ teploty motoru
 
 #define F_CPU 16000000UL  // 16 MHz
 
@@ -65,11 +65,11 @@
 
 #define RS485_SEND PORTB, 0
 
-// pøíjem / vysílání
+// pÅ™Ã­jem / vysÃ­lÃ¡nÃ­
 #define RS485_OUT (C_SETBIT(RS485_SEND))
 #define RS485_IN (C_CLEARBIT(RS485_SEND))
 
-// TODO: uloení adresy do EEPROM
+// TODO: uloÅ¾enÃ­ adresy do EEPROM
 // adresa na RS485
 #define ADDR 11
 
@@ -86,17 +86,17 @@ volatile static uint8_t ena_st=0;
 
 
 
-// GLOBÁLNÍ PROMÌNNÉ
+// GLOBÃLNÃ PROMÄšNNÃ‰
 // stav komunikace
 static tcomm_state comm_state;
 
 static tmotor motor1;
 static tmotor motor2;
 
-// poèítadlo pro timeout komunikace -> zastavení
+// poÄÃ­tadlo pro timeout komunikace -> zastavenÃ­
 static uint8_t comm_to = 0;
 
-// parametry PID uloené v EEPROM
+// parametry PID uloÅ¾enÃ© v EEPROM
 uint8_t EEMEM eP=105,eI=15,eD=15;
 
 
@@ -109,7 +109,7 @@ static inline void motor_init(tmotor *m) {
 	m->last_speed = 0;
 	m->areq_speed = 0;
 	m->penc = 0;
-	m->enc_count = 0;
+	//m->enc_count = 0;
 	m->sum = 0;
 	m->act = 0;
 
@@ -126,7 +126,7 @@ static inline void motor_init(tmotor *m) {
 
 }
 
-// motor 2 dopøedu
+// motor 2 dopÅ™edu
 void motor1_forwd(void) {
 
 	C_SETBIT(INPUT3);
@@ -158,7 +158,7 @@ void motor1_free(void) {
 
 }
 
-// motor 1 dopøedu
+// motor 1 dopÅ™edu
 void motor2_forwd(void) {
 
 	C_SETBIT(INPUT1);
@@ -218,7 +218,7 @@ static inline void ioinit (void) {
 	UCSRB = (1<<UCSZ2)|(0<<UDRE)|(1<<TXEN)|(1<<RXEN)|(1<<RXCIE);
 	UCSRC = (1<<URSEL)|(1<<USBS)|(0<<UMSEL)|(0<<UPM1)|(0<<UPM0)|(1<<UCSZ1)|(1<<UCSZ0);
 
-	// ct2, 40kHz - ètení enkodérù, CTC mode
+	// ct2, 40kHz - ÄtenÃ­ enkodÃ©rÅ¯, CTC mode
 	// 199 - 40kHz N=1
 	// 32 - 30kHz N=8
 	// 49 - 20kHz N=8
@@ -242,7 +242,7 @@ static inline void ioinit (void) {
 	// reference = internal, 2.56V
 	ADMUX = (1<<REFS1)|(1<<REFS0);
 
-	// povolení ADC
+	// povolenÃ­ ADC
 	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 
 	C_SETBIT(INPUT1);
@@ -270,7 +270,7 @@ static inline void ioinit (void) {
 	// inicializace struktury
 	comm_state_init(&comm_state);
 
-	// povolení pøíjmu
+	// povolenÃ­ pÅ™Ã­jmu
 	C_CLEARBIT(RS485_SEND);
 
 	_delay_ms(2000);
@@ -280,34 +280,36 @@ static inline void ioinit (void) {
 
 }
 
-// volá se z pøerušení
-// PID regulátor
+// volÃ¡ se z pÅ™eruÅ¡enÃ­
+// PID regulÃ¡tor
 uint16_t motor_reg(tmotor *m) {
 
-	// vıpoèet aktuální rychlosti 50/33 = 1.5
-	m->act_speed = m->enc + (m->enc/2);
+	// vÃ½poÄet aktuÃ¡lnÃ­ rychlosti 50/33 = 1.5
+	//m->act_speed = m->enc + (m->enc/2);
 
-	// pomocné poèítadlo ujetıch impulzù
+	m->act_speed = (m->enc*9)/10;
+
+	// pomocnÃ© poÄÃ­tadlo ujetÃ½ch impulzÅ¯
 	m->penc += m->enc;
 
-	// TODO: vyzkoušet
-	// aktualizovat ujetou vzdálenost
-	if (labs(m->penc)>=33) {
+	// TODO: vyzkouÅ¡et
+	// aktualizovat ujetou vzdÃ¡lenost
+	if (labs(m->penc)>=55) {
 
-		// pøipoèítat vzdálenost
-		m->distance += m->penc/33;
+		// pÅ™ipoÄÃ­tat vzdÃ¡lenost
+		m->distance += m->penc/55;
 
-		// uloit zbytek po dìlení
-		m->penc = m->penc%33;
+		// uloÅ¾it zbytek po dÄ›lenÃ­
+		m->penc = m->penc%55;
 
 	}
 
 
-	// vynulování poèítadla impulzù
+	// vynulovÃ¡nÃ­ poÄÃ­tadla impulzÅ¯
 	m->enc = 0;
 
-	// rampa pro ádanou rychlost -> nejdøíve se pøidává/ubírá po deseti, pak po jedné
-	#define ACC 5 // zrychlení z 0 na 250 za cca 1s
+	// rampa pro Å¾Ã¡danou rychlost -> nejdÅ™Ã­ve se pÅ™idÃ¡vÃ¡/ubÃ­rÃ¡ po deseti, pak po jednÃ©
+	#define ACC 5 // zrychlenÃ­ z 0 na 250 za cca 1s
 	if (m->req_speed > (m->areq_speed+ACC)) m->areq_speed+=ACC;
 	else if (m->req_speed > m->areq_speed) m->areq_speed++;
 
@@ -320,30 +322,30 @@ uint16_t motor_reg(tmotor *m) {
 			// motor normalne bezi - PID regulace
 			case MOT_RUNNING: {
 
-				// akèní zásah, odchylka
+				// akÄnÃ­ zÃ¡sah, odchylka
 				int16_t e = m->areq_speed - m->act_speed;
 
-				// vıpoèet akèního zásahu
+				// vÃ½poÄet akÄnÃ­ho zÃ¡sahu
 				// akce = P*odchylka + I*suma - D*(speed - last_speed)
 				m->act = (m->P)*e + (m->I)*(m->sum) - (m->D)*(m->act_speed - m->last_speed);
 
-				// urèení smìru otáèení
+				// urÄenÃ­ smÄ›ru otÃ¡ÄenÃ­
 				if (m->act>0) m->forwd();
 				else if (m->act < 0) m->backwd();
 				else m->free();
 
-				// pøevedení akèního zásahu na abs. hodnotu
+				// pÅ™evedenÃ­ akÄnÃ­ho zÃ¡sahu na abs. hodnotu
 				m->act = labs(m->act)/10;
 
 				// omezeni max. vel. akcniho zas.
-				// vıpoèet sumy (suma = suma + odchylka)
+				// vÃ½poÄet sumy (suma = suma + odchylka)
 				if (m->act>8000) m->act = 8000;
-				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade všechny meze
+				else m->sum += e; // jen pokud je act < MAX -> aby suma nerostla nade vÅ¡echny meze
 
 				// ulozeni aktualni rychlosti
 				m->last_speed = m->act_speed;
 
-				// vıpoèet zátìe v %
+				// vÃ½poÄet zÃ¡tÄ›Å¾e v %
 				m->load = m->act/80;
 
 				return (uint16_t)m->act;
@@ -396,15 +398,15 @@ ISR(TIMER1_OVF_vect) {
 
 		p=0;
 
-		// volani regulátorù
+		// volani regulÃ¡torÅ¯
 		OCR1B = motor_reg(&motor2);
 		OCR1A = motor_reg(&motor1);
 
-		// poèítadlo timeoutu pro pøíjem po RS485
+		// poÄÃ­tadlo timeoutu pro pÅ™Ã­jem po RS485
 		receiveTimeout(&comm_state);
 
 
-		// zastavení v pøípadì vıpadku komunikace na 1s
+		// zastavenÃ­ v pÅ™Ã­padÄ› vÃ½padku komunikace na 1s
 		if (comm_to==50) {
 
 			motor1.req_speed = 0;
@@ -416,8 +418,8 @@ ISR(TIMER1_OVF_vect) {
 
 }
 
-// volá se z pøerušení
-// ètení enkoderù
+// volÃ¡ se z pÅ™eruÅ¡enÃ­
+// ÄtenÃ­ enkoderÅ¯
 void read_enc(void) {
 
 	// vzestupna hrana - EN2A
@@ -494,7 +496,7 @@ void read_enc(void) {
 }
 
 
-// ètení stavu enkodérù
+// ÄtenÃ­ stavu enkodÃ©rÅ¯
 ISR(TIMER2_COMP_vect) {
 
 	read_enc();
@@ -507,18 +509,18 @@ ISR(USART_RXC_vect) {
 	//if (CHECKBIT(UCSRA,FE)) comm_state.frame_error++;
 	receivePacket(UDR,&comm_state);
 
-	// právì pøišla adresa
+	// prÃ¡vÄ› pÅ™iÅ¡la adresa
 	if (comm_state.receive_state==PR_LEN) {
 
-		// adresa sedí -> zrušit MPCM
+		// adresa sedÃ­ -> zruÅ¡it MPCM
 		if (comm_state.ip.addr==ADDR) CLEARBIT(UCSRA,MPCM);
 
-		// adresa nesedí -> nastavit pøíznak
+		// adresa nesedÃ­ -> nastavit pÅ™Ã­znak
 		else comm_state.receive_state = PR_READY;
 
 	}
 
-	// konec pøíjmu všeho
+	// konec pÅ™Ã­jmu vÅ¡eho
 	if (comm_state.receive_state==PR_PACKET_RECEIVED || comm_state.receive_state==PR_READY ||
 			comm_state.receive_state==PR_TIMEOUT) SETBIT(UCSRA,MPCM);
 
@@ -534,114 +536,114 @@ ISR(USART_UDRE_vect) {
 
 }
 
-// volá se z main
-// vytvoøení paketu s info o stavu motorù
+// volÃ¡ se z main
+// vytvoÅ™enÃ­ paketu s info o stavu motorÅ¯
 void makeMotorInfo() {
 
-	uint8_t data[22]; // 22 bytù
+	uint8_t data[22]; // 22 bytÅ¯
 
 
 	// ********************************************
-	// poadovaná rychlost - stejná pro oba motory
+	// poÅ¾adovanÃ¡ rychlost - stejnÃ¡ pro oba motory
 	data[0] = motor1.req_speed;
 	data[1] = motor1.req_speed>>8;
 
-	// aktuální rychlost pøedního motoru
+	// aktuÃ¡lnÃ­ rychlost pÅ™ednÃ­ho motoru
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[2] = motor1.act_speed;
 	data[3] = motor1.act_speed>>8; }
 
-	// stav pøedního motoru
+	// stav pÅ™ednÃ­ho motoru
 	data[4] = motor1.state;
 
-	// proud pøedním motorem
+	// proud pÅ™ednÃ­m motorem
 	data[5] = motor1.current;
 
-	// teplota pøedního motoru
+	// teplota pÅ™ednÃ­ho motoru
 	data[6] = motor1.temp;
 
-	// ujetá vzdálenost
+	// ujetÃ¡ vzdÃ¡lenost
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[7] = (int32_t)motor1.distance;
 	data[8] = (int32_t)motor1.distance>>8;
 	data[9] = (int32_t)motor1.distance>>16;
 	data[10] = (int32_t)motor1.distance>>24; }
 
-	// vıkon pøedního motoru
+	// vÃ½kon pÅ™ednÃ­ho motoru
 	data[11] =  motor1.load;
 
 
 	// ********************************************
-	// aktuální rychlost zadního motoru
+	// aktuÃ¡lnÃ­ rychlost zadnÃ­ho motoru
 	data[12] = motor2.act_speed;
 	data[13] = motor2.act_speed>>8;
 
-	// stav zadního motoru
+	// stav zadnÃ­ho motoru
 	data[14] = motor2.state;
 
-	// proud zadním motorem
+	// proud zadnÃ­m motorem
 	data[15] = motor2.current;
 
-	// teplota zadního motoru
+	// teplota zadnÃ­ho motoru
 	data[16] = motor2.temp;
 
-	// ujetá vzdálenost
+	// ujetÃ¡ vzdÃ¡lenost
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	data[17] = (int32_t)motor2.distance;
 	data[18] = (int32_t)motor2.distance>>8;
 	data[19] = (int32_t)motor2.distance>>16;
 	data[20] = (int32_t)motor2.distance>>24; }
 
-	// vıkon zadního motoru
+	// vÃ½kon zadnÃ­ho motoru
 	data[21] = motor2.load;
 
 	makePacket(&comm_state.op,data,22,P_MOTOR_INFO,0);
 
 }
 
-// kompletní obsluha odeslání paketu
+// kompletnÃ­ obsluha odeslÃ¡nÃ­ paketu
 void sendPacketE() {
 
-	// zakázání pøíjmu
+	// zakÃ¡zÃ¡nÃ­ pÅ™Ã­jmu
 	CLEARBIT(UCSRB,RXEN);
 
-	// pøepnutí na odesílání
+	// pÅ™epnutÃ­ na odesÃ­lÃ¡nÃ­
 	C_SETBIT(RS485_SEND);
 
-	// odeslání prvního bytu
+	// odeslÃ¡nÃ­ prvnÃ­ho bytu
 	sendFirstByte(&UDR,&comm_state);
 
-	// povolení pøerušení UDRIE
+	// povolenÃ­ pÅ™eruÅ¡enÃ­ UDRIE
 	SETBIT(UCSRB,UDRIE);
 
-	// èekání na odeslání paketu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ paketu
 	while(comm_state.send_state != PS_READY);
 
-	// èekání na odeslání posledního bytu
+	// ÄekÃ¡nÃ­ na odeslÃ¡nÃ­ poslednÃ­ho bytu
 	while (!(UCSRA & (1<<TXC)));
 
-	// vynulování TXC - nastavením na jednièku
+	// vynulovÃ¡nÃ­ TXC - nastavenÃ­m na jedniÄku
 	SETBIT(UCSRA,TXC);
 
-	// pøepnutí na pøíjem
+	// pÅ™epnutÃ­ na pÅ™Ã­jem
 	C_CLEARBIT(RS485_SEND);
 
-	// povolení pøíjmu
+	// povolenÃ­ pÅ™Ã­jmu
 	SETBIT(UCSRB,RXEN);
 
 
 }
 
-// TODO: otestovat mìøení proudu
-// volá se z main
-// mìøení proudu motory
+// TODO: otestovat mÄ›Å™enÃ­ proudu
+// volÃ¡ se z main
+// mÄ›Å™enÃ­ proudu motory
 void motor_current() {
 
 
-	// spustí pøevod
+	// spustÃ­ pÅ™evod
 	SETBIT(ADCSRA,ADSC);
 
-	// èeká na dokonèení pøevodu
+	// ÄekÃ¡ na dokonÄenÃ­ pÅ™evodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
 	motor2.current = (95*motor2.current + 5*((ADCW*10)/64))/100;
@@ -649,10 +651,10 @@ void motor_current() {
 
 	ADMUX++;
 
-	// spustí pøevod
+	// spustÃ­ pÅ™evod
 	SETBIT(ADCSRA,ADSC);
 
-	// èeká na dokonèení pøevodu
+	// ÄekÃ¡ na dokonÄenÃ­ pÅ™evodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
 	motor1.current = (95*motor1.current + 5*((ADCW*10)/64)) / 100;
@@ -674,43 +676,43 @@ int main(void) {
 	while(1) {
 
 
-		// mìøení proudu motory
+		// mÄ›Å™enÃ­ proudu motory
 		motor_current();
 
-		// pøepnutí na pøíjem
+		// pÅ™epnutÃ­ na pÅ™Ã­jem
 		C_CLEARBIT(RS485_SEND);
 
 
 		comm_state.receive_state = PR_WAITING;
 
-		// èekání na pøíjem paketu
+		// ÄekÃ¡nÃ­ na pÅ™Ã­jem paketu
 		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
 
-		// pokud byl pøijat paket -> rozhodnutí podle typu paketu
+		// pokud byl pÅ™ijat paket -> rozhodnutÃ­ podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
-			// indikace pøíjmu paketu
+			// indikace pÅ™Ã­jmu paketu
 			C_FLIPBIT(LED);
 
-			// vynulování poèítadla pro timeout komunikace -> zastavení motorù
+			// vynulovÃ¡nÃ­ poÄÃ­tadla pro timeout komunikace -> zastavenÃ­ motorÅ¯
 			comm_to = 0;
 
 			switch(comm_state.ip.packet_type) {
 
-			// poadavek na odeslání echo paketu
+			// poÅ¾adavek na odeslÃ¡nÃ­ echo paketu
 			case P_ECHO: {
 
-				// vytvoøení ECHO paketu
+				// vytvoÅ™enÃ­ ECHO paketu
 				makePacket(&comm_state.op,comm_state.ip.data,comm_state.ip.len,P_ECHO,0);
 
-				// odeslání paketu
+				// odeslÃ¡nÃ­ paketu
 				sendPacketE();
 
 			} break;
 
 
-			// pøíjem poadované rychlosti
+			// pÅ™Ã­jem poÅ¾adovanÃ© rychlosti
 			case P_MOTOR_COMM: {
 
 				int16_t sp = 0;
@@ -730,19 +732,19 @@ int main(void) {
 
 			} break;
 
-			// poadavek na odeslání informací z motorù
+			// poÅ¾adavek na odeslÃ¡nÃ­ informacÃ­ z motorÅ¯
 			case P_MOTOR_INFO: {
 
-				// vytvoøení paketu
+				// vytvoÅ™enÃ­ paketu
 				makeMotorInfo();
 
-				// odeslání paketu
+				// odeslÃ¡nÃ­ paketu
 				sendPacketE();
 
 			} break;
 
 
-			// nastavení konstant PID regulátoru
+			// nastavenÃ­ konstant PID regulÃ¡toru
 			case P_MOTOR_SETPID: {
 
 				ATOMIC_BLOCK(ATOMIC_FORCEON) {
@@ -756,7 +758,7 @@ int main(void) {
 				motor2.D = comm_state.ip.data[2];
 				}
 
-				// zápis do EEPROM
+				// zÃ¡pis do EEPROM
 				eeprom_write_byte(&eP,motor1.P);
 				eeprom_write_byte(&eI,motor1.I);
 				eeprom_write_byte(&eD,motor1.D);
@@ -764,7 +766,7 @@ int main(void) {
 
 			} break;
 
-			// odeslání parametrù regulátoru
+			// odeslÃ¡nÃ­ parametrÅ¯ regulÃ¡toru
 			case P_MOTOR_GETPID: {
 
 				uint8_t arr[3];
@@ -775,7 +777,7 @@ int main(void) {
 
 				makePacket(&comm_state.op,arr,3,P_MOTOR_GETPID,0);
 
-				// odeslání paketu
+				// odeslÃ¡nÃ­ paketu
 				sendPacketE();
 
 

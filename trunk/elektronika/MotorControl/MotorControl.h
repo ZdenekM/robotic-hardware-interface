@@ -3,19 +3,24 @@
 
 #include "../CommLib/comm.h"
 
-// maximální rychlost (mm/s)
+// maximÃ¡lnÃ­ rychlost (mm/s)
 #define V_MAX 250
 
-// délka jednoho ètvrt pulzu
+// dÃ©lka jednoho Ätvrt pulzu
 #define TICK_LEN 0.0300917
 
 // prumer kola 115 mm
 // obvod kola 361,1 mm
-// max rychlost (pri 150 RPM) 900 mm/s
-// 1 ot kola == 12.000 imp
-// 1 imp. == 0,0300917 mm
-// 1 mm == 33,23 imp
-// 150 RPM == 600imp za 1/50s
+
+// PREVOD 1:30
+// 1 ot kola = 12.000 imp
+// 1 imp. = 0,0300917 mm
+// 1 mm = 33,23 imp
+
+// PREVOD 1:50
+// 1 ot kola = 20.000 imp
+// 1 imp. = 0.018055 mm
+// 1 mm = 55,38632 imp
 
 
 
@@ -23,28 +28,28 @@ typedef enum {MOT_RUNNING, MOT_BRAKE, MOT_STOP, MOT_FREE, MOT_OVERCURRENT, MOT_O
 
 typedef struct {
 
-	// akèní zásah (hodnota OCR1x)
+	// akÄnÃ­ zÃ¡sah (hodnota OCR1x)
 	int32_t act;
 
-	// poèet tikù enkodéru od minule
+	// poÄet tikÅ¯ enkodÃ©ru od minule
 	int16_t enc;
 
-	// pomocné poèítadlo impulzù pro vıpoèet ujeté vzd.
+	// pomocnÃ© poÄÃ­tadlo impulzÅ¯ pro vÃ½poÄet ujetÃ© vzd.
 	int32_t penc;
 
-	// ádaná rychlost
+	// Å¾Ã¡danÃ¡ rychlost
 	int16_t req_speed;
 
-	// ádaná rychlost - s rampou
+	// Å¾Ã¡danÃ¡ rychlost - s rampou
 	int16_t areq_speed;
 
-	// aktuální skuteèná rychlost
+	// aktuÃ¡lnÃ­ skuteÄnÃ¡ rychlost
 	int16_t act_speed;
 
-	// ujetá vzdálenost (v mm)
+	// ujetÃ¡ vzdÃ¡lenost (v mm)
 	int32_t distance;
 
-	// minulá skuteèná rychlost
+	// minulÃ¡ skuteÄnÃ¡ rychlost
 	int16_t last_speed;
 
 	// suma odchylky
@@ -62,7 +67,7 @@ typedef struct {
 	// teplota motoru
 	uint8_t temp;
 
-	// zátì (v %) - prùmìr
+	// zÃ¡tÄ›Å¾ (v %) - prÅ¯mÄ›r
 	uint8_t load;
 
 	// ukazatele na funkce ovladajici smer otaceni atd.
@@ -76,7 +81,7 @@ typedef struct {
 // inicializace struktury typu tmotor
 static inline void motor_init(tmotor *m);
 
-// motor 2 dopøedu
+// motor 2 dopÅ™edu
 extern void motor2_forwd(void);
 
 // motor 2 dozadu
@@ -85,17 +90,17 @@ extern void motor2_backwd(void);
 // motor 2 brzda
 extern void motor2_stop(void);
 
-// motor 2 volnobìh
+// motor 2 volnobÄ›h
 extern void motor2_free(void);
 
 // inicializace modulu
 static inline void ioinit (void);
 
 
-// funkce implementující PID regulaci
+// funkce implementujÃ­cÃ­ PID regulaci
 extern uint16_t motor_reg(tmotor *m);
 
-// ètení enkodérù
+// ÄtenÃ­ enkodÃ©rÅ¯
 extern void read_enc(void);
 
 
