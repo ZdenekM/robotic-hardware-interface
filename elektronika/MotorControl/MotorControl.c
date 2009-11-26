@@ -2,7 +2,9 @@
 // autor: Zdeněk Materna, zdenek.materna@gmail.com
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
-// TODO: měření proudu
+// TODO: měření proudu - nefunguje
+// TODO: obsluha měření proudu v přerušení
+// TODO: nečekat na paket ve smyčce
 // TODO: měření teploty motoru
 
 #define F_CPU 16000000UL  // 16 MHz
@@ -292,7 +294,6 @@ uint16_t motor_reg(tmotor *m) {
 	// pomocné počítadlo ujetých impulzů
 	m->penc += m->enc;
 
-	// TODO: vyzkoušet
 	// aktualizovat ujetou vzdálenost
 	if (labs(m->penc)>=55) {
 
@@ -727,6 +728,16 @@ int main(void) {
 					ATOMIC_BLOCK(ATOMIC_FORCEON) {
 					motor1.req_speed = sp;
 					motor2.req_speed = sp;
+					}
+
+			} break;
+
+			// příjem požadované rychlosti
+			case P_MOTOR_CLEAR_SUM: {
+
+				ATOMIC_BLOCK(ATOMIC_FORCEON) {
+				motor1.sum = 0;
+				motor2.sum = 0;
 					}
 
 
