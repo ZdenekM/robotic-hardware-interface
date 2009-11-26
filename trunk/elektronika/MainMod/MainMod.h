@@ -30,6 +30,7 @@
 #include "lib/comm.h"
 #include "lib/modr.h"
 #include "lib/sens.h"
+#include "lib/pow.h"
 #include "lib/macros.h"
 #include "../CommLib/comm.h"
 
@@ -73,6 +74,9 @@ typedef struct {
 	// stav joysticku
 	uint16_t joy_x, joy_y;
 
+	// offset joysticku
+	int16_t joy_x_offset,joy_y_offset;
+
 	// stav tlačítek - po přečtení vynulovat
 	volatile uint8_t buttons;
 
@@ -93,6 +97,9 @@ typedef struct {
 	// pole pro uložení full scan dat z ultrazvuku (0, 45, 90, 135, 180)
 	uint16_t us_full[5];
 
+	// příznak nového plného měření
+	uint8_t new_full_flag;
+
 	// prom. pro uložení rychlého scanování (za jízdy)
 	uint16_t us_fast;
 
@@ -102,6 +109,25 @@ typedef struct {
 	uint16_t comp;
 
 } tsens;
+
+typedef struct {
+
+	// celkové napětí baterií
+	uint8_t ubatt;
+
+	// napětí baterie 1
+	uint8_t ubatt1;
+
+	// napětí baterie 2
+	uint8_t ubatt2;
+
+	// napětí pro moduly
+	uint8_t umod;
+
+	// napětí pro motory
+	uint8_t umot;
+
+} tpower_state;
 
 typedef enum {R_READY,R_RUNNING,R_OBST} treg;
 
@@ -129,16 +155,19 @@ typedef struct {
 typedef struct {
 
 	// suma regulátoru
-	int32_t sum;
+	//int32_t sum;
 
 	// parametry regulatoru
-	uint16_t P, I, D;
+	uint16_t P;//, I, D;
 
 	// regulační odchylka
 	int16_t e;
 
+	// vypočtená rychlost otáčení
+	int16_t speed;
+
 	// poslední hodnota
-	int32_t last_angle;
+	int16_t last_e;
 
 	// počáteční azimut
 	int16_t start_angle;
@@ -150,6 +179,26 @@ typedef struct {
 	uint8_t state;
 
 } tangle_reg;
+
+
+typedef struct {
+
+	enum {STRAIGHT, BRAKING, WFFS,TURNING};
+
+	// stav automatu
+	uint8_t state;
+
+	// počítadlo pro vyrušení falešných poplachů
+	uint8_t obsc;
+
+	// vyhlédnutá vzdálenost
+	uint16_t dist;
+
+	// timeout pro otáčení
+	uint8_t turn_to;
+
+
+} trand_ride;
 
 
 
