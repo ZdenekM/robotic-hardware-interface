@@ -2,10 +2,6 @@
 
 PC posílá povely k jízdě přímo (požadovaná vzdálenost), nebo povel k otočení (požadovaný úhel otočení). Modul MainMod potom zajišťuje provedení těchto příkazů (kontroluje ujetou vzdálenost atd.).
 
-=== Náměty na vylepšení ===
-
-  * PC by v paketu mohl posílat celé sekvence povelů
-  * otočení o libovolný úhel
 
 === Volná jízda ===
 
