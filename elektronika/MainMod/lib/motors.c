@@ -199,6 +199,24 @@ void setMotorSpeed(uint8_t addr, int16_t speed) {
 
 }
 
+// vynuluje integrátory regulátorů motorů
+void clearRegSum() {
+
+	// levé motory
+	makePacket(&comm_state.op,NULL,0,P_MOTOR_CLEAR_SUM,10);
+
+	sendPacketE();
+
+	// pravé motory
+	makePacket(&comm_state.op,NULL,0,P_MOTOR_CLEAR_SUM,11);
+
+	sendPacketE();
+
+	C_CLEARBIT(RS485_SEND);
+
+
+}
+
 // nastavení rychlosti motorů -> v závislosti na vzdálenosti překážky
 uint8_t setMotorsSpeed(int16_t left, int16_t right) {
 
@@ -215,9 +233,9 @@ uint8_t setMotorsSpeed(int16_t left, int16_t right) {
 
 		int16_t lowest = 500;
 
-		if (sens.us_fast!=0 && sens.us_fast<lowest) lowest = sens.us_fast;
-		if (sens.sharp[0]!=0 && sens.sharp[0]<lowest) lowest = sens.sharp[0];
-		if (sens.sharp[1]!=0 && sens.sharp[1]<lowest) lowest = sens.sharp[1];
+		if (sens.us_fast>=10 && sens.us_fast<lowest) lowest = sens.us_fast;
+		if (sens.sharp[0]>=50 && sens.sharp[0]<lowest) lowest = sens.sharp[0];
+		if (sens.sharp[1]>=50 && sens.sharp[1]<lowest) lowest = sens.sharp[1];
 
 		// nebezpečná vzdálenost - nutno omezit rychlost
 		if (lowest<350) {
@@ -232,8 +250,8 @@ uint8_t setMotorsSpeed(int16_t left, int16_t right) {
 
 		int16_t lowest= 350;
 
-		if (sens.sharp[2]!=0 && sens.sharp[2]<lowest) lowest = sens.sharp[2];
-		if (sens.sharp[3]!=0 && sens.sharp[3]<lowest) lowest = sens.sharp[3];
+		if (sens.sharp[2]>=50 && sens.sharp[2]<lowest) lowest = sens.sharp[2];
+		if (sens.sharp[3]>=50 && sens.sharp[3]<lowest) lowest = sens.sharp[3];
 
 		// nebezpečná vzdálenost - nutno omezit rychlost
 		if (lowest<350) {
@@ -246,7 +264,7 @@ uint8_t setMotorsSpeed(int16_t left, int16_t right) {
 	} // else -> kontrola při otáčení??
 
 
-	// změna rychlosti - posílá se pouze pokus se liší nová a původní hodnota
+	// změna rychlosti - posílá se pouze pokud se liší nová a původní hodnota
 	if (motors.m[FRONT_LEFT].req_speed!=left) setMotorSpeed(10,left);
 	if (motors.m[FRONT_RIGHT].req_speed!=right)	setMotorSpeed(11,right);
 
