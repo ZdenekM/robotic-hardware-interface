@@ -3,7 +3,6 @@
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
 
-// TODO: opravit plné skenování
 // TODO: obsluha kompasu v přerušení
 
 #define F_CPU 16000000UL
@@ -216,7 +215,22 @@ ISR(TIMER1_CAPT_vect){
 		// uložení výsledku - v mm
 		if (mod_state.s_state == S_FAST_SCAN) {
 
-			mod_state.us_fast = ICR1/12-10;
+			/*static uint16_t pICR1 = 0;
+
+			mod_state.us_fast = (9*pICR1 + 1*ICR1)/120-10;
+
+			pICR1 = ICR1;*/
+
+			//mod_state.us_fast = (9*mod_state.us_fast + 1*(ICR1/12-10))/10;
+
+
+			uint16_t new = ICR1/12-10;
+
+			mod_state.us_fast = (7*mod_state.us_fast + new)/8;
+
+			//mod_state.us_fast = ICR1/12-10;
+
+
 			mod_state.s_state = S_DONE;
 
 		}
@@ -341,15 +355,17 @@ void startUS() {
 
 }
 
+
 // spočítá vzdálenost překážky z ADC
 uint16_t sharpDist(uint16_t adc) {
+
+	// objekt je příliš daleko
+	if (adc<180) return 0;
 
 	// přepočet - zjištěno regresní analýzou
 	uint16_t pom = (125000/adc)-47-25;
 
-	// nula indikuje chybový stav - překročení rozsahu
-	if (pom < 900) return pom;
-	else return 0;
+	return pom;
 
 }
 
@@ -357,8 +373,17 @@ uint16_t sharpDist(uint16_t adc) {
 // přerušení pro obecné použití
 ISR(TIMER0_OVF_vect){
 
+	static uint8_t f10hz=0;
+
+	if (++f10hz==25) {
+
+		mod_state.f10hz_flag = 1;
+		f10hz = 0;
+	}
+
 	static uint8_t sharp_idx = 0;
 
+	if (!mod_state.comp_act)
 	// obsluha čidel Sharp
 	switch (sharp_idx) {
 
@@ -376,7 +401,7 @@ ISR(TIMER0_OVF_vect){
 		// měření dokončeno
 		if (!CHECKBIT(ADCSRA,ADSC)) {
 
-			mod_state.sharp[0] = (9*mod_state.sharp[0] + 1*sharpDist(ADCW))/10;
+			mod_state.sharp[0] = sharpDist(ADCW);
 			sharp_idx++;
 
 		}
@@ -397,7 +422,7 @@ ISR(TIMER0_OVF_vect){
 
 		if (!CHECKBIT(ADCSRA,ADSC)) {
 
-			mod_state.sharp[1] = (9*mod_state.sharp[1] + 1*sharpDist(ADCW))/10;
+			mod_state.sharp[1] = sharpDist(ADCW);
 			sharp_idx++;
 
 		}
@@ -418,7 +443,7 @@ ISR(TIMER0_OVF_vect){
 
 		if (!CHECKBIT(ADCSRA,ADSC)) {
 
-			mod_state.sharp[2] = (9*mod_state.sharp[2] + 1*sharpDist(ADCW))/10;
+			mod_state.sharp[2] = sharpDist(ADCW);
 			sharp_idx++;
 
 		}
@@ -439,7 +464,7 @@ ISR(TIMER0_OVF_vect){
 
 		if (!CHECKBIT(ADCSRA,ADSC)) {
 
-			mod_state.sharp[3] = (9*mod_state.sharp[3] + 1*sharpDist(ADCW))/10;
+			mod_state.sharp[3] = sharpDist(ADCW);
 			sharp_idx = 0;
 
 		}
@@ -448,7 +473,8 @@ ISR(TIMER0_OVF_vect){
 		} break;
 
 
-	}
+	} // switch
+
 
 	// počítadlo timeoutu pro příjem po RS485
 	receiveTimeout(&comm_state);
@@ -638,12 +664,20 @@ ISR(TIMER0_OVF_vect){
 // přečtení úhlu z kompasu
 void getAngle(tmod_state *m) {
 
+	// počká se na doměření ADC
+	while(!CHECKBIT(ADCSRA,ADSC));
+
+	// při nastaveném příznaku neprobíhá další měření
+	mod_state.comp_act = 1;
+
 	uint16_t angle=0;
 
 	angle = i2c_read(0xC0,2) <<8; // read cmps03 angle, high byte
 	angle += i2c_read(0xC0,3);
 
-	m->comp = (m->comp + angle)/2;
+	m->comp = angle;
+
+	mod_state.comp_act = 0;
 }
 
 
@@ -660,24 +694,28 @@ int main(void) {
 		C_CLEARBIT(RS485_SEND);
 
 		// měření ultrazvukem (v přerušení)
-		//if (mod_state.s_state == S_DONE) mod_state.s_state = S_FAST_SCAN;
+		if (mod_state.s_state == S_DONE) mod_state.s_state = S_FAST_SCAN;
 
-		// obsluha Sharpů
-		//getAnalogData();
+		if (mod_state.f10hz_flag==1) {
 
-		//getAngle(&mod_state);
+			// obsluha kompasu
+			getAngle(&mod_state);
 
-		comm_state.receive_state = PR_WAITING;
+			mod_state.f10hz_flag = 0;
+
+		}
+
+		//comm_state.receive_state = PR_WAITING;
 
 		// čekání na příjem paketu
-		while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
+		//while(comm_state.receive_state != PR_PACKET_RECEIVED && comm_state.receive_state!=PR_TIMEOUT && comm_state.receive_state!=PR_READY);
 
 
 		// pokud byl přijat paket -> rozhodnutí podle typu paketu
 		if (comm_state.receive_state==PR_PACKET_RECEIVED && checkPacket(&comm_state)) {
 
 			// indikace příjmu paketu
-			//C_FLIPBIT(LED);
+			C_FLIPBIT(LED);
 
 			switch(comm_state.ip.packet_type) {
 
@@ -796,9 +834,13 @@ int main(void) {
 
 			} // switch
 
+			comm_state.receive_state = PR_WAITING;
+
 		} // if
 
-		comm_state.receive_state = PR_READY;
+		else if (comm_state.receive_state == PR_TIMEOUT || comm_state.receive_state == PR_READY) comm_state.receive_state = PR_WAITING;
+
+		//comm_state.receive_state = PR_READY;
 
 
 	} // while

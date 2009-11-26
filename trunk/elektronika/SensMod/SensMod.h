@@ -21,8 +21,14 @@ typedef struct {
 	// prom. pro uložení rychlého scanování (za jízdy)
 	volatile uint16_t us_fast;
 
+	// minulá hodnota
+	uint16_t us_fast_last;
+
 	// údaje z kompasu
 	uint16_t comp;
+
+	// flag indikující aktivitu kompasu
+	uint8_t comp_act:1;
 
 	// taktilní senzory
 	uint8_t tact;
@@ -31,7 +37,10 @@ typedef struct {
 	volatile uint8_t comp_to;
 
 	// flag pro odeslání full_scan
-	uint8_t full_flag;
+	uint8_t full_flag:1;
+
+	// flag indikující 100ms
+	uint8_t f10hz_flag:1;
 
 
 
