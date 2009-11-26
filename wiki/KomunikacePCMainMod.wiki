@@ -60,9 +60,7 @@ Zjištění nastavených PID konstant se provede pomocí paketu P_MOTOR_GETPID.
 
 === Vyčtení údajů ze senzorů překážek ===
 
-Během jízdy se ultrazvuk na servu neotáčí, měří se tedy vzdálenost k překážce přímo před robotem. Plný "sken" okolí se provede bezprostředně po zastavení. Měření pomocí infračervených senzorů probíhá neustále.
-
-Chyba při měření je vždy indikována nulovou hodnotou. Všechny vzdálenosti jsou v milimetrech.
+Během jízdy se ultrazvuk na servu neotáčí, měří se tedy vzdálenost k překážce přímo před robotem. Plný "sken" okolí se provede na požádání. Měření pomocí infračervených senzorů probíhá neustále. Chyba při měření je vždy indikována nulovou hodnotou. Všechny vzdálenosti jsou v milimetrech.
 
 Popis jednotlivých paketů:
 
