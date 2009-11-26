@@ -79,6 +79,8 @@ void getMotorPID(uint8_t addr);
 
 void setMotorPID(uint8_t addr);
 
+void clearRegSum();
+
 
 
 
