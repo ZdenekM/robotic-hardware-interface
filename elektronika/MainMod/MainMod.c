@@ -3,11 +3,11 @@
 // stránky projektu: http://code.google.com/p/robotic-hardware-interface
 
 
-// TODO: plné skenování okolí
 // TODO: náhodná projížďka
 // TODO: zastavení při výpadku SensMod
 // TODO: zprovoznit watchdog
 // TODO: podmenu na lcd
+
 
 #include "MainMod.h"
 
@@ -21,6 +21,9 @@ tcomm_state comm_state;
 // stav komunikace - rs232
 tcomm_state pccomm_state;
 
+// napětí
+tpower_state power_state;
+
 // strukt. pro regulátor ujeté vzdálenosti
 tdist_reg dist_reg;
 
@@ -29,6 +32,9 @@ tangle_reg angle_reg;
 
 // struktura pro stav motorů
 tmotors motors;
+
+// str. pro náhodnou projížďku
+trand_ride rand_ride;
 
 // flagy pro obsluhu perif.
 volatile uint8_t flags = 0;
@@ -84,8 +90,11 @@ ISR(USART1_UDRE_vect) {
 
 
 
+
 // přerušení - 50 Hz
 ISR(TIMER0_COMP_vect) {
+
+	C_FLIPBIT(LCD_BL);
 
 
 	// počítadlo pro obnovení lcd
@@ -136,6 +145,11 @@ int main(void)
 
 	// inicializuje MainMod
 	ioinit();
+
+	_delay_ms(1000);
+
+	// test komunikace s moduly
+	initModules();
 
 	mod_state.menu_state = M_STANDBY;
 
@@ -191,18 +205,29 @@ int main(void)
 
         	if (CHECKBIT(mod_state.buttons,ABUTT4)) {
 
-        		//setAngleReg(90);
+        		switch (mod_state.menu_state) {
 
-        		while(comm_state.send_state != PS_READY);
+        		case M_ANGLEREG: setAngleReg(90); break;
+        		case M_DISTREG: setDistReg(1000); break;
+        		case M_SENS_FULL: {
 
-        		// příkaz pro plné skenování
-        		makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
-        		sendPacketE();
+        			while(comm_state.send_state != PS_READY);
+
+        			 // příkaz pro plné skenování
+        			 makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
+        			 sendPacketE();
+
+        		} break;
+
+        		//case M_JOYSTICK: setJoyZero(); break;
+
+
+        		} // switch
 
         		CLEARBIT(mod_state.buttons,ABUTT4);
 
 
-        	}
+        	} // if
 
     		C_CLEARBIT(F_1HZ);
     		manageLcd();
@@ -228,6 +253,9 @@ int main(void)
 			// načtení dat ze senzorů
 			getSensorState();
 
+			// získání údajů o napětí
+			getPowerState();
+
 			// regulátor pro ujetou vzdálenost
 			distReg();
 
@@ -238,13 +266,18 @@ int main(void)
 
 		switch(mod_state.control) {
 
+		static uint8_t joy,autonom;
+
 		// zdroj řízení nastaven na PC
 		case C_PC: {
 
+			joy = 0;
+			autonom = 0;
+
 			// zastavení při timeoutu komunikace s PC - 5s
-			if (mod_state.pc_comm_to >= PcCommTo)
+			//if (mod_state.pc_comm_to >= PcCommTo)
 				// pož. rychlost není nula - zastavit
-				setMotorsSpeed(0,0);
+				//setMotorsSpeed(0,0);
 
 
 		} break;
@@ -252,7 +285,10 @@ int main(void)
 		// zdroj řízení nastaven na joystick
 		case C_JOY: {
 
-			joyRide();
+			autonom = 0;
+
+			if (joy!=50) joy++;
+			else joyRide();
 
 
 		} break;
@@ -260,30 +296,10 @@ int main(void)
 		// autonomní operace
 		case C_AUTO: {
 
-			// TODO: náhodná projížďka
+			joy = 0;
 
-			/*if (dist_reg.state == R_READY) {
-
-				if (sens.us_fast>200) setDistReg(&dist_reg,sens.us_fast-200);
-
-			} else {
-
-				if (sens.us_fast > (dist_reg.req_dist+200)) setDistReg(&dist_reg,sens.us_fast-200);
-
-			}*/
-
-			// test otočení o zadaný úhel
-			/*static uint8_t flag = 0;
-
-			if (flag==0) {
-
-				flag = 1;
-
-				setAngleReg(90);
-
-
-
-			}*/
+			if (autonom!=50) autonom++;
+			else randomRide();
 
 		} break;
 
