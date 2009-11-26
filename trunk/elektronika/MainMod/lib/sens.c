@@ -171,6 +171,8 @@ uint8_t getSensorState() {
 
 			comm_state.receive_state = PR_READY;
 
+			sens.new_full_flag = 1;
+
 			return FULL_SCAN;
 
 
