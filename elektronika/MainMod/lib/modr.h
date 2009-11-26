@@ -46,4 +46,7 @@ void manageLcd();
 // obsluha joysticku
 void joyRide();
 
+// náhodná projížďka
+void randomRide();
+
 #endif /* MODR_H_ */

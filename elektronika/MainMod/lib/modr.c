@@ -12,6 +12,8 @@ extern tdist_reg dist_reg;
 extern tangle_reg angle_reg;
 extern tmotors motors;
 extern tsens sens;
+extern tpower_state power_state;
+extern trand_ride rand_ride;
 
 
 // inicializace regulátoru ujeté vzd.
@@ -29,13 +31,13 @@ void initDistReg() {
 void initAngleReg() {
 
 	angle_reg.P = 1;
-	angle_reg.I = 0;
-	angle_reg.D = 0;
-	angle_reg.last_angle = 0;
+	//angle_reg.I = 0;
+	//angle_reg.D = 0;
+	//angle_reg.last_angle = 0;
 	angle_reg.req_angle = 0;
 	angle_reg.start_angle = 0;
 	angle_reg.state = R_READY;
-	angle_reg.sum = 0;
+	//angle_reg.sum = 0;
 
 
 }
@@ -104,7 +106,7 @@ void ioinit() {
 	//UBRR1L = 68; // 14400
 	//UBRR1L = 25; // 38400
 	//UBRR1L = 12; // 76800
-	UBRR1L = 12; // 250000
+	UBRR1L = 12;
 	UBRR1H = 0;
 
 	UCSR1A = (0<<U2X1)|(0<<MPCM1);
@@ -266,6 +268,32 @@ void standBy() {
 	lcd_gotoxy(0,0);
 	lcd_puts_P("Standby");
 
+	char abuff[11];
+
+	lcd_gotoxy(0,1);
+	sprintf_P(abuff,PSTR("B1:%7u"),power_state.ubatt1);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(0,2);
+	sprintf_P(abuff,PSTR("B2:%7u"),power_state.ubatt2);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(10,1);
+	sprintf_P(abuff,PSTR("MD:%7u"),power_state.umod);
+	lcd_puts(abuff);
+
+	lcd_gotoxy(10,2);
+	sprintf_P(abuff,PSTR("MT:%7u"),power_state.umot);
+	lcd_puts(abuff);
+
+
+}
+
+// nastaví offset joysticku
+void setJoyZero() {
+
+	/*mod_state.joy_x_offset = mod_state.joy_x - 512;
+	mod_state.joy_y_offset = mod_state.joy_y - 512;*/
 
 }
 
@@ -299,7 +327,7 @@ void update_joystick() {
 	// čeká na dokončení převodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	mod_state.joy_y = (mod_state.joy_y + ADCW) / 2; // filtr
+	mod_state.joy_y = ((mod_state.joy_y + ADCW) / 2) - mod_state.joy_y_offset; // filtr
 
 	// nastavení kanálu
 	ADMUX &= 0xC0; // vynulování 5 spodnich bitů
@@ -311,7 +339,7 @@ void update_joystick() {
 	// čeká na dokončení převodu
 	while (CHECKBIT(ADCSRA,ADSC ));
 
-	mod_state.joy_x = (mod_state.joy_x + ADCW) / 2; // filtr
+	mod_state.joy_x = ((mod_state.joy_x + ADCW) / 2) - mod_state.joy_x_offset; // filtr
 
 
 
@@ -434,50 +462,77 @@ void angleRegInfo() {
 	sprintf_P(abuff,PSTR("E :%7d"),angle_reg.e);
 	lcd_puts(abuff);
 
+	// rychlost otáčení
+	lcd_gotoxy(10,2);
+	sprintf_P(abuff,PSTR("SP:%7d"),angle_reg.speed);
+	lcd_puts(abuff);
+
 
 	// stav regulátoru
 	lcd_gotoxy(10,3);
 	if (angle_reg.state==R_READY) sprintf_P(abuff,PSTR("ST:  READY")); // připraven
 	else if (angle_reg.state==R_RUNNING) sprintf_P(abuff,PSTR("ST:    RUN")); // běží
+	lcd_puts(abuff);
 
 
 }
 
-//TODO: nefunguje - OPRAVIT
 // regulátor pro otočení o zadaný úhel
 void angleReg() {
 
 	if (angle_reg.state == R_RUNNING) {
 
-		int16_t speed;
+		int16_t comp;
 
-		// výpočet odchylky (relativní, ne absolutní)
-		angle_reg.e = angle_reg.req_angle - (sens.comp - angle_reg.start_angle);
+		// výpočet reg. odchylky
+
+		// otáčení doprava
+		if (angle_reg.req_angle>0) {
+
+				// deseti se dělí kvůli snížení přesnosti
+				if ((sens.comp/10) < (angle_reg.start_angle/10)) comp = sens.comp + 3600;
+				else comp = sens.comp;
+
+			}
+
+		// otáčení doleva
+		else {
+
+				if ((sens.comp/10) > (angle_reg.start_angle/10)) comp = sens.comp - 3600;
+				else comp = sens.comp;
+
+		}
+
+		// výpočet odchylky
+		angle_reg.e = (angle_reg.start_angle + angle_reg.req_angle) - comp;
 
 		// výpočet  rychlosti
-		speed = angle_reg.P*angle_reg.e;
+		angle_reg.speed = labs(2*angle_reg.e);
 
-		//speed /= 100;
+		angle_reg.last_e = angle_reg.e;
 
 		// omezení rozsahu
-		if (speed>250) speed = 250;
-		else if (speed<-250) speed = -250;
+		if (angle_reg.speed>100) angle_reg.speed = 100;
+		else if (angle_reg.speed<-100) angle_reg.speed = -100;
 
 		// hotovo (odchylka je 0.5°)
 		if (labs(angle_reg.e)<5) {
 
-			speed = 0;
+			angle_reg.speed = 0;
 			angle_reg.state = R_READY;
 
 		}
 
 		// určení směru otáčení
-		if (angle_reg.e>0) setMotorsSpeed(speed,-speed);
-		else setMotorsSpeed(-speed,speed);
+		if (angle_reg.e>0) setMotorsSpeed(angle_reg.speed,-angle_reg.speed);
+		else setMotorsSpeed(-angle_reg.speed,angle_reg.speed);
+
+		// vynulovat integrátory (zamezení nechtěného otáčení, šetření baterií)
+		if (angle_reg.state == R_READY) clearRegSum();
 
 
 
-	}
+	} // if
 
 
 
@@ -485,7 +540,7 @@ void angleReg() {
 
 void setAngleReg(int16_t angle) {
 
-	if (angle>=-360 && angle<=360 && angle_reg.state==R_READY) {
+	if (angle>=-360 && angle<=360 && angle_reg.state==R_READY && dist_reg.state!=R_RUNNING) {
 
 		setMotorsSpeed(0,0);
 		angle_reg.req_angle = angle*10;
@@ -499,15 +554,19 @@ void setAngleReg(int16_t angle) {
 // nastavení regulátoru ujeté vzd.
 void setDistReg(int16_t dist) {
 
-	// nastavení počáteční vzdálenosti
-	dist_reg.lstart_dist = (motors.m[FRONT_LEFT].distance + motors.m[REAR_LEFT].distance)/2;
-	dist_reg.rstart_dist = (motors.m[FRONT_RIGHT].distance + motors.m[REAR_RIGHT].distance)/2;
+	// jenom pokud neběží reg. otočení
+	if (angle_reg.state==R_READY) {
 
-	// zadání požadované vzdálenosti k ujetí
-	dist_reg.req_dist = dist;
+		// nastavení počáteční vzdálenosti
+		dist_reg.lstart_dist = (motors.m[FRONT_LEFT].distance + motors.m[REAR_LEFT].distance)/2;
+		dist_reg.rstart_dist = (motors.m[FRONT_RIGHT].distance + motors.m[REAR_RIGHT].distance)/2;
 
-	dist_reg.state = R_RUNNING;
+		// zadání požadované vzdálenosti k ujetí
+		dist_reg.req_dist = dist;
 
+		dist_reg.state = R_RUNNING;
+
+	}
 
 }
 
@@ -712,6 +771,132 @@ void joyRide() {
 		}
 
 
+
+
+}
+
+void randomRide() {
+
+	switch(rand_ride.state) {
+
+	// jízda rovně
+	case STRAIGHT: {
+
+		if ((sens.us_fast==0 || sens.us_fast>200)
+			&& (sens.sharp[0]==0 || sens.sharp[0]>200)
+			&& (sens.sharp[1]==0 || sens.sharp[1]>200)) {
+
+				setMotorsSpeed(250,250);
+				rand_ride.obsc = 0;
+
+		}
+		else {
+
+			if (++rand_ride.obsc==5) {
+
+				setMotorsSpeed(0,0);
+				rand_ride.state = BRAKING;
+
+				rand_ride.obsc = 0;
+
+			}
+
+
+
+		}
+
+	} break;
+
+	// čekání na zastavení
+	case BRAKING: {
+
+		if (motors.m[FRONT_LEFT].act_speed==0 && motors.m[FRONT_RIGHT].act_speed==0) {
+
+			while(comm_state.send_state != PS_READY);
+
+			// příkaz pro plné skenování
+			makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
+			sendPacketE();
+
+			rand_ride.state = WFFS;
+
+
+		}
+
+	}
+
+	// čekání na plný sken
+	case WFFS: {
+
+		if (sens.new_full_flag==1) {
+
+			// vlevo je víc místa než rovně
+			if (sens.us_full[0] > sens.us_full[2]) {
+
+				// otáčení doleva
+				setMotorsSpeed(-50,50);
+				rand_ride.dist = sens.us_full[0];
+				rand_ride.state = TURNING;
+
+			} else
+
+			// vpravo je víc místa než rovně
+			if (sens.us_full[4] > sens.us_full[2]) {
+
+				// otáčení doprava
+				setMotorsSpeed(50,-50);
+				rand_ride.dist = sens.us_full[4];
+				rand_ride.state = TURNING;
+
+
+			// TODO: dodělat couvání, pokud to nejde rovně
+			} else { // nejvíc místa je rovně
+
+
+				rand_ride.state = STRAIGHT;
+
+
+			}
+
+
+
+			sens.new_full_flag = 0;
+
+		}
+
+
+
+	} break;
+
+	// otáčení, dokud nebude před robotem dost místa
+	case TURNING: {
+
+		if (sens.us_fast >=rand_ride.dist) {
+
+				setMotorsSpeed(0,0);
+				clearRegSum();
+				rand_ride.turn_to = 0;
+				rand_ride.state = STRAIGHT;
+
+		} else {
+
+			if (++rand_ride.turn_to==50) {
+
+				// nedaří se najít vybranou vzdálenost, zkusíme polovinu :)
+				rand_ride.dist /= 2;
+				rand_ride.turn_to = 0;
+
+				}
+
+
+		}
+
+
+
+	} break;
+
+
+	} // switch auto;
 
 
 }
