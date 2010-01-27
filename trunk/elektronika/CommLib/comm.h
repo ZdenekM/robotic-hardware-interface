@@ -14,7 +14,7 @@
 #define BUFF_LEN 32
 
 // timeout pro příjem paketu - 2x 10ms = 20ms
-#define MAXTIMEOUT 5
+#define MAXTIMEOUT 3
 
 
 typedef struct {
@@ -48,7 +48,7 @@ typedef struct {
 // PC_MOVE_INFO - informace o pohybu
 
 
-typedef enum {P_ECHO, P_MOTOR_COMM,P_MOTOR_INFO,P_COMM_INFO,PC_FREE_RIDE, PC_MOVE_STRAIGHT, PC_MOVE_ROUND, PC_MOVE_INFO, PC_MOVE_AINFO, P_SENS_FAST,P_SENS_FULL,P_SENS_COMP,P_MOTOR_SETPID,P_MOTOR_GETPID} tpacket_type;
+typedef enum {P_ECHO, P_MOTOR_COMM,P_MOTOR_INFO,P_COMM_INFO,PC_FREE_RIDE, PC_MOVE_STRAIGHT, PC_MOVE_ROUND, PC_MOVE_INFO, PC_MOVE_AINFO, P_SENS_FAST,P_SENS_FULL,P_SENS_COMP,P_MOTOR_SETPID,P_MOTOR_GETPID, P_POWSTATE, P_MOTOR_CLEAR_SUM, P_ACK} tpacket_type;
 
 // definice stavů odesílání paketu
 typedef enum {PS_SYNC1, PS_SYNC2, PS_ADDR, PS_LEN, PS_TYPE, PS_DATA, PS_CRC1, PS_CRC2, PS_READY} tsend_state;

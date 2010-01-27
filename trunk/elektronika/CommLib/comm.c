@@ -342,6 +342,7 @@ uint8_t checkPacket(tcomm_state *c) {
 
 void receiveTimeout(tcomm_state *c) {
 
+	 //&& c->receive_state!=PR_WAITING
 	if (c->receive_state!=PR_PACKET_RECEIVED && c->receive_state!=PR_READY) {
 
 		// chyba při přenosu
