@@ -65,18 +65,18 @@ void ioinit() {
 	lcd_home();
 
 	// CT0 - asynch. -> lcd menu, tlacitka, hodiny, regulace podsvetleni lcd
-		// 10 Hz - N=32, OCR=50
-		// 100 Hz - N=1, OCR=163
+	// 10 Hz - N=32, OCR=50
+	// 50 Hz - N=8, OCR=40
 
-		// asynchronní taktování
-		ASSR = (1<<AS0);
+	// asynchronní taktování
+	ASSR = (1<<AS0);
 
-		// 100 Hz
-		OCR0 = 163;
-		TCCR0 = (0<<CS02)|(0<<CS01)|(1<<CS00);
+	// 50 Hz, CTC
+	OCR0 = 40;
+	TCCR0 = (1<<WGM01)|(0<<WGM00)|(0<<CS02)|(1<<CS01)|(0<<CS00);
 
-		// OCIE0: Timer/Counter0 Output Compare Match Interrupt Enable
-		TIMSK = (1<<OCIE0);
+	// OCIE0: Timer/Counter0 Output Compare Match Interrupt Enable
+	TIMSK = (1<<OCIE0);
 
 	// nastavení obou UARTů
 		// nastaveni uart1 - komunikace s moduly
@@ -94,8 +94,16 @@ void ioinit() {
 			// TXB81 - 9. bit
 
 	// RS232, 38400, 8n1
-	UBRR0L = 25;
+
+	//#if F_CPU==16000000UL
+	//UBRR0L = 25;
+	//UBRR0H = 0;
+	//#else F_CPU==18432000UL
+	UBRR0L = 29;
 	UBRR0H = 0;
+	//#endif
+
+
 
 	UCSR0A = (0<<U2X0)|(0<<MPCM0);
 	UCSR0B = (0<<UCSZ02)|(0<<UDRIE0)|(1<<TXEN0)|(1<<RXEN0)|(1<<RXCIE0);
@@ -106,8 +114,15 @@ void ioinit() {
 	//UBRR1L = 68; // 14400
 	//UBRR1L = 25; // 38400
 	//UBRR1L = 12; // 76800
-	UBRR1L = 12;
+
+	//#if F_CPU==16000000UL
+	//UBRR1L = 12;
+	//UBRR1H = 0;
+	//#else F_CPU==18432000UL
+	UBRR1L = 14;
 	UBRR1H = 0;
+	//#endif
+
 
 	UCSR1A = (0<<U2X1)|(0<<MPCM1);
 	UCSR1B = (1<<UCSZ12)|(0<<UDRIE1)|(1<<TXEN1)|(1<<RXEN1)|(1<<RXCIE1);
@@ -507,7 +522,7 @@ void angleReg() {
 		angle_reg.e = (angle_reg.start_angle + angle_reg.req_angle) - comp;
 
 		// výpočet  rychlosti
-		angle_reg.speed = labs(2*angle_reg.e);
+		angle_reg.speed = labs(angle_reg.e/8);
 
 		angle_reg.last_e = angle_reg.e;
 
@@ -540,10 +555,10 @@ void angleReg() {
 
 void setAngleReg(int16_t angle) {
 
-	if (angle>=-360 && angle<=360 && angle_reg.state==R_READY && dist_reg.state!=R_RUNNING) {
+	if (angle>=-3600 && angle<=3600 && angle_reg.state==R_READY && dist_reg.state!=R_RUNNING) {
 
 		setMotorsSpeed(0,0);
-		angle_reg.req_angle = angle*10;
+		angle_reg.req_angle = angle;
 		angle_reg.start_angle = sens.comp;
 		angle_reg.state = R_RUNNING;
 

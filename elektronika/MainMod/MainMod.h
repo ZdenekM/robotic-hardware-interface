@@ -8,7 +8,8 @@
 #define BUTT2 PIND, 7
 #define BUTT1 PING, 0
 
-#define F_CPU 16000000UL
+//#define F_CPU 16000000UL
+#define F_CPU 18432000UL
 
 #include <stdlib.h>
 #include <stdio.h>
