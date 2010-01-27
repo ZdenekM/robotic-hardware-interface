@@ -8,6 +8,11 @@
 // TODO: zprovoznit watchdog
 // TODO: podmenu na lcd
 
+// TODO: potvrzení přijetí paketu odeslání CRC
+// TODO: oznámení o dokončení otáčení, ujetí vzdálenosti
+
+// 22.1.: opravena rychlost as. CT0, úprava rych. UARTů pro 18 MHz krystal, úprava timeoutů
+
 
 #include "MainMod.h"
 
@@ -45,13 +50,19 @@ tsens sens;
 // časové flagy
 #define F_1HZ flags, 0
 #define F_50HZ flags, 1
-
+#define F_25HZ flags, 2
+#define F_10HZ flags, 3
+#define F_5HZ flags, 4
+#define F_6HZ flags, 5
 
 
 // USART0 - komunikace s PC
 ISR(USART0_RX_vect) {
 
+	//C_FLIPBIT(LCD_BL);
+
 	if (CHECKBIT(UCSR0A,FE0)) pccomm_state.frame_error++;
+
 	receivePacket(UDR0,&pccomm_state);
 
 }
@@ -69,6 +80,7 @@ ISR(USART0_UDRE_vect) {
 ISR(USART1_RX_vect) {
 
 	if (CHECKBIT(UCSR1A,FE1)) comm_state.frame_error++;
+
 	receivePacket(UDR1,&comm_state);
 
 }
@@ -98,7 +110,39 @@ ISR(TIMER0_COMP_vect) {
 
 
 	// počítadlo pro obnovení lcd
-	static uint8_t lcdc=0;
+	static uint8_t lcdc=0, f25hz, f10hz, f5hz,f6hz;
+
+	// 25 Hz
+	if (++f25hz==2) {
+
+		f25hz=0;
+		C_SETBIT(F_25HZ);
+
+	}
+
+	// 10 Hz
+	if (++f10hz==6) {
+
+		f10hz=0;
+		C_SETBIT(F_10HZ);
+
+	}
+
+	// 5 Hz
+	if (++f5hz==11) {
+
+		f5hz=0;
+		C_SETBIT(F_5HZ);
+
+		}
+
+	// 6 Hz
+	if (++f6hz==9) {
+
+		f6hz=0;
+		C_SETBIT(F_6HZ);
+
+	}
 
 	//static uint8_t lcdbl=0;
 
@@ -117,12 +161,12 @@ ISR(TIMER0_COMP_vect) {
 	receiveTimeout(&pccomm_state);
 
 	// 1 Hz
-	if (++lcdc==50) {
+	if (++lcdc==51) {
 
 		lcdc=0;
 
 		// zvýšení počítadla pro timeout komunikace s PC
-		if (mod_state.pc_comm_to<PcCommTo) mod_state.pc_comm_to++;
+		//if (mod_state.pc_comm_to<PcCommTo) mod_state.pc_comm_to++;
 
 		// nastavení příznaků
 		C_SETBIT(F_1HZ);
@@ -166,7 +210,7 @@ int main(void)
     while (1) {
 
     	// reset watchdogu
-    	wdt_reset();
+    	//wdt_reset();
 
 
     	// obsluha LCD
@@ -207,7 +251,7 @@ int main(void)
 
         		switch (mod_state.menu_state) {
 
-        		case M_ANGLEREG: setAngleReg(90); break;
+        		case M_ANGLEREG: setAngleReg(900); break;
         		case M_DISTREG: setDistReg(1000); break;
         		case M_SENS_FULL: {
 
@@ -232,6 +276,118 @@ int main(void)
     		C_CLEARBIT(F_1HZ);
     		manageLcd();
 
+    		// získání údajů o napětí
+    		getPowerState();
+
+
+    	} // F1HZ
+
+    	if (C_CHECKBIT(F_25HZ)) {
+
+
+
+    		C_CLEARBIT(F_25HZ);
+
+    	}
+
+    	if (C_CHECKBIT(F_10HZ)) {
+
+    		C_CLEARBIT(F_10HZ);
+
+    	}
+
+    	if (C_CHECKBIT(F_6HZ)) {
+
+    		static uint8_t pom = 0;
+
+    		switch (pom) {
+
+    		case 0: {
+
+    		    // čtení stavu levých motorů
+    		    getMotorInfo(10,&motors.m[FRONT_LEFT],&motors.m[REAR_LEFT]);
+
+    		    pom++;
+
+    		 } break;
+
+    		 case 1: {
+
+    		    // čtení stavu pravých motorů
+    		    getMotorInfo(11,&motors.m[FRONT_RIGHT],&motors.m[REAR_RIGHT]);
+
+    		    pom++;
+
+    		 } break;
+
+    		 case 2: {
+
+    		 // načtení dat ze senzorů
+    		 getSensorState();
+
+    		 pom=0;
+
+    		 } break;
+
+    		} // switch
+
+    	    C_CLEARBIT(F_6HZ);
+
+    	}
+
+    	if (C_CHECKBIT(F_5HZ)) {
+
+    		// regulátor pro ujetou vzdálenost
+    		distReg();
+
+    		// regulátor otočení
+    		angleReg();
+
+    		if (mod_state.control==C_JOY) update_joystick();
+
+    		switch(mod_state.control) {
+
+				static uint8_t joy,autonom;
+
+				// zdroj řízení nastaven na PC
+				case C_PC: {
+
+					joy = 0;
+					autonom = 0;
+
+					// zastavení při timeoutu komunikace s PC - 5s
+					//if (mod_state.pc_comm_to >= PcCommTo)
+						// pož. rychlost není nula - zastavit
+						//setMotorsSpeed(0,0);
+
+
+				} break;
+
+				// zdroj řízení nastaven na joystick
+				case C_JOY: {
+
+					autonom = 0;
+
+					if (joy!=50) joy++;
+					else joyRide();
+
+
+				} break;
+
+				// autonomní operace
+				case C_AUTO: {
+
+					joy = 0;
+
+					if (autonom!=50) autonom++;
+					else randomRide();
+
+				} break;
+
+
+    		} //switch
+
+    		C_CLEARBIT(F_5HZ);
 
     	}
 
@@ -241,73 +397,6 @@ int main(void)
     	if (C_CHECKBIT(F_50HZ)) {
 
     		C_CLEARBIT(F_50HZ);
-
-			update_joystick();
-
-			// čtení stavu levých motorů
-			getMotorInfo(10,&motors.m[FRONT_LEFT],&motors.m[REAR_LEFT]);
-
-			// čtení stavu pravých motorů
-			getMotorInfo(11,&motors.m[FRONT_RIGHT],&motors.m[REAR_RIGHT]);
-
-			// načtení dat ze senzorů
-			getSensorState();
-
-			// získání údajů o napětí
-			getPowerState();
-
-			// regulátor pro ujetou vzdálenost
-			distReg();
-
-			// regulátor otočení
-			angleReg();
-
-
-
-		switch(mod_state.control) {
-
-		static uint8_t joy,autonom;
-
-		// zdroj řízení nastaven na PC
-		case C_PC: {
-
-			joy = 0;
-			autonom = 0;
-
-			// zastavení při timeoutu komunikace s PC - 5s
-			//if (mod_state.pc_comm_to >= PcCommTo)
-				// pož. rychlost není nula - zastavit
-				//setMotorsSpeed(0,0);
-
-
-		} break;
-
-		// zdroj řízení nastaven na joystick
-		case C_JOY: {
-
-			autonom = 0;
-
-			if (joy!=50) joy++;
-			else joyRide();
-
-
-		} break;
-
-		// autonomní operace
-		case C_AUTO: {
-
-			joy = 0;
-
-			if (autonom!=50) autonom++;
-			else randomRide();
-
-		} break;
-
-
-
-
-		} //switch
-
 
     	} // 50 Hz
 
@@ -409,12 +498,12 @@ int main(void)
     		// otočení
     		case PC_MOVE_ROUND: {
 
-    		    // TODO: naprogramovat
-    			if (mod_state.control == C_PC ) {
+    			int16_t angle;
 
+    			angle = pccomm_state.ip.data[0];
+    			angle |= pccomm_state.ip.data[1]<<8;
 
-
-    			}
+    			if (mod_state.control == C_PC && angle_reg.state == R_READY) setAngleReg(angle);
 
 
     		} break;
@@ -515,13 +604,20 @@ int main(void)
     		// plné měření - pouze když se stojí
     		case P_SENS_FULL: {
 
-    			// provede se pouze když robot stojí a zdroj řízení je nastavený na PC
-    			/*if ((motors.m[FRONT_LEFT].act_speed == 0) && (motors.m[FRONT_RIGHT].act_speed == 0) && (mod_state.control == C_PC)) {
+    			if (!sens.new_full_flag) {
 
-    				// provést plné skenování
-    				getFullSensorState();
+					while(comm_state.send_state != PS_READY);
 
-    				uint8_t arr[19];
+					// příkaz pro plné skenování
+					makePacket(&comm_state.op,NULL,0,P_SENS_FULL,21);
+					sendPacketE();
+
+    			} else {
+
+    				// vynulování příznaku hotového skenování
+    				sens.new_full_flag = 0;
+
+    				uint8_t arr[10];
 
     				// us - 0st
     				arr[0] = sens.us_full[0];
@@ -543,30 +639,14 @@ int main(void)
     				arr[8] = sens.us_full[4];
     				arr[9] = sens.us_full[4]>>8;
 
-
-					// sharp 1 (levý přední)
-    				arr[10] = sens.sharp[0];
-    				arr[11] = sens.sharp[0]>>8;
-
-    				// sharp 2 (pravý přední)
-    				arr[12] = sens.sharp[1];
-    				arr[13] = sens.sharp[1]>>8;
-
-    				// sharp 3 (levý zadní)
-    				arr[14] = sens.sharp[2];
-    				arr[15] = sens.sharp[2]>>8;
-
-    				// sharp 4 (pravý zadní)
-    				arr[16] = sens.sharp[3];
-    				arr[17] = sens.sharp[3]>>8;
-
-    				// taktilní senzory
-    				arr[18] = sens.tact;
+    				// vytvoření paketu
+    				makePacket(&pccomm_state.op,arr,10,P_SENS_FULL,0);
 
     				// obsluha odeslání paketu
-    				sendPCPacketE();*/
+    				sendPCPacketE();
 
-    			//}
+
+    			}
 
 
 
@@ -574,6 +654,9 @@ int main(void)
 
 
     		} // switch
+
+    		// potvrzení přijetí paketu
+    		confirmRec();
 
     		pccomm_state.receive_state = PR_WAITING;
 

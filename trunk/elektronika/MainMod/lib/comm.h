@@ -18,5 +18,8 @@ void sendCommStat();
 
 void sendPCPacketE();
 
+// potvrzení přijetí paketu
+void confirmRec();
+
 
 #endif /* MCOMM_H_ */

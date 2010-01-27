@@ -8,6 +8,21 @@
 extern tcomm_state comm_state;
 extern tcomm_state pccomm_state;
 
+// potvrzení přijetí paketu
+void confirmRec() {
+
+	uint8_t data[2];
+
+	data[0] = pccomm_state.ip.crc;
+	data[1] = pccomm_state.ip.crc>>8;
+
+	// vytvoření paketu
+	makePacket(&pccomm_state.op,data,2,P_ACK,0);
+
+	// odeslání
+	sendPCPacketE();
+
+}
 
 // volá se z main
 // odeslání paketu - extra funkce pro každý modul
